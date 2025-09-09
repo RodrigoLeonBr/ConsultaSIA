@@ -18,11 +18,6 @@ export function useAuth() {
     retry: false,
     staleTime: 0,
     refetchOnMount: true,
-    meta: {
-      headers: token ? {
-        Authorization: `Bearer ${token}`,
-      } : {},
-    },
   });
 
   const logout = () => {
