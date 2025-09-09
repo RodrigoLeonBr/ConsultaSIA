@@ -1,6 +1,59 @@
+# Dependencies
 node_modules
+.upm
+.cache
+
+# Build outputs
 dist
+build
+
+# Environment variables and secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+*.db
+*.sqlite
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Replit specific
+.config
+.local
