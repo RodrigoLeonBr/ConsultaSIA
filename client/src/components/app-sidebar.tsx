@@ -110,28 +110,32 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar data-testid="sidebar-main">
-      <SidebarContent>
+    <Sidebar data-testid="sidebar-main" className="bg-white dark:bg-gray-900 border-r border-border">
+      <SidebarContent className="bg-white dark:bg-gray-900">
         {/* Header */}
-        <div className="p-6 border-b border-sidebar-border">
+        <div className="p-6 border-b border-sidebar-border bg-white dark:bg-gray-900">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <TrendingUp className="text-primary-foreground h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-sidebar-foreground">ConsultaProd</h1>
+              <h1 className="text-lg font-semibold text-foreground">ConsultaProd</h1>
               <p className="text-sm text-muted-foreground">Sistema de Gestão</p>
             </div>
           </div>
         </div>
 
         {/* Main Navigation */}
-        <SidebarGroup>
+        <SidebarGroup className="px-2 py-2">
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActiveRoute(item.url)}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={isActiveRoute(item.url)}
+                    className="hover:bg-accent data-[active=true]:bg-primary data-[active=true]:text-primary-foreground font-medium"
+                  >
                     <Link href={item.url} data-testid={`nav-${item.title.toLowerCase()}`}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
@@ -144,13 +148,17 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Auxiliary Tables */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Tabelas Auxiliares</SidebarGroupLabel>
-          <SidebarGroupContent>
+        <SidebarGroup className="px-2 py-2">
+          <SidebarGroupLabel className="text-foreground font-medium px-2">Tabelas Auxiliares</SidebarGroupLabel>
+          <SidebarGroupContent className="space-y-1">
             <SidebarMenu>
               {auxiliaryTables.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActiveRoute(item.url)}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={isActiveRoute(item.url)}
+                    className="hover:bg-accent data-[active=true]:bg-primary data-[active=true]:text-primary-foreground font-medium"
+                  >
                     <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
@@ -164,13 +172,17 @@ export function AppSidebar() {
 
         {/* System - Only for Admin */}
         {user?.role === 'admin' && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Sistema</SidebarGroupLabel>
-            <SidebarGroupContent>
+          <SidebarGroup className="px-2 py-2">
+            <SidebarGroupLabel className="text-foreground font-medium px-2">Sistema</SidebarGroupLabel>
+            <SidebarGroupContent className="space-y-1">
               <SidebarMenu>
                 {systemItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActiveRoute(item.url)}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActiveRoute(item.url)}
+                      className="hover:bg-accent data-[active=true]:bg-primary data-[active=true]:text-primary-foreground font-medium"
+                    >
                       <Link href={item.url} data-testid={`nav-${item.title.toLowerCase()}`}>
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
@@ -185,17 +197,17 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* Footer */}
-      <SidebarFooter>
-        <div className="p-4 border-t border-sidebar-border">
+      <SidebarFooter className="bg-white dark:bg-gray-900">
+        <div className="p-4 border-t border-sidebar-border bg-white dark:bg-gray-900">
           <div className="flex items-center space-x-3">
             <Avatar className="h-8 w-8">
               <AvatarImage src="" />
-              <AvatarFallback className="bg-secondary text-secondary-foreground">
+              <AvatarFallback className="bg-primary text-primary-foreground font-medium">
                 {getUserInitials()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
+              <p className="text-sm font-medium text-foreground truncate">
                 {getUserDisplayName()}
               </p>
               <p className="text-xs text-muted-foreground">{getRoleDisplayName()}</p>
@@ -204,7 +216,7 @@ export function AppSidebar() {
               variant="ghost"
               size="icon"
               onClick={logout}
-              className="h-8 w-8"
+              className="h-8 w-8 hover:bg-accent"
               data-testid="button-logout"
             >
               <LogOut className="h-4 w-4" />
