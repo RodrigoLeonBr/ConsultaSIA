@@ -1,0 +1,191 @@
+Sistema ConsultaProd
+Produto de Gerenciamento e Relatórios Dinâmicos
+1. Visão Geral do Produto
+1.1 Objetivo
+Desenvolver um sistema web em PHP com arquitetura MVC para gerenciar dados de produção em saúde e gerar relatórios dinâmicos personalizáveis.
+
+1.2 Escopo
+Sistema completo de gestão de dados com funcionalidades de CRUD para tabelas auxiliares e gerador de relatórios com filtros avançados e múltiplas opções de exportação.
+
+2. Funcionalidades Principais
+2.1 Sistema de Autenticação e Autorização
+Perfis de Usuário:
+Administrador
+
+Acesso completo a todas as funcionalidades
+Gerenciamento de usuários
+Configurações do sistema
+Acesso total aos relatórios
+Operador
+
+Acesso ao gerenciamento de tabelas auxiliares
+Geração de relatórios básicos
+Exportação limitada conforme permissões
+Funcionalidades de Autenticação:
+Login/logout seguro
+Controle de sessão
+Recuperação de senha
+Log de acessos
+2.2 Gerenciamento de Tabelas Auxiliares
+2.2.1 Tabela CBO (Ocupações)
+Campos: Código CBO, Descrição da Ocupação, Status
+Funcionalidades:
+Cadastro de novas ocupações
+Edição de ocupações existentes
+Inativação/ativação de registros
+Busca e filtros por código ou descrição
+Importação em lote via CSV/Excel
+2.2.2 Tabela Prestador (Prestadores)
+Campos: Código Prestador, Nome/Razão Social, CNPJ/CPF, Tipo, Status
+Funcionalidades:
+Cadastro completo de prestadores
+Validação de CNPJ/CPF
+Categorização por tipo de prestador
+Histórico de alterações
+Relatórios de prestadores ativos/inativos
+2.2.3 Tabela Procedimento (Tabela de Procedimentos)
+Campos: Código Procedimento, Descrição, Valor, Complexidade, Status
+Funcionalidades:
+Gestão completa de procedimentos
+Controle de valores e reajustes
+Classificação por complexidade
+Versionamento de alterações
+Importação de tabelas oficiais
+2.2.4 Tabela S_RUB (Financiamentos)
+Campos: Código Rubrica, Descrição, Tipo Financiamento, Status
+Funcionalidades:
+Cadastro de rubricas de financiamento
+Categorização por tipo
+Vinculação com procedimentos
+Controle orçamentário
+Relatórios financeiros
+2.3 Gerador de Relatórios Dinâmicos
+2.3.1 Seleção de Campos
+Interface com checkboxes para seleção de campos da tabela principal:
+
+PRD_DTCOMP (Data Competência)
+PRD_DTREAL (Data Realização)
+PRD_CBO (CBO) - com lookup para tabela CBO
+PRD_PREST (Prestador) - com lookup para tabela Prestador
+PRD_PROC (Procedimento) - com lookup para tabela Procedimento
+PRD_QTD (Quantidade)
+PRD_VL_P (Valor)
+PRD_RUB (Rubrica) - com lookup para tabela S_RUB
+RUB_DC (Descrição Rubrica)
+PRD_CIDPRI (CID Principal)
+2.3.2 Sistema de Filtros Avançados
+Operadores disponíveis para cada campo:
+
+Igualdade: = (igual a)
+Comparação: < (menor), > (maior), <= (menor igual), >= (maior igual)
+Texto: contendo, inicia com, termina com
+Data: período entre datas, data específica
+Lista: múltipla seleção
+Funcionalidades dos Filtros:
+
+Adição dinâmica de múltiplos filtros
+Operadores lógicos (E/OU) entre filtros
+Agrupamento de filtros com parênteses
+Salvamento de configurações de filtro
+Templates de filtros pré-definidos
+2.3.3 Opções de Exportação
+Formatos Disponíveis:
+
+CSV: Dados tabulares para análise
+Excel (.xlsx): Com formatação e fórmulas
+PDF: Relatórios formatados para apresentação
+Configurações de Exportação:
+
+Cabeçalhos personalizados
+Formatação de dados (datas, valores monetários)
+Totalizadores e subtotais
+Logo institucional (PDF)
+Orientação da página
+3. Arquitetura Técnica
+3.1 Tecnologias
+Backend: PHP 8.0+
+Arquitetura: MVC (Model-View-Controller)
+Banco de Dados: MySQL/PostgreSQL
+Frontend: HTML5, CSS3, JavaScript
+Framework CSS: Bootstrap 5
+Bibliotecas: PHPSpreadsheet (Excel), TCPDF (PDF)
+3.2 Estrutura MVC
+Models:
+User (usuários e autenticação)
+CBO (ocupações)
+Prestador (prestadores)
+Procedimento (procedimentos)
+SRub (rubricas/financiamentos)
+ConsultaProd (tabela principal)
+Report (geração de relatórios)
+Controllers:
+AuthController (autenticação)
+CRUDController (operações CRUD genéricas)
+ReportController (geração de relatórios)
+ExportController (exportação de dados)
+Views:
+Layout principal responsivo
+Formulários de CRUD
+Interface de geração de relatórios
+Dashboards administrativos
+4. Funcionalidades Detalhadas
+4.1 Dashboard Principal
+Resumo estatístico dos dados
+Gráficos de produção por período
+Indicadores de performance
+Atalhos para funcionalidades principais
+4.2 Interface de Relatórios
+Passo 1: Seleção de campos (checkboxes)
+Passo 2: Configuração de filtros (formulário dinâmico)
+Passo 3: Pré-visualização dos dados
+Passo 4: Escolha do formato e exportação
+4.3 Gerenciamento de Dados
+Interfaces CRUD padronizadas para todas as tabelas
+Validações de integridade referencial
+Logs de auditoria para todas as operações
+Backup automático de dados críticos
+5. Requisitos Não Funcionais
+5.1 Performance
+Tempo de resposta < 3 segundos para consultas
+Paginação para resultados > 1000 registros
+Cache de consultas frequentes
+Otimização de queries SQL
+5.2 Segurança
+Criptografia de senhas (bcrypt)
+Proteção contra SQL Injection
+Validação de entrada de dados
+Controle de sessão seguro
+Log de todas as operações
+5.3 Usabilidade
+Interface responsiva (mobile-friendly)
+Navegação intuitiva
+Feedback visual para ações do usuário
+Mensagens de erro claras e orientativas
+6. Cronograma de Desenvolvimento
+Fase 1 (4 semanas): Infraestrutura Base
+Configuração do ambiente MVC
+Sistema de autenticação
+Layout base e navegação
+Fase 2 (6 semanas): CRUD das Tabelas Auxiliares
+Implementação completa do gerenciamento de CBO, Prestador, Procedimento e S_RUB
+Validações e integridade referencial
+Fase 3 (8 semanas): Gerador de Relatórios
+Interface de seleção de campos
+Sistema de filtros dinâmicos
+Pré-visualização de dados
+Fase 4 (4 semanas): Exportação e Finalização
+Implementação das exportações (CSV, Excel, PDF)
+Testes finais e ajustes
+Documentação e treinamento
+7. Critérios de Aceitação
+7.1 Funcionalidades Obrigatórias
+✅ Sistema de login funcional com perfis diferenciados
+✅ CRUD completo para todas as tabelas auxiliares
+✅ Gerador de relatórios com seleção de campos
+✅ Sistema de filtros com todos os operadores especificados
+✅ Exportação nos três formatos (CSV, Excel, PDF)
+7.2 Qualidade
+✅ Interface responsiva e intuitiva
+✅ Tempo de resposta adequado
+✅ Segurança implementada conforme especificações
+✅ Código documentado e estruturado
