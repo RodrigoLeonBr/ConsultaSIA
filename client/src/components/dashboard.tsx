@@ -157,7 +157,7 @@ function RecentActivity() {
           ))}
         </div>
         <div className="mt-4">
-          <Button variant="link" className="text-primary h-auto p-0" data-testid="button-view-all-activities">
+          <Button variant="ghost" className="text-primary h-auto p-0" data-testid="button-view-all-activities">
             Ver todas as atividades
           </Button>
         </div>

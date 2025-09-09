@@ -1,5 +1,14 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
+
+// Extend Express Request type to include user
+interface AuthenticatedRequest extends Request {
+  user: {
+    id: string;
+    username: string;
+    role: string;
+  };
+}
 import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -16,7 +25,7 @@ import {
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 // Authentication middleware
-const authenticateToken = (req: any, res: any, next: any) => {
+const authenticateToken = (req: AuthenticatedRequest, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -34,7 +43,7 @@ const authenticateToken = (req: any, res: any, next: any) => {
 };
 
 // Admin role middleware
-const requireAdmin = (req: any, res: any, next: any) => {
+const requireAdmin = (req: AuthenticatedRequest, res: any, next: any) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Admin access required' });
   }
@@ -80,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/auth/me', authenticateToken, async (req: any, res) => {
+  app.get('/api/auth/me', authenticateToken, async (req: AuthenticatedRequest, res) => {
     try {
       const user = await storage.getUser(req.user.id);
       if (!user) {
@@ -147,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'create',
         tableName: 'cbo',
         recordId: cbo.id,
@@ -173,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'update',
         tableName: 'cbo',
         recordId: cbo.id,
@@ -199,7 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'delete',
         tableName: 'cbo',
         recordId: req.params.id,
@@ -235,7 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'create',
         tableName: 'prestador',
         recordId: prestador.id,
@@ -261,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'update',
         tableName: 'prestador',
         recordId: prestador.id,
@@ -287,7 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'delete',
         tableName: 'prestador',
         recordId: req.params.id,
@@ -323,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'create',
         tableName: 'procedimento',
         recordId: procedimento.id,
@@ -349,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'update',
         tableName: 'procedimento',
         recordId: procedimento.id,
@@ -375,7 +384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'delete',
         tableName: 'procedimento',
         recordId: req.params.id,
@@ -411,7 +420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'create',
         tableName: 's_rub',
         recordId: srub.id,
@@ -437,7 +446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'update',
         tableName: 's_rub',
         recordId: srub.id,
@@ -463,7 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'delete',
         tableName: 's_rub',
         recordId: req.params.id,
@@ -501,7 +510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'export',
         tableName: 'consulta_prod',
         newValues: JSON.stringify({ format, filters, fields, recordCount: result.total }),
@@ -538,7 +547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Audit log
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: (req as AuthenticatedRequest).user.id,
         action: 'create',
         tableName: 'users',
         recordId: user.id,

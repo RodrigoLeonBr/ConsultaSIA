@@ -220,7 +220,7 @@ export function DataTable<T extends { id: string }>({
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => actions.edit!(row)}
+                              onClick={() => actions.edit?.onClick(row)}
                               data-testid={`button-edit-${index}`}
                             >
                               <Edit className="h-4 w-4" />
@@ -230,7 +230,7 @@ export function DataTable<T extends { id: string }>({
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => actions.delete!(row)}
+                              onClick={() => actions.delete?.onClick(row)}
                               data-testid={`button-delete-${index}`}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />

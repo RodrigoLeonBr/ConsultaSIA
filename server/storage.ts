@@ -22,7 +22,7 @@ import {
   type InsertAuditLog,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, like, gte, lte, desc, asc, count } from "drizzle-orm";
+import { eq, and, or, like, gte, lte, desc, asc, count, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -109,7 +109,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: string): Promise<boolean> {
     const result = await db.delete(users).where(eq(users.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // CBO operations
@@ -155,7 +155,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCBO(id: string): Promise<boolean> {
     const result = await db.delete(cbo).where(eq(cbo.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Prestador operations
@@ -202,7 +202,7 @@ export class DatabaseStorage implements IStorage {
 
   async deletePrestador(id: string): Promise<boolean> {
     const result = await db.delete(prestador).where(eq(prestador.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Procedimento operations
@@ -248,7 +248,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProcedimento(id: string): Promise<boolean> {
     const result = await db.delete(procedimento).where(eq(procedimento.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // SRub operations
@@ -294,7 +294,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSRub(id: string): Promise<boolean> {
     const result = await db.delete(sRub).where(eq(sRub.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // ConsultaProd operations

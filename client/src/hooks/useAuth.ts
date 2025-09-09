@@ -12,16 +12,16 @@ export interface User {
 export function useAuth() {
   const token = localStorage.getItem("token");
   
-  const { data: user, isLoading, error } = useQuery({
+  const { data: user, isLoading, error } = useQuery<User>({
     queryKey: ["/api/auth/me"],
     enabled: !!token,
     retry: false,
     staleTime: 0,
     refetchOnMount: true,
     meta: {
-      headers: {
+      headers: token ? {
         Authorization: `Bearer ${token}`,
-      },
+      } : {},
     },
   });
 
