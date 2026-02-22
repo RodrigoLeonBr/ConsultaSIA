@@ -1,0 +1,20 @@
+{
+  "active": [
+    {
+      "slug": "mvp-slice-1",
+      "path": "plans/mvp-slice-1.md",
+      "title": "MVP Slice 1: Consulta Síncrona SIA paginada (Server-Side)",
+      "linkedAt": "2026-02-22T16:27:53.147Z",
+      "status": "active"
+    },
+    {
+      "slug": "mvp-slice-2",
+      "path": "plans/mvp-slice-2.md",
+      "title": "MVP Slice 2: Motor Assíncrono de Relatórios (SIA Consolidados)",
+      "linkedAt": "2026-02-22T17:07:42.089Z",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "primary": "mvp-slice-1"
+}

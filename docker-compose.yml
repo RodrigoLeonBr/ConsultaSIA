@@ -1,0 +1,47 @@
+# Arquivo Compose para orquestração local/produção dos serviços web Node.js (V3)
+# O MySQL/MariaDB é assumido como pré-existente no Host e acessado via `host.docker.internal` (ou IP da ponte docker local) configurado livremente no arquivo .env
+
+services:
+  api:
+    build:
+      context: ./v3-backend
+      dockerfile: Dockerfile
+    container_name: v3-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-3000}:3000"
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health", "||", "exit", "1" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  worker:
+    build:
+      context: ./v3-backend
+      dockerfile: Dockerfile
+    container_name: v3-worker
+    restart: unless-stopped
+    # Reutiliza a imagem base, mas injeta flag que engatilha o loop de job no framework do NestJS
+    environment:
+      - RUN_WORKER=true
+    env_file:
+      - .env
+    depends_on:
+      api:
+        condition: service_started
+
+  web:
+    build:
+      context: ./v3-frontend
+      dockerfile: Dockerfile
+      args:
+        # Passa a variável ao momento do build do React. Se o .env não provê, usa localhost HTTP.
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
+    container_name: v3-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8080}:80"

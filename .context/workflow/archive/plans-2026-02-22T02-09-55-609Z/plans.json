@@ -1,0 +1,14 @@
+{
+  "active": [
+    {
+      "slug": "init-context-and-docs",
+      "path": "plans/init-context-and-docs.md",
+      "title": "Project Context Initialization and Documentation",
+      "summary": "Initialize project context, fill documentation, and set up workflow for ConsultaProd Laravel 12 project.",
+      "linkedAt": "2026-02-22T01:01:29.254Z",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "primary": "init-context-and-docs"
+}

@@ -1,0 +1,44 @@
+project:
+  name: "consultaprod-v3"
+  scale: LARGE
+  started: "2026-02-22T02:09:55.612Z"
+  current_phase: C
+
+phases:
+  P:
+    status: filled
+    started_at: "2026-02-22T02:09:55.612Z"
+    completed_at: "2026-02-22T02:10:17.591Z"
+  R:
+    status: filled
+    started_at: "2026-02-22T02:10:17.594Z"
+    completed_at: "2026-02-22T02:13:42.938Z"
+  E:
+    status: completed
+    started_at: "2026-02-22T02:13:42.939Z"
+    completed_at: "2026-02-22T02:20:23.976Z"
+  V:
+    status: completed
+    started_at: "2026-02-22T02:20:23.980Z"
+    completed_at: "2026-02-22T02:30:39.388Z"
+  C:
+    status: filled
+    started_at: "2026-02-22T02:30:39.389Z"
+    completed_at: "2026-02-22T02:31:48.686Z"
+
+execution:
+  history:
+    - timestamp: "2026-02-22T17:09:07.519Z"
+      phase: C
+      action: plan_phase_updated
+      plan: "mvp-slice-2"
+      description: "Plan phase E updated to completed"
+  last_activity: "2026-02-22T17:09:07.519Z"
+  resume_context: "Fase do plano atualizada"
+
+approval:
+  plan_created: true
+  plan_approved: true
+  approved_by: "system-migration"
+  approved_at: "2026-02-22T02:20:23.976Z"
+

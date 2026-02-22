@@ -1,0 +1,346 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-02-22T01:02:47.370Z",
+  "stack": {
+    "primaryLanguage": "javascript",
+    "languages": [
+      "javascript",
+      "php"
+    ],
+    "frameworks": [
+      "laravel"
+    ],
+    "buildTools": [
+      "vite"
+    ],
+    "testFrameworks": [],
+    "packageManager": "npm",
+    "isMonorepo": false,
+    "hasDocker": false,
+    "hasCI": false
+  },
+  "structure": {
+    "totalFiles": 11248,
+    "rootPath": ".",
+    "topDirectories": [
+      {
+        "name": "app",
+        "fileCount": 59,
+        "description": "Application entry (Next.js app router)"
+      },
+      {
+        "name": "bootstrap",
+        "fileCount": 4,
+        "description": "Module directory"
+      },
+      {
+        "name": "config",
+        "fileCount": 11,
+        "description": "Configuration files"
+      },
+      {
+        "name": "database",
+        "fileCount": 26,
+        "description": "Module directory"
+      },
+      {
+        "name": "public",
+        "fileCount": 7,
+        "description": "Public static assets"
+      },
+      {
+        "name": "resources",
+        "fileCount": 80,
+        "description": "Resource definitions"
+      },
+      {
+        "name": "routes",
+        "fileCount": 3,
+        "description": "Route definitions"
+      },
+      {
+        "name": "storage",
+        "fileCount": 166,
+        "description": "Module directory"
+      },
+      {
+        "name": "tests",
+        "fileCount": 13,
+        "description": "Test files and fixtures"
+      },
+      {
+        "name": "vendor",
+        "fileCount": 10846,
+        "description": "Module directory"
+      }
+    ],
+    "languageDistribution": [
+      {
+        "extension": ".php",
+        "count": 9588
+      },
+      {
+        "extension": ".json",
+        "count": 485
+      },
+      {
+        "extension": ".md",
+        "count": 316
+      },
+      {
+        "extension": ".txt",
+        "count": 143
+      },
+      {
+        "extension": ".stub",
+        "count": 116
+      },
+      {
+        "extension": ".vue",
+        "count": 54
+      },
+      {
+        "extension": ".rst",
+        "count": 46
+      },
+      {
+        "extension": ".js",
+        "count": 38
+      },
+      {
+        "extension": ".jsx",
+        "count": 28
+      },
+      {
+        "extension": ".tsx",
+        "count": 28
+      }
+    ]
+  },
+  "architecture": {
+    "layers": [],
+    "patterns": [],
+    "entryPoints": [
+      "resources\\js\\app.js"
+    ],
+    "mainEntryPoints": [
+      "resources\\js\\app.js"
+    ],
+    "moduleExports": []
+  },
+  "symbols": {
+    "classes": [],
+    "interfaces": [],
+    "functions": [
+      {
+        "name": "cancelSearch",
+        "kind": "function",
+        "file": "public\\js\\relatorios-base.js",
+        "line": 450,
+        "exported": false,
+        "description": "Cancel search"
+      },
+      {
+        "name": "handleFileDownload",
+        "kind": "function",
+        "file": "public\\js\\relatorios-base.js",
+        "line": 515,
+        "exported": false,
+        "description": "Handle file download"
+      },
+      {
+        "name": "hideLoading",
+        "kind": "function",
+        "file": "public\\js\\relatorios-base.js",
+        "line": 53,
+        "exported": false,
+        "description": "Hide loading indicator"
+      },
+      {
+        "name": "loadLookupData",
+        "kind": "function",
+        "file": "public\\js\\relatorios-base.js",
+        "line": 145,
+        "exported": false,
+        "description": "Load lookup data for a field"
+      },
+      {
+        "name": "renderListResults",
+        "kind": "function",
+        "file": "public\\js\\relatorios-base.js",
+        "line": 162,
+        "exported": false,
+        "description": "Render list results (original format)"
+      },
+      {
+        "name": "renderMatrixResults",
+        "kind": "function",
+        "file": "public\\js\\relatorios-base.js",
+        "line": 223,
+        "exported": false,
+        "description": "Render matrix results (pivot table format)"
+      },
+      {
+        "name": "renderMatrixTable",
+        "kind": "function",
+        "file": "public\\js\\relatorios-base.js",
+        "line": 255,
+        "exported": false,
+        "description": "Helper to build HTML for a single matrix table"
+      },
+      {
+        "name": "renderResults",
+        "kind": "function",
+        "file": "public\\js\\relatorios-base.js",
+        "line": 424,
+        "exported": false,
+        "description": "Render results (dispatches to list or matrix renderer)"
+      },
+      {
+        "name": "showCancellation",
+        "kind": "function",
+        "file": "public\\js\\relatorios-base.js",
+        "line": 487,
+        "exported": false,
+        "description": "Show cancellation message"
+      },
+      {
+        "name": "showError",
+        "kind": "function",
+        "file": "public\\js\\relatorios-base.js",
+        "line": 461,
+        "exported": false,
+        "description": "Show error message"
+      },
+      {
+        "name": "showLoading",
+        "kind": "function",
+        "file": "public\\js\\relatorios-base.js",
+        "line": 22,
+        "exported": false,
+        "description": "Show loading indicator"
+      },
+      {
+        "name": "showMatrixLoading",
+        "kind": "function",
+        "file": "public\\js\\relatorios-base.js",
+        "line": 79,
+        "exported": false,
+        "description": "Show matrix-specific loading"
+      },
+      {
+        "name": "showSQL",
+        "kind": "function",
+        "file": "public\\js\\relatorios-base.js",
+        "line": 123,
+        "exported": false,
+        "description": "Show SQL"
+      }
+    ],
+    "types": [],
+    "enums": []
+  },
+  "publicAPI": [],
+  "dependencies": {
+    "mostImported": [
+      {
+        "file": "resources\\js\\bootstrap.js",
+        "importedBy": 1
+      }
+    ]
+  },
+  "stats": {
+    "totalSymbols": 13,
+    "exportedSymbols": 0,
+    "analysisTimeMs": 49
+  },
+  "keyFiles": [
+    {
+      "path": "resources\\js\\app.js",
+      "description": "Entry point",
+      "category": "entrypoint"
+    },
+    {
+      "path": "package.json",
+      "description": "Package manifest",
+      "category": "config"
+    },
+    {
+      "path": "postcss.config.js",
+      "description": "Tool configuration",
+      "category": "config"
+    },
+    {
+      "path": "tailwind.config.js",
+      "description": "Tool configuration",
+      "category": "config"
+    },
+    {
+      "path": "vendor\\laravel\\breeze\\stubs\\default\\postcss.config.js",
+      "description": "Tool configuration",
+      "category": "config"
+    },
+    {
+      "path": "vendor\\laravel\\breeze\\stubs\\default\\tailwind.config.js",
+      "description": "Tool configuration",
+      "category": "config"
+    },
+    {
+      "path": "vendor\\laravel\\breeze\\stubs\\default\\vite.config.js",
+      "description": "Tool configuration",
+      "category": "config"
+    },
+    {
+      "path": "vendor\\laravel\\breeze\\stubs\\inertia-common\\tailwind.config.js",
+      "description": "Tool configuration",
+      "category": "config"
+    },
+    {
+      "path": "vendor\\laravel\\breeze\\stubs\\inertia-react-ts\\tsconfig.json",
+      "description": "TypeScript configuration",
+      "category": "config"
+    },
+    {
+      "path": "vendor\\laravel\\breeze\\stubs\\inertia-react\\vite.config.js",
+      "description": "Tool configuration",
+      "category": "config"
+    },
+    {
+      "path": "vendor\\laravel\\breeze\\stubs\\inertia-vue-ts\\tsconfig.json",
+      "description": "TypeScript configuration",
+      "category": "config"
+    },
+    {
+      "path": "vendor\\laravel\\breeze\\stubs\\inertia-vue\\vite.config.js",
+      "description": "Tool configuration",
+      "category": "config"
+    },
+    {
+      "path": "vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\exceptions\\renderer\\vite.config.js",
+      "description": "Tool configuration",
+      "category": "config"
+    },
+    {
+      "path": "vite.config.js",
+      "description": "Tool configuration",
+      "category": "config"
+    }
+  ],
+  "navigation": {
+    "tests": "src/**/*.test.ts",
+    "config": [
+      "package.json"
+    ],
+    "types": [
+      "vendor\\laravel\\breeze\\stubs\\inertia-vue-ts\\resources\\js\\types\\vite-env.d.ts",
+      "vendor\\laravel\\breeze\\stubs\\inertia-vue-ts\\resources\\js\\types\\index.d.ts",
+      "vendor\\laravel\\breeze\\stubs\\inertia-vue-ts\\resources\\js\\types\\global.d.ts",
+      "vendor\\laravel\\breeze\\stubs\\inertia-react-ts\\resources\\js\\types\\vite-env.d.ts",
+      "vendor\\laravel\\breeze\\stubs\\inertia-react-ts\\resources\\js\\types\\index.d.ts",
+      "vendor\\laravel\\breeze\\stubs\\inertia-react-ts\\resources\\js\\types\\global.d.ts"
+    ],
+    "mainLogic": [
+      "src"
+    ]
+  }
+}

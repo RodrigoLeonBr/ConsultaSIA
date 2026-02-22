@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ai-context": {
+      "command": "npx",
+      "args": ["@ai-coders/context", "mcp"]
+      }
+    }
+}

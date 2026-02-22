@@ -1,0 +1,43 @@
+project:
+  name: "Project Context Initialization"
+  scale: SMALL
+  started: "2026-02-22T01:01:16.374Z"
+  current_phase: P
+
+phases:
+  P:
+    status: in_progress
+    started_at: "2026-02-22T01:01:16.374Z"
+  R:
+    status: skipped
+    reason: "Not required for scale SMALL"
+  E:
+    status: pending
+  V:
+    status: pending
+  C:
+    status: skipped
+    reason: "Not required for scale SMALL"
+
+execution:
+  history:
+    - timestamp: "2026-02-22T01:01:16.374Z"
+      phase: P
+      action: started
+    - timestamp: "2026-02-22T01:01:29.260Z"
+      phase: R
+      action: phase_skipped
+    - timestamp: "2026-02-22T01:01:29.260Z"
+      phase: C
+      action: phase_skipped
+    - timestamp: "2026-02-22T01:01:29.260Z"
+      phase: P
+      action: plan_linked
+      plan: "init-context-and-docs"
+  last_activity: "2026-02-22T01:01:29.260Z"
+  resume_context: "Plano vinculado - aguardando revisão"
+
+approval:
+  plan_created: true
+  plan_approved: false
+
