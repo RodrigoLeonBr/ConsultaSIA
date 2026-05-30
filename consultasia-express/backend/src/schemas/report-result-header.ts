@@ -12,4 +12,5 @@ export const reportResultHeader = mysqlTable('report_result_header', {
   createdAt:                datetime('created_at').notNull(),
 });
 
-export type ReportResultHeader = typeof reportResultHeader.$inferSelect;
+export type NewReportResultHeader = typeof reportResultHeader.$inferInsert;
+export type ReportResultHeader    = typeof reportResultHeader.$inferSelect;

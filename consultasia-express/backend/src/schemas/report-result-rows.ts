@@ -6,3 +6,6 @@ export const reportResultRows = mysqlTable('report_result_rows', {
   rowIndex: int('row_index').notNull(),
   rowJson:  longtext('row_json').notNull(),
 });
+
+export type NewReportResultRow = typeof reportResultRows.$inferInsert;
+export type ReportResultRow    = typeof reportResultRows.$inferSelect;

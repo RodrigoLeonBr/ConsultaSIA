@@ -1,5 +1,9 @@
 import { mysqlTable, bigint, varchar, int, decimal } from 'drizzle-orm/mysql-core';
 
+// Intentionally minimal — this schema covers only the columns used in simple queries.
+// Complex reports use raw SQL via db.execute(sql.raw(...)). Adding more columns here
+// is NOT required and does NOT break anything.
+// STORED GENERATED columns (grupo, subgrupo, forma) ARE selectable — MySQL stores them physically.
 export const sPrd = mysqlTable('s_prd', {
   id: bigint('id', { mode: 'number', unsigned: true }).primaryKey().autoincrement(),
   prdCmp: varchar('prd_cmp', { length: 6 }).notNull(),

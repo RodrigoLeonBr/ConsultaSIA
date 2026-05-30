@@ -18,7 +18,7 @@ export const procedimento = mysqlTable('procedimento', {
 
 export const sRub = mysqlTable('s_rub', {
   rubId: char('RUB_ID', { length: 4 }).primaryKey(),
-  rubDc: varchar('RUB_DC', { length: 60 }),
+  rubDc: char('RUB_DC', { length: 40 }),
 });
 
 export const cismetro = mysqlTable('cismetro', {
