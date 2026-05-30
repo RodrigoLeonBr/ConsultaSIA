@@ -54,7 +54,10 @@ export class WorkerService {
       .where(eq(reportJob.id, job.id));
 
     try {
-      const params = job.parameters as Record<string, any>;
+      const rawParams = job.parameters;
+      const params: Record<string, any> = typeof rawParams === 'string'
+        ? JSON.parse(rawParams)
+        : (rawParams as Record<string, any>);
 
       if (job.type === 'export') {
         await this.handleExport(job.id, params.resultId as number, params.format as 'xlsx' | 'csv' | 'pdf');
