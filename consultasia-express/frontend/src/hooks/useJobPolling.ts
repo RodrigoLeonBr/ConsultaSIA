@@ -5,7 +5,7 @@ import type { Job } from '../types';
 export function useJobPolling(jobId: number | null) {
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (!jobId) return;
