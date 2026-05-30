@@ -1,5 +1,5 @@
 import { pool } from '../db';
-import { SIA_PRODUCAO_FIELDS, LIMITS, METADATA_RESPONSE } from '../field-catalog';
+import { SIA_PRODUCAO_FIELDS, METADATA_RESPONSE } from '../field-catalog';
 import type { SiaProductionQuery } from '../validation/sia.schema';
 import { AppError } from '../middleware/error-handler';
 
@@ -50,7 +50,7 @@ export class SiaService {
 
     // Build SELECT clause
     const selectParts: string[] = [];
-    const columns: object[] = [];
+    const columns: Array<{ fieldId: string; label: string; type: string; displayAlias?: string }> = [];
 
     for (const fieldId of select) {
       const field = SIA_PRODUCAO_FIELDS[fieldId]!;

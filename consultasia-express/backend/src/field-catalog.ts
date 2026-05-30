@@ -117,7 +117,7 @@ export const SIA_PRODUCAO_FIELDS: Record<string, FieldDef> = {
     id: 'procedimento_descricao', label: 'Descrição Procedimento', type: 'text',
     sqlExpr: 'pc.procedimento',
     filterExpr: `sp.prd_pa IN (SELECT codigo FROM procedimento WHERE procedimento LIKE ?)`,
-    allowedOperators: ['=', 'like', 'starts_with', 'ends_with'],
+    allowedOperators: ['like', 'starts_with', 'ends_with'],
     sortable: false, groupable: false, filterOnly: true, requiresJoin: 'procedimento',
   },
 };
