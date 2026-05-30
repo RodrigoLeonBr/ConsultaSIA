@@ -193,9 +193,10 @@ export class SiaService {
     const start = Date.now();
 
     // Use pool.execute() directly for parameterized raw SQL (drizzle sql.raw does not support params)
+    const safeParams = params as (string | number | null)[];
     const [[countRows], [dataRows]] = await Promise.all([
-      pool.execute(countSql, params),
-      pool.execute(dataSql, params),
+      pool.execute(countSql, safeParams),
+      pool.execute(dataSql, safeParams),
     ]);
 
     const queryTimeMs = Date.now() - start;

@@ -13,7 +13,7 @@ reportsRouter.post('/jobs', async (req: Request, res: Response, next: NextFuncti
     if (!parsed.success) {
       res.status(400).json({
         statusCode: 400,
-        message: parsed.error.errors.map(e => e.message),
+        message: parsed.error.issues.map((e: { message: string }) => e.message),
         error: 'Bad Request',
       });
       return;

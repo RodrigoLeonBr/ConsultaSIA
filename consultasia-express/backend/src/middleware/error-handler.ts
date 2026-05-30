@@ -12,7 +12,7 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
   if (err instanceof ZodError) {
     res.status(400).json({
       statusCode: 400,
-      message: err.errors.map(e => e.message),
+      message: err.issues.map((e: { message: string }) => e.message),
       error: 'Bad Request',
     });
     return;
