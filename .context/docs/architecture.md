@@ -47,6 +47,46 @@ graph TD
     API -->|"(10) Paginação Direta"| DB
 ```
 
+## Job Types Catalog
+
+| Type | Descrição | Parâmetros obrigatórios |
+|------|-----------|------------------------|
+| `sia-aggregated` | SIA agrupado por CBO, SUM qty/value | `competence` |
+| `sia-faturamento-prestador` | Faturamento GROUP BY hierarquia completa (prestador→tipo→grupo→subgrupo→forma→proc) | `competence` |
+| `sia-dynamic-production` | Query dinâmica idêntica ao `POST /reports/sia/production`, mas assíncrona | `competence`, `select[]` |
+| `export` | Gera arquivo XLSX/CSV/PDF a partir de um resultado já armazenado | `resultId`, `format` |
+
+### Limites do Worker
+
+| Limite | Valor |
+|--------|-------|
+| Concorrência | 1 job por vez (poll usa `LIMIT 1`) |
+| MAX_EXPORT_ROWS | 100.000 linhas (XLSX/CSV) |
+| MAX_PDF_ROWS | 5.000 linhas (PDF) |
+| TTL resultados | 7 dias |
+| TTL exports | 2 dias |
+
+## Export Flow
+
+```
+JobResultsPage
+  → POST /reports/jobs { type: 'export', parameters: { resultId, format: 'xlsx' } }
+  → HTTP 202 { jobId }
+
+Worker
+  → Lê report_result_rows do resultId (em chunks)
+  → Gera arquivo:
+      xlsx → ExcelJS (cabeçalho bold, bg azul claro, auto-width, UTF-8 BOM)
+      csv  → nativo (campos quoted, UTF-8 BOM)
+      pdf  → PDFKit (tabela com bordas, A4 landscape)
+  → Salva em /tmp/exports/<jobId>.<ext>
+  → Grava filePath em report_result_header.sourceTablesVersionsJson
+
+Usuário → GET /reports/jobs/:id/download → stream do arquivo
+```
+
+---
+
 ### Explicação do Fluxo de Jobs
 Conforme desenhado em ADR-0003, toda orquestração de long-run process no projeto Consulta V3 não exige Redis e depende essencialmente do MySQL (`aux_jobs.sql`).
 
