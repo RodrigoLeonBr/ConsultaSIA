@@ -11,9 +11,5 @@ const pool = mysql.createPool({
   timezone: 'Z',
 });
 
-pool.on('error', (err: Error) => {
-  console.error('[DB] Pool connection error:', err.message);
-});
-
 export const db = drizzle(pool);
 export { pool };
