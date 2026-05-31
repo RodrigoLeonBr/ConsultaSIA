@@ -1,0 +1,16 @@
+{
+  "name": "consultasia-express",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ConsultAsia Express — fullstack SIA reporting system",
+  "scripts": {
+    "dev":   "concurrently -n \"api,ui\" -c \"blue,green\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "start": "concurrently -n \"api,ui\" -c \"blue,green\" \"npm --prefix backend run start\" \"npm --prefix frontend run preview\"",
+    "worker": "npm --prefix backend run worker",
+    "install:all": "npm --prefix backend install && npm --prefix frontend install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

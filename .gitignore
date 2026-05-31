@@ -3,6 +3,7 @@
 .env
 .env.*
 !.env.example
+!.env.production
 .env.backup
 .phpunit.result.cache
 /.fleet

@@ -31,10 +31,8 @@ async function main() {
     res.json({ status: 'ok', ts: new Date().toISOString() });
   });
 
-  // Mount SIA routes at /reports/sia
+  // API routes
   app.use('/reports/sia', siaRouter);
-
-  // Mount reports routes at /reports
   app.use('/reports', reportsRouter);
 
   // Global error handler (must be last)
