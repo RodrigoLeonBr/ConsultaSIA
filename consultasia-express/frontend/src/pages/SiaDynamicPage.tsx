@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { BarChart3, Plus, X, Save, Trash2, ChevronRight } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Button } from '../components/ui/Button';
@@ -43,7 +43,7 @@ export function SiaDynamicPage() {
   const [error, setError] = useState<string | null>(null);
   const [views, setViews] = useState<SavedView[]>(loadViews);
   const [viewName, setViewName] = useState('');
-  const { page, pageSize, setPage, setPageSize } = useServerTable();
+  const { pageSize, setPage, setPageSize } = useServerTable();
   const abortRef = useRef<AbortController | null>(null);
 
   // Load metadata once
@@ -93,7 +93,7 @@ export function SiaDynamicPage() {
       setPage(p); setPageSize(ps);
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'CanceledError') {
-        const msg = (err as Record<string, unknown> & { response?: { data?: { message?: unknown } } }).response?.data?.message;
+        const msg = (err as unknown as { response?: { data?: { message?: unknown } } }).response?.data?.message;
         setError(Array.isArray(msg) ? (msg as string[]).join(', ') : String((err as Error).message));
       }
     } finally { setLoading(false); }

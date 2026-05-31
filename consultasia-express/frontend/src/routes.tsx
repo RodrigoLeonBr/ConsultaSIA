@@ -1,35 +1,31 @@
-import type React from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { SiaDynamicPage } from './pages/SiaDynamicPage';
-import { AsyncReportsPage } from './pages/AsyncReportsPage';
-import { JobResultsPage } from './pages/JobResultsPage';
-
-function Nav() {
-  const { pathname } = useLocation();
-  const linkStyle = (path: string): React.CSSProperties => ({
-    color: pathname === path ? '#2980b9' : '#555',
-    textDecoration: 'none',
-    fontWeight: pathname === path ? 'bold' : 'normal',
-    padding: '4px 0',
-    borderBottom: pathname === path ? '2px solid #2980b9' : '2px solid transparent',
-  });
-
-  return (
-    <nav style={{ padding: '10px 24px', background: '#f8f9fa', borderBottom: '1px solid #e0e0e0', display: 'flex', gap: 20 }}>
-      <Link to="/" style={linkStyle('/')}>SIA Dinâmico</Link>
-      <Link to="/async" style={linkStyle('/async')}>Relatórios Assíncronos</Link>
-    </nav>
-  );
-}
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Shell } from './components/layout/Shell';
+import { DashboardPage }      from './pages/DashboardPage';
+import { PrestadoresPage }    from './pages/PrestadoresPage';
+import { ProcedimentosPage }  from './pages/ProcedimentosPage';
+import { CboPage }            from './pages/CboPage';
+import { RubricasPage }       from './pages/RubricasPage';
+import { SiaDynamicPage }     from './pages/SiaDynamicPage';
+import { FaturamentoPage }    from './pages/FaturamentoPage';
+import { AsyncReportsPage }   from './pages/AsyncReportsPage';
+import { JobResultsPage }     from './pages/JobResultsPage';
 
 export function AppRoutes() {
   return (
     <BrowserRouter>
-      <Nav />
       <Routes>
-        <Route path="/" element={<SiaDynamicPage />} />
-        <Route path="/async" element={<AsyncReportsPage />} />
-        <Route path="/job-results/:jobId" element={<JobResultsPage />} />
+        <Route element={<Shell />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="prestadores"   element={<PrestadoresPage />} />
+          <Route path="procedimentos" element={<ProcedimentosPage />} />
+          <Route path="cbos"          element={<CboPage />} />
+          <Route path="rubricas"      element={<RubricasPage />} />
+          <Route path="sia-dinamico"  element={<SiaDynamicPage />} />
+          <Route path="faturamento"   element={<FaturamentoPage />} />
+          <Route path="async-reports" element={<AsyncReportsPage />} />
+          <Route path="job-results/:jobId" element={<JobResultsPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

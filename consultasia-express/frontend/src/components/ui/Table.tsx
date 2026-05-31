@@ -1,4 +1,3 @@
-import React from 'react';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import { Spinner } from './Spinner';
 
