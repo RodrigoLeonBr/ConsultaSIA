@@ -5,6 +5,7 @@ import { timingMiddleware } from './middleware/timing';
 import { errorHandler } from './middleware/error-handler';
 import { siaRouter } from './routes/sia.routes';
 import { reportsRouter } from './routes/reports.routes';
+import { lookupRouter } from './routes/lookup.routes';
 
 const isWorker = process.env.RUN_WORKER === 'true';
 
@@ -36,6 +37,9 @@ async function main() {
 
   // Mount reports routes at /reports
   app.use('/reports', reportsRouter);
+
+  // Mount lookup routes at /api
+  app.use('/api', lookupRouter);
 
   // Global error handler (must be last)
   app.use(errorHandler as express.ErrorRequestHandler);
