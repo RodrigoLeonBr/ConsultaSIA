@@ -1,5 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { lookupService } from '../services/lookup.service';
+import { db } from '../db';
+import { reportJob } from '../schemas/report-job';
+import { desc } from 'drizzle-orm';
 
 export const lookupRouter = Router();
 
@@ -39,5 +42,19 @@ lookupRouter.get('/rubricas', async (req: Request, res: Response, next: NextFunc
     const { search, page, pageSize } = parsePagination(req.query as Record<string, string>);
     const result = await lookupService.listRubricas(search, page, pageSize);
     res.json(result);
+  } catch (err) { next(err); }
+});
+
+lookupRouter.get('/jobs/recent', async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const jobs = await db.select().from(reportJob).orderBy(desc(reportJob.createdAt)).limit(20);
+    const data = jobs.map(j => ({
+      id: j.id,
+      type: j.type,
+      status: j.status,
+      competence: (j.parameters as Record<string, unknown>)?.competence ?? null,
+      createdAt: j.createdAt?.toISOString() ?? '',
+    }));
+    res.json({ data });
   } catch (err) { next(err); }
 });

@@ -23,3 +23,16 @@ export const getJob = (id: number): Promise<Job> =>
 
 export const getJobResults = (id: number, page: number, limit: number): Promise<JobResults> =>
   api.get(`/reports/jobs/${id}/results`, { params: { page, limit } }).then(r => r.data);
+
+// Lookup endpoints
+export const getPrestadores = (search: string, page: number, pageSize: number) =>
+  api.get('/api/prestadores', { params: { search, page, pageSize } }).then(r => r.data);
+
+export const getProcedimentos = (search: string, page: number, pageSize: number) =>
+  api.get('/api/procedimentos', { params: { search, page, pageSize } }).then(r => r.data);
+
+export const getCbos = (search: string, page: number, pageSize: number) =>
+  api.get('/api/cbos', { params: { search, page, pageSize } }).then(r => r.data);
+
+export const getRubricas = (search: string, page: number, pageSize: number) =>
+  api.get('/api/rubricas', { params: { search, page, pageSize } }).then(r => r.data);
