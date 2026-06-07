@@ -31,7 +31,7 @@
                         {{ __('Relatórios Produção') }}
                     </x-nav-link>
                     <x-nav-link :href="route('relatorios.apac.index')" :active="request()->routeIs('relatorios.apac.*')">
-                        {{ __('Relatórios APAC/OCI') }}
+                        {{ __('Relatório de APAC') }}
                     </x-nav-link>
                 </div>
             </div>
@@ -104,7 +104,7 @@
                 {{ __('Relatórios Produção') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('relatorios.apac.index')" :active="request()->routeIs('relatorios.apac.*')">
-                {{ __('Relatórios APAC/OCI') }}
+                {{ __('Relatório de APAC') }}
             </x-responsive-nav-link>
         </div>
 

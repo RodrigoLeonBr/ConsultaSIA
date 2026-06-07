@@ -1,12 +1,12 @@
 @extends('layouts.modern')
 
-@section('title', 'Relatórios APAC/OCI')
+@section('title', 'Relatório de APAC')
 
 @section('header')
 <div class="flex items-center justify-between">
     <div>
-        <h1 class="text-3xl font-bold text-gray-900">Relatórios APAC/OCI</h1>
-        <p class="text-gray-600 mt-1">Relatórios específicos para APAC e OCI com filtros avançados</p>
+        <h1 class="text-3xl font-bold text-gray-900">Relatório de APAC</h1>
+        <p class="text-gray-600 mt-1">Produção APAC por prestador/procedimento (tabelas s_pap + s_apa)</p>
     </div>
 </div>
 @endsection
@@ -36,10 +36,12 @@
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <h3 class="text-sm font-medium text-blue-800">Sistema de Relatórios APAC/OCI</h3>
+                        <h3 class="text-sm font-medium text-blue-800">Relatório de APAC</h3>
                         <div class="mt-2 text-sm text-blue-700">
-                            <p>Este sistema permite gerar relatórios detalhados de APAC (Autorização de Procedimentos de Alta Complexidade) e OCI (Órteses, Próteses e Materiais Especiais).</p>
-                            <p class="mt-1"><strong>OCI:</strong> Use o filtro "Filtrar apenas OCI" para procedimentos que iniciam com "09".</p>
+                            <p>Gera relatórios da <strong>produção APAC</strong> com procedimentos internos (<code>s_pap</code>) e dados do paciente/guia (<code>s_apa</code>), no mesmo padrão da
+                                <a href="{{ route('relatorios.bpi.index') }}" class="font-medium text-blue-800 hover:text-blue-900 underline">Produção Individualizada</a>.
+                            </p>
+                            <p class="mt-1"><strong>OCI:</strong> use o filtro "Filtrar apenas OCI" para procedimentos principais que iniciam com "09".</p>
                         </div>
                     </div>
                 </div>
@@ -250,6 +252,9 @@
         let selectedFields = [];
         let appliedFilters = [];
         let filterCounter = 0;
+        const COMPETENCIA_FIELD = 'PAP_CMP';
+        const MOVIMENTO_FIELD = 'PAP_MVM';
+        const MATRIX_DATE_FIELDS = [COMPETENCIA_FIELD, MOVIMENTO_FIELD];
         
         // Aliases para funções do módulo compartilhado
         const showLoading = RelatoriosBase.showLoading;
@@ -372,7 +377,11 @@
             // Field selection - usar event delegation para campos carregados dinamicamente
             document.addEventListener('change', function(e) {
                 if (e.target.classList.contains('field-checkbox')) {
+                    enforceMatrixDateExclusion(e.target);
                     updateSelectedFields();
+                }
+                if (e.target.name === 'view_type' && e.target.value === 'matrix') {
+                    enforceMatrixDateExclusionOnViewSwitch();
                 }
             });
 
@@ -500,26 +509,57 @@
             container.appendChild(fragment);
         }
 
-        // Update selected fields array
         function updateSelectedFields() {
             selectedFields = Array.from(document.querySelectorAll('.field-checkbox:checked'))
                 .map(checkbox => checkbox.value)
-                .filter(field => field !== 'filter_oci'); // Remove filter_oci from selected fields
-            
-            // Detectar se competência está selecionada para mostrar controles de matriz
-            checkCompetenciaSelection();
+                .filter(field => field !== 'filter_oci');
+
+            checkMatrixDateSelection();
         }
 
-        // Check if competencia field is selected and show/hide matrix controls
-        function checkCompetenciaSelection() {
-            const hasCompetencia = selectedFields.includes('PAP_MVM');
+        function uncheckField(fieldKey) {
+            const checkbox = document.getElementById(`field-${fieldKey}`);
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+        }
+
+        function getSelectedMatrixDateFields() {
+            return MATRIX_DATE_FIELDS.filter(field => selectedFields.includes(field));
+        }
+
+        function isMatrixViewSelected() {
+            return document.querySelector('input[name="view_type"][value="matrix"]')?.checked === true;
+        }
+
+        function enforceMatrixDateExclusion(checkbox) {
+            if (!isMatrixViewSelected() || !checkbox.checked) {
+                return;
+            }
+            if (checkbox.value === COMPETENCIA_FIELD) {
+                uncheckField(MOVIMENTO_FIELD);
+            } else if (checkbox.value === MOVIMENTO_FIELD) {
+                uncheckField(COMPETENCIA_FIELD);
+            }
+        }
+
+        function enforceMatrixDateExclusionOnViewSwitch() {
+            const selectedDates = MATRIX_DATE_FIELDS.filter(field =>
+                document.getElementById(`field-${field}`)?.checked
+            );
+            if (selectedDates.length > 1) {
+                uncheckField(MOVIMENTO_FIELD);
+            }
+        }
+
+        function checkMatrixDateSelection() {
+            const hasMatrixDate = getSelectedMatrixDateFields().length > 0;
             const visualizationControls = document.getElementById('visualization-controls');
-            
-            if (hasCompetencia) {
+
+            if (hasMatrixDate) {
                 visualizationControls.style.display = 'block';
             } else {
                 visualizationControls.style.display = 'none';
-                // Reset to list view when competencia is not selected
                 const listRadio = document.querySelector('input[name="view_type"][value="list"]');
                 if (listRadio) listRadio.checked = true;
             }
@@ -711,8 +751,13 @@
             const isMatrixView = viewType === 'matrix';
             
             // Validar se matriz é possível
-            if (isMatrixView && !selectedFields.includes('PAP_MVM')) {
-                alert('Para visualização em matriz, o campo "Competência" deve estar selecionado.');
+            if (isMatrixView && getSelectedMatrixDateFields().length === 0) {
+                alert('Para visualização em matriz, selecione "Data Competência" ou "Data Movimento" (apenas um deles).');
+                return;
+            }
+
+            if (isMatrixView && getSelectedMatrixDateFields().length > 1) {
+                alert('Não é possível selecionar "Data Competência" e "Data Movimento" ao mesmo tempo na matriz.');
                 return;
             }
             

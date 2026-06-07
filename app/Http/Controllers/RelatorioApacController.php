@@ -11,114 +11,19 @@ use App\Http\Controllers\Concerns\HasMatrixReport;
 class RelatorioApacController extends BaseRelatorioController
 {
     use HasMatrixReport;
-    /**
-     * Display the APAC/OCI report builder interface
-     */
+
     public function index()
     {
         return view('relatorios.apac.index');
     }
 
-    /**
-     * Get available fields for APAC/OCI report building
-     */
     public function getFields()
     {
         return response()->json([
-            'fields' => [
-                'PAP_UID' => [
-                    'label' => 'Unidade (CNES)',
-                    'type' => 'lookup',
-                    'table' => 's_pap',
-                    'lookup_table' => 'prestador',
-                    'lookup_key' => 're_cunid',
-                    'lookup_display' => 're_cnome',
-                    'operators' => ['=', 'in']
-                ],
-                'PAP_MVM' => [
-                    'label' => 'Competência',
-                    'type' => 'date',
-                    'table' => 's_pap',
-                    'operators' => ['=', '>=', '<=', 'between']
-                ],
-                'PAP_PA' => [
-                    'label' => 'Procedimento',
-                    'type' => 'lookup',
-                    'table' => 's_pap',
-                    'lookup_table' => 'procedimento',
-                    'lookup_key' => 'codigo',
-                    'lookup_display' => 'procedimento',
-                    'operators' => ['=', 'in', 'like']
-                ],
-                'PAP_CBO' => [
-                    'label' => 'CBO Profissional',
-                    'type' => 'lookup',
-                    'table' => 's_pap',
-                    'lookup_table' => 'cbo',
-                    'lookup_key' => 'cbo',
-                    'lookup_display' => 'ds_cbo',
-                    'operators' => ['=', 'in']
-                ],
-                'PAP_CIDPRI' => [
-                    'label' => 'CID Principal',
-                    'type' => 'text',
-                    'table' => 's_pap',
-                    'operators' => ['=', 'like', 'starts_with']
-                ],
-                'PAP_QT_P' => [
-                    'label' => 'Quantidade Produzida',
-                    'type' => 'number',
-                    'table' => 's_pap',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between']
-                ],
-                'PAP_VALOR' => [
-                    'label' => 'Valor (Unitário e Total)',
-                    'type' => 'currency',
-                    'table' => 's_pap',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between']
-                ],
-                'APA_PRIPAL' => [
-                    'label' => 'Procedimento Principal APAC',
-                    'type' => 'text',
-                    'table' => 's_apa',
-                    'operators' => ['=', 'like', 'starts_with']
-                ],
-                // NOVO CAMPO NOME
-                'APA_NMPCN' => [
-                    'label' => 'Nome do Paciente',
-                    'type' => 'text',
-                    'table' => 's_apa',
-                    'operators' => ['=', 'like', 'starts_with']
-                ],
-                // NOVOS CAMPOS CISMETRO
-                'cismetro_valor' => [
-                    'label' => 'Cismetro - Valor Unitário',
-                    'type' => 'currency',
-                    'table' => 'cismetro',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between']
-                ],
-                'cismetro_total' => [
-                    'label' => 'Cismetro - Valor Total',
-                    'type' => 'currency',
-                    'table' => 'calculated',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between']
-                ],
-                'cismetro_descricao' => [
-                    'label' => 'Cismetro - Descrição',
-                    'type' => 'lookup',
-                    'table' => 'cismetro',
-                    'lookup_table' => 'cismetro',
-                    'lookup_key' => 'codigo',
-                    'lookup_display' => 'descricao',
-                    'operators' => ['=', 'like']
-                ]
-            ]
+            'fields' => $this->getAllFieldConfigs(),
         ]);
     }
 
-    /**
-     * Implement abstract methods from BaseRelatorioController
-     */
     protected function getTableName(): string
     {
         return 's_pap';
@@ -130,6 +35,11 @@ class RelatorioApacController extends BaseRelatorioController
     }
 
     protected function getCompetenciaField(): string
+    {
+        return 'PAP_CMP';
+    }
+
+    protected function getMovimentoField(): ?string
     {
         return 'PAP_MVM';
     }
@@ -146,7 +56,7 @@ class RelatorioApacController extends BaseRelatorioController
 
     protected function getReportTitle(): string
     {
-        return 'Relatório APAC/OCI';
+        return 'Relatório de APAC';
     }
 
     protected function getMatrixExportClass(): string
@@ -154,214 +64,446 @@ class RelatorioApacController extends BaseRelatorioController
         return MatrixReportExport::class;
     }
 
-    /**
-     * Build database query for APAC/OCI data
-     */
-    protected function buildQuery($selectedFields, $filters, $groupBy = true)
+    protected function getFaixaEtariaFieldIds(): array
     {
-        // Check if OCI filter is applied
+        return ['faixa_etaria_1', 'faixa_etaria_2'];
+    }
+
+    protected function getFormaFieldIds(): array
+    {
+        return ['grupo', 'descgrupo', 'subgrupo', 'descsubgrupo', 'forma', 'descforma'];
+    }
+
+    protected function faixaEtaria1Expression(string $alias): string
+    {
+        $idade = "CAST({$alias}.PAP_IDADE AS SIGNED)";
+
+        $max = self::IDADE_MAXIMA_SIGTAP;
+
+        return "CASE
+            WHEN {$idade} > {$max} THEN 'Ignorado'
+            WHEN {$idade} = 0 THEN 'Menor que 1 ano'
+            WHEN {$idade} BETWEEN 1 AND 4 THEN '1 a 4 anos'
+            WHEN {$idade} BETWEEN 5 AND 9 THEN '5 a 9 anos'
+            WHEN {$idade} BETWEEN 10 AND 14 THEN '10 a 14 anos'
+            WHEN {$idade} BETWEEN 15 AND 19 THEN '15 a 19 anos'
+            WHEN {$idade} BETWEEN 20 AND 24 THEN '20 a 24 anos'
+            WHEN {$idade} BETWEEN 25 AND 29 THEN '25 a 29 anos'
+            WHEN {$idade} BETWEEN 30 AND 34 THEN '30 a 34 anos'
+            WHEN {$idade} BETWEEN 35 AND 39 THEN '35 a 39 anos'
+            WHEN {$idade} BETWEEN 40 AND 44 THEN '40 a 44 anos'
+            WHEN {$idade} BETWEEN 45 AND 49 THEN '45 a 49 anos'
+            WHEN {$idade} BETWEEN 50 AND 54 THEN '50 a 54 anos'
+            WHEN {$idade} BETWEEN 55 AND 59 THEN '55 a 59 anos'
+            WHEN {$idade} BETWEEN 60 AND 64 THEN '60 a 64 anos'
+            WHEN {$idade} BETWEEN 65 AND 69 THEN '65 a 69 anos'
+            WHEN {$idade} BETWEEN 70 AND 74 THEN '70 a 74 anos'
+            WHEN {$idade} BETWEEN 75 AND 79 THEN '75 a 79 anos'
+            WHEN {$idade} >= 80 THEN '80 anos ou mais'
+            ELSE 'Ignorado'
+        END";
+    }
+
+    protected function faixaEtaria2Expression(string $alias): string
+    {
+        $idade = "CAST({$alias}.PAP_IDADE AS SIGNED)";
+
+        $max = self::IDADE_MAXIMA_SIGTAP;
+
+        return "CASE
+            WHEN {$idade} > {$max} THEN 'Ignorado'
+            WHEN {$idade} <= 9 THEN 'Criança'
+            WHEN {$idade} BETWEEN 10 AND 17 THEN 'Infantil'
+            WHEN {$idade} BETWEEN 18 AND 59 THEN 'Adulto'
+            WHEN {$idade} >= 60 THEN 'Idoso'
+            ELSE 'Ignorado'
+        END";
+    }
+
+    protected function faixaEtaria1OrderExpression(string $alias): string
+    {
+        $expr = $this->faixaEtaria1Expression($alias);
+
+        return "FIELD(({$expr}), 'Menor que 1 ano', '1 a 4 anos', '5 a 9 anos', '10 a 14 anos', '15 a 19 anos', '20 a 24 anos', '25 a 29 anos', '30 a 34 anos', '35 a 39 anos', '40 a 44 anos', '45 a 49 anos', '50 a 54 anos', '55 a 59 anos', '60 a 64 anos', '65 a 69 anos', '70 a 74 anos', '75 a 79 anos', '80 anos ou mais', 'Ignorado')";
+    }
+
+    protected function faixaEtaria2OrderExpression(string $alias): string
+    {
+        $expr = $this->faixaEtaria2Expression($alias);
+
+        return "FIELD(({$expr}), 'Criança', 'Infantil', 'Adulto', 'Idoso', 'Ignorado')";
+    }
+
+    protected function needsFormaJoins(array $selectedFields, array $filters): bool
+    {
+        $referenced = array_merge(
+            $selectedFields,
+            array_column($filters, 'field')
+        );
+
+        return collect($referenced)->contains(fn ($field) => in_array($field, $this->getFormaFieldIds(), true));
+    }
+
+    protected function needsPrestadorJoin(array $selectedFields, array $filters): bool
+    {
+        $referenced = array_merge(
+            $selectedFields,
+            array_column($filters, 'field')
+        );
+
+        return in_array('tipo_relatorio', $referenced, true)
+            || in_array('PAP_UID', $referenced, true);
+    }
+
+    protected function needsApaJoin(array $selectedFields, array $filters): bool
+    {
+        $referenced = array_merge(
+            $selectedFields,
+            array_column($filters, 'field')
+        );
+
+        if (collect($referenced)->contains(fn ($field) => str_starts_with($field, 'APA_'))) {
+            return true;
+        }
+
+        return collect($filters)->contains(fn ($filter) => ($filter['field'] ?? '') === 'filter_oci');
+    }
+
+    protected function addApaJoin($query, array $filters): void
+    {
         $ociFilter = collect($filters)->firstWhere('field', 'filter_oci');
-        
-        // Check if cismetro fields are needed
-        $needsCismetro = collect($selectedFields)->contains(function($field) {
-            return str_starts_with($field, 'cismetro_');
-        });
-        
-        // Start with s_pap as main table
-        $query = DB::table('s_pap as pap');
-        
-        // Add s_apa join - with OCI condition if needed
+
         if ($ociFilter && $ociFilter['value'] === true) {
-            // For OCI filter, join with condition that APA_PRIPAL starts with '09'
-            $query->join('s_apa as apa', function($join) {
+            $query->join('s_apa as apa', function ($join) {
                 $join->on(DB::raw('pap.PAP_NUM COLLATE utf8mb4_unicode_ci'), '=', DB::raw('apa.APA_NUM COLLATE utf8mb4_unicode_ci'))
                      ->where('apa.APA_PRIPAL', 'like', '09%');
             });
         } else {
-            // Regular left join for all APAC data
-            $query->leftJoin('s_apa as apa', function($join) {
+            $query->leftJoin('s_apa as apa', function ($join) {
                 $join->on(DB::raw('pap.PAP_NUM COLLATE utf8mb4_unicode_ci'), '=', DB::raw('apa.APA_NUM COLLATE utf8mb4_unicode_ci'));
             });
         }
-        
-        // Add joins based on selected fields
+    }
+
+    protected function addFormaJoins($query): void
+    {
+        $query->leftJoin('forma as fg', function ($join) {
+            $join->on(DB::raw('SUBSTRING(pap.PAP_PA, 1, 2)'), '=', 'fg.grupo')
+                 ->where('fg.subgrupo', '=', DB::raw('CONCAT(SUBSTRING(pap.PAP_PA, 1, 2), "00")'))
+                 ->where('fg.forma', '=', DB::raw('CONCAT(SUBSTRING(pap.PAP_PA, 1, 2), "0000")'));
+        });
+        $query->leftJoin('forma as fs', function ($join) {
+            $join->on(DB::raw('SUBSTRING(pap.PAP_PA, 1, 4)'), '=', 'fs.subgrupo')
+                 ->where('fs.forma', '=', DB::raw('CONCAT(SUBSTRING(pap.PAP_PA, 1, 4), "00")'));
+        });
+        $query->leftJoin('forma as ff', function ($join) {
+            $join->on(DB::raw('SUBSTRING(pap.PAP_PA, 1, 6)'), '=', 'ff.forma');
+        });
+    }
+
+    protected function addPrestadorJoinIfNeeded($query, &$joins): void
+    {
+        if (!in_array('prestador', $joins, true)) {
+            $query->leftJoin('prestador as pr', function ($join) {
+                $join->on(DB::raw('pap.PAP_UID COLLATE utf8mb4_unicode_ci'), '=', DB::raw('pr.re_cunid COLLATE utf8mb4_unicode_ci'));
+            });
+            $joins[] = 'prestador';
+        }
+    }
+
+    protected function addReportJoins($query, $selectedFields, $filters, $tableAlias, &$joins): void
+    {
+        $this->addApaJoin($query, $filters);
+
+        if ($this->needsPrestadorJoin($selectedFields, $filters)) {
+            $this->addPrestadorJoinIfNeeded($query, $joins);
+        }
+
+        if ($this->needsFormaJoins($selectedFields, $filters) && !in_array('forma', $joins, true)) {
+            $this->addFormaJoins($query);
+            $joins[] = 'forma';
+        }
+
+        if (collect($selectedFields)->contains('PAP_VALOR') && !in_array('procedimento', $joins, true)) {
+            $query->leftJoin('procedimento as pc', function ($join) use ($tableAlias) {
+                $join->on(DB::raw("{$tableAlias}.PAP_PA COLLATE utf8mb4_unicode_ci"), '=', DB::raw('pc.codigo COLLATE utf8mb4_unicode_ci'));
+            });
+            $joins[] = 'procedimento';
+        }
+    }
+
+    protected function buildQuery($selectedFields, $filters, $groupBy = true)
+    {
+        $needsCismetro = collect($selectedFields)->contains(fn ($field) => str_starts_with($field, 'cismetro_'))
+            || collect($filters)->contains(fn ($f) => str_starts_with($f['field'] ?? '', 'cismetro_'));
+
+        $query = DB::table('s_pap as pap');
         $joins = [];
-        
+
+        $this->addReportJoins($query, $selectedFields, $filters, 'pap', $joins);
+
         foreach ($selectedFields as $field) {
             $fieldConfig = $this->getFieldConfig($field);
             if ($fieldConfig && $fieldConfig['type'] === 'lookup') {
                 $joinKey = $fieldConfig['lookup_table'];
-                if (!in_array($joinKey, $joins)) {
+                if (!in_array($joinKey, $joins, true)) {
                     $this->addJoin($query, $field, $fieldConfig);
                     $joins[] = $joinKey;
                 }
             }
-            // Special case: PAP_VALOR needs procedimento join for pa_total
-            if ($field === 'PAP_VALOR' && !in_array('procedimento', $joins)) {
-                $query->leftJoin('procedimento as pc', function($join) {
+
+            if ($field === 'PAP_VALOR' && !in_array('procedimento', $joins, true)) {
+                $query->leftJoin('procedimento as pc', function ($join) {
                     $join->on(DB::raw('pap.PAP_PA COLLATE utf8mb4_unicode_ci'), '=', DB::raw('pc.codigo COLLATE utf8mb4_unicode_ci'));
                 });
                 $joins[] = 'procedimento';
             }
         }
-        
-        // Add cismetro join if needed
-        if ($needsCismetro && !in_array('cismetro', $joins)) {
-            $query->leftJoin('cismetro as cs', function($join) {
+
+        if (collect($filters)->contains(fn ($f) => ($f['field'] ?? '') === 'procedimento_descricao')
+            && !in_array('procedimento', $joins, true)) {
+            $query->leftJoin('procedimento as pc', function ($join) {
+                $join->on(DB::raw('pap.PAP_PA COLLATE utf8mb4_unicode_ci'), '=', DB::raw('pc.codigo COLLATE utf8mb4_unicode_ci'));
+            });
+            $joins[] = 'procedimento';
+        }
+
+        if ($needsCismetro && !in_array('cismetro', $joins, true)) {
+            $query->leftJoin('cismetro as cs', function ($join) {
                 $join->on(DB::raw('pap.PAP_PA COLLATE utf8mb4_unicode_ci'), '=', DB::raw('cs.codigo COLLATE utf8mb4_unicode_ci'));
             });
             $joins[] = 'cismetro';
         }
-        
-        // Build select fields with grouping and aggregation
+
         $selectFields = [];
         $groupByFields = [];
-        
+
         foreach ($selectedFields as $field) {
-            // Skip filter_oci as it's not a selectable field, only a filter
             if ($field === 'filter_oci') {
                 continue;
             }
-            
+
             $fieldConfig = $this->getFieldConfig($field);
-            if ($fieldConfig) {
-                if ($fieldConfig['type'] === 'lookup') {
-                    $alias = $this->getTableAlias($fieldConfig['lookup_table']);
-                    
-                    if ($field === 'PAP_UID') {
-                        $selectFields[] = "pap.PAP_UID as cnes";
-                        $selectFields[] = "pr.re_cnome as unidade_nome";
-                        $groupByFields[] = "pap.PAP_UID";
-                        $groupByFields[] = "pr.re_cnome";
-                    } elseif ($field === 'PAP_PA') {
-                        $selectFields[] = "pap.PAP_PA as procedimento_codigo";
-                        $selectFields[] = "pc.procedimento as procedimento_nome";
-                        $groupByFields[] = "pap.PAP_PA";
-                        $groupByFields[] = "pc.procedimento";
-                    } elseif ($field === 'cismetro_descricao') {
-                        $selectFields[] = "pap.PAP_PA as cismetro_codigo";
-                        $selectFields[] = "cs.descricao as cismetro_descricao";
-                        $groupByFields[] = "pap.PAP_PA";
-                        $groupByFields[] = "cs.descricao";
-                    } else {
-                        $selectFields[] = "pap.{$field}";
-                        $selectFields[] = "{$alias}.{$fieldConfig['lookup_display']} as {$field}_display";
-                        $groupByFields[] = "pap.{$field}";
-                        $groupByFields[] = "{$alias}.{$fieldConfig['lookup_display']}";
-                    }
-                } elseif ($field === 'PAP_QT_P') {
-                    // Sum quantities
-                    $selectFields[] = DB::raw("SUM(CAST(pap.PAP_QT_P as DECIMAL(15,2))) as total_quantidade");
-                } elseif ($field === 'PAP_VALOR') {
-                    // Add valor unitário and valor total
-                    $selectFields[] = "pc.pa_total as valor_unitario";
-                    $selectFields[] = DB::raw("SUM(CAST(pap.PAP_QT_P as DECIMAL(15,2)) * CAST(pc.pa_total as DECIMAL(15,2))) as valor_total");
-                    $groupByFields[] = "pc.pa_total";
-                } elseif ($field === 'cismetro_valor') {
-                    // Cismetro unit value
-                    $selectFields[] = "cs.valor as cismetro_valor";
-                    $groupByFields[] = "cs.valor";
-                } elseif ($field === 'cismetro_total') {
-                    // Cismetro total value (quantity * unit value)
-                    $selectFields[] = DB::raw("SUM(CAST(pap.PAP_QT_P as DECIMAL(15,2)) * COALESCE(cs.valor, 0)) as cismetro_total");
-                } elseif ($field === 'PAP_MVM') {
-                    // Format competencia as YYYY-MM
-                    $selectFields[] = DB::raw("CONCAT(SUBSTRING(pap.PAP_MVM, 1, 4), '-', SUBSTRING(pap.PAP_MVM, 5, 2)) as competencia");
-                    $groupByFields[] = "pap.PAP_MVM";
-                } elseif (strpos($field, 'APA_') === 0) {
-                    // Fields from s_apa table
-                    $selectFields[] = "apa.{$field}";
-                    $groupByFields[] = "apa.{$field}";
+            if (!$fieldConfig) {
+                continue;
+            }
+
+            if ($fieldConfig['type'] === 'lookup') {
+                $alias = $this->getTableAliasForJoin($fieldConfig['lookup_table']);
+
+                if ($field === 'PAP_UID') {
+                    $selectFields[] = 'pap.PAP_UID as cnes';
+                    $selectFields[] = 'pr.re_cnome as unidade_nome';
+                    $groupByFields[] = 'pap.PAP_UID';
+                    $groupByFields[] = 'pr.re_cnome';
+                } elseif ($field === 'PAP_PA') {
+                    $selectFields[] = 'pap.PAP_PA as procedimento_codigo';
+                    $selectFields[] = 'pc.procedimento as procedimento_nome';
+                    $groupByFields[] = 'pap.PAP_PA';
+                    $groupByFields[] = 'pc.procedimento';
+                } elseif ($field === 'cismetro_descricao') {
+                    $selectFields[] = 'pap.PAP_PA as cismetro_codigo';
+                    $selectFields[] = 'cs.descricao as cismetro_descricao';
+                    $groupByFields[] = 'pap.PAP_PA';
+                    $groupByFields[] = 'cs.descricao';
                 } else {
-                    // Fields from s_pap table
                     $selectFields[] = "pap.{$field}";
+                    $selectFields[] = "{$alias}.{$fieldConfig['lookup_display']} as {$field}_display";
                     $groupByFields[] = "pap.{$field}";
+                    $groupByFields[] = "{$alias}.{$fieldConfig['lookup_display']}";
                 }
+            } elseif ($field === 'procedimento_descricao') {
+                continue;
+            } elseif ($field === 'PAP_QT_P') {
+                $selectFields[] = DB::raw('SUM(CAST(pap.PAP_QT_P as DECIMAL(15,2))) as total_quantidade');
+            } elseif ($field === 'PAP_VALOR') {
+                $selectFields[] = 'pc.pa_total as valor_unitario';
+                $selectFields[] = DB::raw('SUM(CAST(pap.PAP_QT_P as DECIMAL(15,2)) * CAST(pc.pa_total as DECIMAL(15,2))) as valor_total');
+                $groupByFields[] = 'pc.pa_total';
+            } elseif ($field === 'cismetro_valor') {
+                $selectFields[] = 'cs.valor as cismetro_valor';
+                $groupByFields[] = 'cs.valor';
+            } elseif ($field === 'cismetro_total') {
+                $selectFields[] = DB::raw('SUM(CAST(pap.PAP_QT_P as DECIMAL(15,2)) * COALESCE(cs.valor, 0)) as cismetro_total');
+            } elseif ($field === 'PAP_CMP') {
+                $selectFields[] = DB::raw("CONCAT(SUBSTRING(pap.PAP_CMP, 1, 4), '-', SUBSTRING(pap.PAP_CMP, 5, 2)) as competencia");
+                $groupByFields[] = 'pap.PAP_CMP';
+            } elseif ($field === 'PAP_MVM') {
+                $selectFields[] = DB::raw("CONCAT(SUBSTRING(pap.PAP_MVM, 1, 4), '-', SUBSTRING(pap.PAP_MVM, 5, 2)) as movimento");
+                $groupByFields[] = 'pap.PAP_MVM';
+            } elseif ($field === 'APA_CMP') {
+                $selectFields[] = DB::raw("CONCAT(SUBSTRING(apa.APA_CMP, 1, 4), '-', SUBSTRING(apa.APA_CMP, 5, 2)) as apa_competencia");
+                $groupByFields[] = 'apa.APA_CMP';
+            } elseif ($field === 'APA_MVM') {
+                $selectFields[] = DB::raw("CONCAT(SUBSTRING(apa.APA_MVM, 1, 4), '-', SUBSTRING(apa.APA_MVM, 5, 2)) as apa_movimento");
+                $groupByFields[] = 'apa.APA_MVM';
+            } elseif ($field === 'grupo') {
+                $selectFields[] = DB::raw('SUBSTRING(pap.PAP_PA, 1, 2) as grupo');
+                $groupByFields[] = DB::raw('SUBSTRING(pap.PAP_PA, 1, 2)');
+            } elseif ($field === 'descgrupo') {
+                $selectFields[] = 'fg.descricao as descgrupo';
+                $groupByFields[] = 'fg.descricao';
+            } elseif ($field === 'subgrupo') {
+                $selectFields[] = DB::raw('SUBSTRING(pap.PAP_PA, 1, 4) as subgrupo');
+                $groupByFields[] = DB::raw('SUBSTRING(pap.PAP_PA, 1, 4)');
+            } elseif ($field === 'descsubgrupo') {
+                $selectFields[] = 'fs.descricao as descsubgrupo';
+                $groupByFields[] = 'fs.descricao';
+            } elseif ($field === 'forma') {
+                $selectFields[] = DB::raw('SUBSTRING(pap.PAP_PA, 1, 6) as forma');
+                $groupByFields[] = DB::raw('SUBSTRING(pap.PAP_PA, 1, 6)');
+            } elseif ($field === 'descforma') {
+                $selectFields[] = 'ff.descricao as descforma';
+                $groupByFields[] = 'ff.descricao';
+            } elseif ($field === 'tipo_relatorio') {
+                $selectFields[] = 'pr.relatorio as tipo_relatorio';
+                $groupByFields[] = 'pr.relatorio';
+            } elseif ($field === 'faixa_etaria_1') {
+                $expr = $this->faixaEtaria1Expression('pap');
+                $selectFields[] = DB::raw("({$expr}) as faixa_etaria_1");
+                $groupByFields[] = DB::raw("({$expr})");
+            } elseif ($field === 'faixa_etaria_2') {
+                $expr = $this->faixaEtaria2Expression('pap');
+                $selectFields[] = DB::raw("({$expr}) as faixa_etaria_2");
+                $groupByFields[] = DB::raw("({$expr})");
+            } elseif ($field === 'PAP_IDADE') {
+                $expr = $this->idadeNormalizadaSql('pap.PAP_IDADE');
+                $selectFields[] = DB::raw("{$expr} as PAP_IDADE");
+                $groupByFields[] = DB::raw($expr);
+            } elseif (str_starts_with($field, 'APA_')) {
+                $selectFields[] = "apa.{$field}";
+                $groupByFields[] = "apa.{$field}";
+            } else {
+                $selectFields[] = "pap.{$field}";
+                $groupByFields[] = "pap.{$field}";
             }
         }
-        
+
         $query->select($selectFields);
-        
-        // Apply filters
+
         foreach ($filters as $filter) {
             $this->applyFilter($query, $filter);
         }
-        
-        // Group by non-aggregate fields if grouping is enabled
+
         if ($groupBy && !empty($groupByFields)) {
             $query->groupBy($groupByFields);
         }
-        
-        // Order by first field
-        if (!empty($groupByFields)) {
+
+        $firstOrderField = collect($selectedFields)->first(
+            fn ($field) => !in_array($field, ['PAP_QT_P', 'PAP_VALOR', 'cismetro_total', 'procedimento_descricao', 'filter_oci'], true)
+        );
+
+        if ($firstOrderField === 'faixa_etaria_1') {
+            $query->orderBy(DB::raw($this->faixaEtaria1OrderExpression('pap')));
+        } elseif ($firstOrderField === 'faixa_etaria_2') {
+            $query->orderBy(DB::raw($this->faixaEtaria2OrderExpression('pap')));
+        } elseif (!empty($groupByFields)) {
             $query->orderBy($groupByFields[0]);
         }
-        
+
         return $query;
     }
 
-    /**
-     * Add appropriate join to query
-     */
     protected function addJoin($query, $field, $fieldConfig)
     {
         $alias = $this->getTableAliasForJoin($fieldConfig['lookup_table']);
         $tableAlias = $this->getTableAlias();
-        
+
         switch ($fieldConfig['lookup_table']) {
             case 'prestador':
-                $query->leftJoin("prestador as {$alias}", function($join) use ($tableAlias, $alias) {
+                $query->leftJoin("prestador as {$alias}", function ($join) use ($tableAlias, $alias) {
                     $join->on(DB::raw("{$tableAlias}.PAP_UID COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.re_cunid COLLATE utf8mb4_unicode_ci"));
                 });
                 break;
             case 'cbo':
-                $query->leftJoin("cbo as {$alias}", function($join) use ($tableAlias, $alias) {
+                $query->leftJoin("cbo as {$alias}", function ($join) use ($tableAlias, $alias) {
                     $join->on(DB::raw("{$tableAlias}.PAP_CBO COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.cbo COLLATE utf8mb4_unicode_ci"));
                 });
                 break;
             case 'procedimento':
-                $query->leftJoin("procedimento as {$alias}", function($join) use ($tableAlias, $alias) {
+                $query->leftJoin("procedimento as {$alias}", function ($join) use ($tableAlias, $alias) {
                     $join->on(DB::raw("{$tableAlias}.PAP_PA COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.codigo COLLATE utf8mb4_unicode_ci"));
                 });
                 break;
             case 'cismetro':
-                $query->leftJoin("cismetro as {$alias}", function($join) use ($tableAlias, $alias) {
+                $query->leftJoin("cismetro as {$alias}", function ($join) use ($tableAlias, $alias) {
                     $join->on(DB::raw("{$tableAlias}.PAP_PA COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.codigo COLLATE utf8mb4_unicode_ci"));
                 });
                 break;
         }
     }
 
-
-    /**
-     * Apply filter to query
-     */
     protected function applyFilter($query, $filter)
     {
         $field = $filter['field'];
         $operator = $filter['operator'];
         $value = $filter['value'];
-        
-        // Skip OCI filter as it's handled in buildQuery
+
         if ($field === 'filter_oci') {
             return;
         }
-        
-        // Handle cismetro fields in filters
+
+        if ($field === 'procedimento_descricao') {
+            $subquery = DB::table('procedimento')->select('codigo');
+
+            switch ($operator) {
+                case '=':
+                    $subquery->where('procedimento', '=', $value);
+                    break;
+                case 'like':
+                    $subquery->where('procedimento', 'like', '%' . $value . '%');
+                    break;
+                case 'starts_with':
+                    $subquery->where('procedimento', 'like', $value . '%');
+                    break;
+                case 'ends_with':
+                    $subquery->where('procedimento', 'like', '%' . $value);
+                    break;
+            }
+
+            $procedimentoCodigos = $subquery->pluck('codigo')->toArray();
+
+            if (!empty($procedimentoCodigos)) {
+                $query->whereIn('pap.PAP_PA', $procedimentoCodigos);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+
+            return;
+        }
+
+        if ($field === 'grupo') {
+            $this->applyFormaCodeFilter($query, 2, $operator, $value);
+            return;
+        }
+        if ($field === 'subgrupo') {
+            $this->applyFormaCodeFilter($query, 4, $operator, $value);
+            return;
+        }
+        if ($field === 'forma') {
+            $this->applyFormaCodeFilter($query, 6, $operator, $value);
+            return;
+        }
+        if ($field === 'descforma') {
+            $this->applyTextFilter($query, 'ff.descricao', $operator, $value);
+            return;
+        }
+        if ($field === 'tipo_relatorio') {
+            $this->applyTextFilter($query, 'pr.relatorio', $operator, $value);
+            return;
+        }
+
         if ($field === 'cismetro_valor') {
             $fullField = 'cs.valor';
         } elseif ($field === 'cismetro_total') {
-            // For cismetro_total, we need to filter on the calculated field
-            // This is more complex and might need HAVING clause
-            return; // Skip for now, can be implemented later if needed
+            return;
         } elseif (str_starts_with($field, 'cismetro_')) {
-            $fullField = 'cs.' . substr($field, 9); // Remove 'cismetro_' prefix
+            $fullField = 'cs.' . substr($field, 9);
         } else {
-            // Determine table prefix
-            $tablePrefix = strpos($field, 'APA_') === 0 ? 'apa' : $this->getTableAlias();
+            $tablePrefix = str_starts_with($field, 'APA_') ? 'apa' : $this->getTableAlias();
             $fullField = "{$tablePrefix}.{$field}";
         }
-        
+
         switch ($operator) {
             case '=':
                 $query->where($fullField, '=', $value);
@@ -384,6 +526,9 @@ class RelatorioApacController extends BaseRelatorioController
             case 'starts_with':
                 $query->where($fullField, 'like', $value . '%');
                 break;
+            case 'ends_with':
+                $query->where($fullField, 'like', '%' . $value);
+                break;
             case 'between':
                 if (is_array($value) && count($value) === 2) {
                     $query->whereBetween($fullField, $value);
@@ -397,23 +542,39 @@ class RelatorioApacController extends BaseRelatorioController
         }
     }
 
-     /**
-     * Override formatData to handle specific field mappings
-     */
+    protected function applyFormaCodeFilter($query, int $length, string $operator, $value): void
+    {
+        $expr = DB::raw("SUBSTRING(pap.PAP_PA, 1, {$length})");
+        $this->applyTextFilter($query, $expr, $operator, $value);
+    }
+
+    protected function applyTextFilter($query, $field, string $operator, $value): void
+    {
+        switch ($operator) {
+            case '=':
+                $query->where($field, '=', $value);
+                break;
+            case 'like':
+                $query->where($field, 'like', '%' . $value . '%');
+                break;
+            case 'starts_with':
+                $query->where($field, 'like', $value . '%');
+                break;
+        }
+    }
+
     protected function formatData($data, $selectedFields)
     {
         return $data->map(function ($row) use ($selectedFields) {
             $formatted = [];
-            
+
             foreach ($selectedFields as $field) {
-                // Skip filter_oci as it's not a data field
                 if ($field === 'filter_oci') {
                     continue;
                 }
-                
+
                 $fieldConfig = $this->getFieldConfig($field);
-                
-                // Handle special field mappings
+
                 if ($field === 'PAP_UID') {
                     $formatted['CNES'] = $row->cnes ?? '';
                     $formatted['Unidade'] = $row->unidade_nome ?? '';
@@ -423,147 +584,127 @@ class RelatorioApacController extends BaseRelatorioController
                 } elseif ($field === 'cismetro_descricao') {
                     $formatted['Código Cismetro'] = $row->cismetro_codigo ?? '';
                     $formatted['Cismetro - Descrição'] = $row->cismetro_descricao ?? '';
+                } elseif ($field === 'procedimento_descricao') {
+                    continue;
                 } elseif ($field === 'cismetro_valor') {
-                    $formatted['Cismetro - Valor Unitário'] = $row->cismetro_valor ? 
-                        'R$ ' . number_format((float)$row->cismetro_valor, 2, ',', '.') : 'R$ 0,00';
+                    $formatted['Cismetro - Valor Unitário'] = $row->cismetro_valor
+                        ? 'R$ ' . number_format((float) $row->cismetro_valor, 2, ',', '.')
+                        : 'R$ 0,00';
                 } elseif ($field === 'cismetro_total') {
-                    $formatted['Cismetro - Valor Total'] = $row->cismetro_total ? 
-                        'R$ ' . number_format((float)$row->cismetro_total, 2, ',', '.') : 'R$ 0,00';
+                    $formatted['Cismetro - Valor Total'] = $row->cismetro_total
+                        ? 'R$ ' . number_format((float) $row->cismetro_total, 2, ',', '.')
+                        : 'R$ 0,00';
                 } elseif ($field === 'PAP_QT_P') {
-                    $formatted['Quantidade Total'] = number_format((float)($row->total_quantidade ?? 0), 0, ',', '.');
+                    $formatted['Quantidade Total'] = number_format((float) ($row->total_quantidade ?? 0), 0, ',', '.');
                 } elseif ($field === 'PAP_VALOR') {
-                    $formatted['Valor Unitário'] = 'R$ ' . number_format((float)($row->valor_unitario ?? 0), 2, ',', '.');
-                    $formatted['Valor Total'] = 'R$ ' . number_format((float)($row->valor_total ?? 0), 2, ',', '.');
+                    $formatted['Valor Unitário'] = 'R$ ' . number_format((float) ($row->valor_unitario ?? 0), 2, ',', '.');
+                    $formatted['Valor Total'] = 'R$ ' . number_format((float) ($row->valor_total ?? 0), 2, ',', '.');
+                } elseif ($field === 'PAP_CMP') {
+                    $formatted['Data Competência'] = $row->competencia ?? '';
                 } elseif ($field === 'PAP_MVM') {
-                    $formatted['Competência'] = $row->competencia ?? '';
-                } elseif ($field === 'APA_NMPCN') {
-                    // NOVO CAMPO NOME
-                    $formatted['Nome do Paciente'] = $row->APA_NMPCN ?? '';            
+                    $formatted['Data Movimento'] = $row->movimento ?? '';
+                } elseif ($field === 'APA_CMP') {
+                    $formatted['Competência APAC'] = $row->apa_competencia ?? '';
+                } elseif ($field === 'APA_MVM') {
+                    $formatted['Movimento APAC'] = $row->apa_movimento ?? '';
+                } elseif (in_array($field, $this->getFaixaEtariaFieldIds(), true)) {
+                    $formatted[$fieldConfig['label']] = $row->{$field} ?? '';
+                } elseif ($field === 'PAP_IDADE') {
+                    $formatted['Idade'] = $this->formatIdadeExibicao($row->PAP_IDADE ?? null);
+                } elseif (in_array($field, $this->getFormaFieldIds(), true)) {
+                    $formatted[$fieldConfig['label']] = $row->{$field} ?? '';
                 } else {
                     $value = $row->{$field} ?? '';
-                    
-                    // Format based on field type
+
                     switch ($fieldConfig['type'] ?? 'text') {
+                        case 'currency':
+                            $formatted[$fieldConfig['label']] = 'R$ ' . number_format((float) $value, 2, ',', '.');
+                            break;
                         case 'number':
-                            $formatted[$fieldConfig['label']] = number_format((float)$value, 2, ',', '.');
+                            $formatted[$fieldConfig['label']] = number_format((float) $value, 0, ',', '.');
                             break;
                         case 'date':
-                            $formatted[$fieldConfig['label']] = $value ? date('d/m/Y', strtotime($value)) : '';
+                            $formatted[$fieldConfig['label']] = $value
+                                ? (strlen((string) $value) === 6
+                                    ? substr($value, 4, 2) . '/' . substr($value, 0, 4)
+                                    : $value)
+                                : '';
                             break;
                         case 'lookup':
                             $displayField = $field . '_display';
                             $formatted[$fieldConfig['label']] = $row->{$displayField} ?? $value;
+                            break;
+                        case 'choice':
+                            $options = $fieldConfig['options'] ?? [];
+                            $formatted[$fieldConfig['label']] = $options[trim((string) $value)] ?? $value;
                             break;
                         default:
                             $formatted[$fieldConfig['label']] = $value;
                     }
                 }
             }
+
             return $formatted;
         });
     }
 
-    /**
-     * Override calculateTotals to handle specific numeric fields
-     */
     protected function calculateTotals($data, $selectedFields)
     {
         $totals = [];
-        
+
         if (in_array('PAP_QT_P', $selectedFields)) {
-            $totalQty = $data->sum(function($item) {
-                return $item->total_quantidade ?? 0;
-            });
+            $totalQty = $data->sum(fn ($item) => $item->total_quantidade ?? 0);
             $totals['Quantidade Total'] = number_format($totalQty, 0, ',', '.');
         }
-        
+
         if (in_array('PAP_VALOR', $selectedFields)) {
-            $totalValue = $data->sum(function($item) {
-                return $item->valor_total ?? 0;
-            });
+            $totalValue = $data->sum(fn ($item) => $item->valor_total ?? 0);
             $totals['Valor Total Geral'] = 'R$ ' . number_format($totalValue, 2, ',', '.');
         }
-        
-        // NOVOS TOTAIS CISMETRO
+
         if (in_array('cismetro_total', $selectedFields)) {
-            $totalCismetro = $data->sum(function($item) {
-                return $item->cismetro_total ?? 0;
-            });
+            $totalCismetro = $data->sum(fn ($item) => $item->cismetro_total ?? 0);
             $totals['Cismetro - Valor Total Geral'] = 'R$ ' . number_format($totalCismetro, 2, ',', '.');
         }
-        
+
         return $totals;
     }
 
-    /**
-     * Export to Excel
-     */
-    /**
- * Export to Excel - Simplified Version
- */
     protected function exportExcel($data, $selectedFields, $totals = [])
     {
         try {
-            \Log::info('=== APAC Excel Export Started (Simplified) ===', [
-                'data_type' => gettype($data),
-                'data_count' => is_countable($data) ? count($data) : 'not countable',
-                'fields_count' => count($selectedFields),
-                'totals_count' => count($totals)
-            ]);
-            
-            // Basic validation
             if (empty($data)) {
                 throw new \Exception('Nenhum dado encontrado para exportação');
             }
-            
-            // Convert to Collection if needed
+
             if (!$data instanceof \Illuminate\Support\Collection) {
-                \Log::info('APAC: Converting data to Collection');
                 $data = collect($data);
             }
-            
-            \Log::info('APAC: Data prepared, count: ' . $data->count());
-            
-            // Create export instance
-            \Log::info('APAC: Creating RelatorioApacExport instance...');
+
             $export = new RelatorioApacExport($data, $selectedFields, $totals);
-            
-            \Log::info('APAC: Starting Excel download...');
-            
-            // Simple download with timestamp
+
             return Excel::download($export, 'relatorio_apac_' . date('Y-m-d_H-i-s') . '.xlsx');
-            
         } catch (\Exception $e) {
-            \Log::error('APAC Excel Export Error: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
+            \Log::error('APAC Excel Export Error: ' . $e->getMessage());
+
             return response()->json([
-                'error' => 'Erro ao exportar Excel: ' . $e->getMessage()
+                'error' => 'Erro ao exportar Excel: ' . $e->getMessage(),
             ], 500);
         }
     }
 
-    /**
-     * Export to PDF
-     */
     protected function exportPdf($data, $selectedFields, $totals = [])
     {
         $pdf = Pdf::loadView('relatorios.apac.pdf', [
             'data' => $data,
             'fields' => $selectedFields,
             'totals' => $totals,
-            'title' => 'Relatório APAC/OCI - ConsultaProd'
+            'title' => 'Relatório de APAC - ConsultaProd',
         ]);
-        
+
         return $pdf->download('relatorio_apac.pdf');
     }
 
-    /**
-     * Export to CSV
-     */
     protected function exportCsv($data, $selectedFields, $totals = [])
     {
         $filename = 'relatorio_apac.csv';
@@ -572,46 +713,54 @@ class RelatorioApacController extends BaseRelatorioController
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
-        $callback = function() use ($data, $selectedFields, $totals) {
+        $callback = function () use ($data, $totals) {
             $file = fopen('php://output', 'w');
-            
-            // Add BOM for UTF-8
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-            
-            // Headers - get from first row if data exists
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
             if (!empty($data)) {
                 $firstRow = $data->first();
                 $fieldLabels = array_keys($firstRow);
                 fputcsv($file, $fieldLabels, ';');
-                
-                // Data
+
                 foreach ($data as $row) {
-                    $csvRow = array_values($row);
-                    fputcsv($file, $csvRow, ';');
+                    fputcsv($file, array_values($row), ';');
                 }
-                
-                // Add totals if available
+
                 if (!empty($totals)) {
-                    fputcsv($file, [], ';'); // Empty line
+                    fputcsv($file, [], ';');
                     fputcsv($file, ['TOTAIS'], ';');
                     foreach ($totals as $label => $value) {
                         fputcsv($file, [$label, $value], ';');
                     }
                 }
             }
-            
+
             fclose($file);
         };
 
         return response()->stream($callback, 200, $headers);
     }
 
-    /**
-     * Get field configuration
-     */
     protected function getFieldConfig($field)
     {
-        $fields = [
+        return $this->getAllFieldConfigs()[$field] ?? null;
+    }
+
+    protected function getAllFieldConfigs(): array
+    {
+        return [
+            'PAP_CMP' => [
+                'label' => 'Data Competência',
+                'type' => 'date',
+                'table' => 's_pap',
+                'operators' => ['=', '>=', '<=', 'between'],
+            ],
+            'PAP_MVM' => [
+                'label' => 'Data Movimento',
+                'type' => 'date',
+                'table' => 's_pap',
+                'operators' => ['=', '>=', '<=', 'between'],
+            ],
             'PAP_UID' => [
                 'label' => 'Unidade (CNES)',
                 'type' => 'lookup',
@@ -619,13 +768,14 @@ class RelatorioApacController extends BaseRelatorioController
                 'lookup_table' => 'prestador',
                 'lookup_key' => 're_cunid',
                 'lookup_display' => 're_cnome',
-                'operators' => ['=', 'in']
+                'operators' => ['=', 'in'],
             ],
-            'PAP_MVM' => [
-                'label' => 'Competência',
-                'type' => 'date',
-                'table' => 's_pap',
-                'operators' => ['=', '>=', '<=', 'between']
+            'tipo_relatorio' => [
+                'label' => 'Tipo de Relatório',
+                'type' => 'text',
+                'table' => 'prestador',
+                'field' => 'relatorio',
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'PAP_PA' => [
                 'label' => 'Procedimento',
@@ -634,7 +784,14 @@ class RelatorioApacController extends BaseRelatorioController
                 'lookup_table' => 'procedimento',
                 'lookup_key' => 'codigo',
                 'lookup_display' => 'procedimento',
-                'operators' => ['=', 'in', 'like']
+                'operators' => ['=', 'in', 'like'],
+            ],
+            'procedimento_descricao' => [
+                'label' => 'Descrição do Procedimento',
+                'type' => 'text',
+                'table' => 'procedimento',
+                'field' => 'procedimento',
+                'operators' => ['=', 'like', 'starts_with', 'ends_with'],
             ],
             'PAP_CBO' => [
                 'label' => 'CBO Profissional',
@@ -643,51 +800,143 @@ class RelatorioApacController extends BaseRelatorioController
                 'lookup_table' => 'cbo',
                 'lookup_key' => 'cbo',
                 'lookup_display' => 'ds_cbo',
-                'operators' => ['=', 'in']
+                'operators' => ['=', 'in'],
             ],
             'PAP_CIDPRI' => [
                 'label' => 'CID Principal',
                 'type' => 'text',
                 'table' => 's_pap',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'PAP_QT_P' => [
                 'label' => 'Quantidade Produzida',
                 'type' => 'number',
                 'table' => 's_pap',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'PAP_VALOR' => [
                 'label' => 'Valor (Unitário e Total)',
                 'type' => 'currency',
                 'table' => 's_pap',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
+            ],
+            'PAP_IDADE' => [
+                'label' => 'Idade',
+                'type' => 'number',
+                'table' => 's_pap',
+                'operators' => ['=', '>=', '<='],
+            ],
+            'faixa_etaria_1' => [
+                'label' => 'Faixa Etária (detalhada)',
+                'type' => 'calculated',
+                'table' => 's_pap',
+                'operators' => [],
+            ],
+            'faixa_etaria_2' => [
+                'label' => 'Faixa Etária (resumida)',
+                'type' => 'calculated',
+                'table' => 's_pap',
+                'operators' => [],
+            ],
+            'APA_NUM' => [
+                'label' => 'Número APAC',
+                'type' => 'text',
+                'table' => 's_apa',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'APA_CMP' => [
+                'label' => 'Competência APAC',
+                'type' => 'date',
+                'table' => 's_apa',
+                'operators' => ['=', '>=', '<=', 'between'],
+            ],
+            'APA_MVM' => [
+                'label' => 'Movimento APAC',
+                'type' => 'date',
+                'table' => 's_apa',
+                'operators' => ['=', '>=', '<=', 'between'],
             ],
             'APA_PRIPAL' => [
                 'label' => 'Procedimento Principal APAC',
                 'type' => 'text',
                 'table' => 's_apa',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
-            // NOVO CAMPO NOME
             'APA_NMPCN' => [
                 'label' => 'Nome do Paciente',
                 'type' => 'text',
                 'table' => 's_apa',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
-            // CAMPOS CISMETRO
+            'APA_CNSPCT' => [
+                'label' => 'CNS Paciente',
+                'type' => 'text',
+                'table' => 's_apa',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'APA_DTNASC' => [
+                'label' => 'Data de Nascimento',
+                'type' => 'text',
+                'table' => 's_apa',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'APA_SEXPCN' => [
+                'label' => 'Sexo',
+                'type' => 'choice',
+                'table' => 's_apa',
+                'options' => [
+                    'M' => 'Masculino',
+                    'F' => 'Feminino',
+                ],
+                'operators' => ['='],
+            ],
+            'APA_CIDCA' => [
+                'label' => 'CID Principal APAC',
+                'type' => 'text',
+                'table' => 's_apa',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'APA_RACA' => [
+                'label' => 'Raça/Cor',
+                'type' => 'text',
+                'table' => 's_apa',
+                'operators' => ['=', 'in'],
+            ],
+            'APA_DTINIC' => [
+                'label' => 'Data Início Validade',
+                'type' => 'text',
+                'table' => 's_apa',
+                'operators' => ['=', '>=', '<=', 'between'],
+            ],
+            'APA_DTFIM' => [
+                'label' => 'Data Fim Validade',
+                'type' => 'text',
+                'table' => 's_apa',
+                'operators' => ['=', '>=', '<=', 'between'],
+            ],
+            'APA_TPATEN' => [
+                'label' => 'Tipo de Atendimento',
+                'type' => 'text',
+                'table' => 's_apa',
+                'operators' => ['=', 'in'],
+            ],
+            'APA_TPAPAC' => [
+                'label' => 'Tipo APAC',
+                'type' => 'text',
+                'table' => 's_apa',
+                'operators' => ['=', 'in'],
+            ],
             'cismetro_valor' => [
                 'label' => 'Cismetro - Valor Unitário',
                 'type' => 'currency',
                 'table' => 'cismetro',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'cismetro_total' => [
                 'label' => 'Cismetro - Valor Total',
                 'type' => 'currency',
                 'table' => 'calculated',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'cismetro_descricao' => [
                 'label' => 'Cismetro - Descrição',
@@ -696,19 +945,55 @@ class RelatorioApacController extends BaseRelatorioController
                 'lookup_table' => 'cismetro',
                 'lookup_key' => 'codigo',
                 'lookup_display' => 'descricao',
-                'operators' => ['=', 'like']
-            ]
+                'operators' => ['=', 'like'],
+            ],
+            'grupo' => [
+                'label' => 'Grupo',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'descgrupo' => [
+                'label' => 'Descrição do Grupo',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => [],
+            ],
+            'subgrupo' => [
+                'label' => 'Subgrupo',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'descsubgrupo' => [
+                'label' => 'Descrição do Subgrupo',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => [],
+            ],
+            'forma' => [
+                'label' => 'Forma de Organização',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'descforma' => [
+                'label' => 'Descrição da Forma',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
         ];
-        
-        return $fields[$field] ?? null;
     }
 
-    /**
-     * Implement trait methods for matrix
-     */
     protected function getPrestadorField(): string
     {
         return 'PAP_UID';
+    }
+
+    protected function getMatrixSplitCandidates(): array
+    {
+        return [$this->getPrestadorField(), 'tipo_relatorio'];
     }
 
     protected function getCboField(): string
@@ -725,36 +1010,72 @@ class RelatorioApacController extends BaseRelatorioController
     {
         $selectFields = [];
         $groupByFields = [];
-        
+
         if ($field === 'PAP_UID') {
             $selectFields[] = "{$tableAlias}.PAP_UID as prestador_codigo";
-            $selectFields[] = "pr.re_cnome as prestador_nome";
+            $selectFields[] = 'pr.re_cnome as prestador_nome';
             $groupByFields[] = "{$tableAlias}.PAP_UID";
-            $groupByFields[] = "pr.re_cnome";
+            $groupByFields[] = 'pr.re_cnome';
         } elseif ($field === 'PAP_PA') {
             $selectFields[] = "{$tableAlias}.PAP_PA as procedimento_codigo";
-            $selectFields[] = "pc.procedimento as procedimento_nome";
+            $selectFields[] = 'pc.procedimento as procedimento_nome';
             $groupByFields[] = "{$tableAlias}.PAP_PA";
-            $groupByFields[] = "pc.procedimento";
+            $groupByFields[] = 'pc.procedimento';
         } elseif ($field === 'PAP_CBO') {
             $selectFields[] = "{$tableAlias}.PAP_CBO as cbo_codigo";
-            $selectFields[] = "cb.ds_cbo as cbo_nome";
+            $selectFields[] = 'cb.ds_cbo as cbo_nome';
             $groupByFields[] = "{$tableAlias}.PAP_CBO";
-            $groupByFields[] = "cb.ds_cbo";
+            $groupByFields[] = 'cb.ds_cbo';
         } elseif ($field === 'cismetro_descricao') {
             $selectFields[] = "{$tableAlias}.PAP_PA as cismetro_codigo";
-            $selectFields[] = "cs.descricao as cismetro_descricao";
+            $selectFields[] = 'cs.descricao as cismetro_descricao';
             $groupByFields[] = "{$tableAlias}.PAP_PA";
-            $groupByFields[] = "cs.descricao";
+            $groupByFields[] = 'cs.descricao';
+        } elseif ($field === 'grupo') {
+            $selectFields[] = DB::raw("SUBSTRING({$tableAlias}.PAP_PA, 1, 2) as grupo");
+            $groupByFields[] = DB::raw("SUBSTRING({$tableAlias}.PAP_PA, 1, 2)");
+        } elseif ($field === 'descgrupo') {
+            $selectFields[] = 'fg.descricao as descgrupo';
+            $groupByFields[] = 'fg.descricao';
+        } elseif ($field === 'subgrupo') {
+            $selectFields[] = DB::raw("SUBSTRING({$tableAlias}.PAP_PA, 1, 4) as subgrupo");
+            $groupByFields[] = DB::raw("SUBSTRING({$tableAlias}.PAP_PA, 1, 4)");
+        } elseif ($field === 'descsubgrupo') {
+            $selectFields[] = 'fs.descricao as descsubgrupo';
+            $groupByFields[] = 'fs.descricao';
+        } elseif ($field === 'forma') {
+            $selectFields[] = DB::raw("SUBSTRING({$tableAlias}.PAP_PA, 1, 6) as forma");
+            $groupByFields[] = DB::raw("SUBSTRING({$tableAlias}.PAP_PA, 1, 6)");
+        } elseif ($field === 'descforma') {
+            $selectFields[] = 'ff.descricao as descforma';
+            $groupByFields[] = 'ff.descricao';
+        } elseif ($field === 'tipo_relatorio') {
+            $selectFields[] = 'pr.relatorio as tipo_relatorio';
+            $groupByFields[] = 'pr.relatorio';
+        } elseif ($field === 'faixa_etaria_1') {
+            $expr = $this->faixaEtaria1Expression($tableAlias);
+            $selectFields[] = DB::raw("({$expr}) as faixa_etaria_1");
+            $groupByFields[] = DB::raw("({$expr})");
+        } elseif ($field === 'faixa_etaria_2') {
+            $expr = $this->faixaEtaria2Expression($tableAlias);
+            $selectFields[] = DB::raw("({$expr}) as faixa_etaria_2");
+            $groupByFields[] = DB::raw("({$expr})");
+        } elseif ($field === 'PAP_IDADE') {
+            $expr = $this->idadeNormalizadaSql("{$tableAlias}.PAP_IDADE");
+            $selectFields[] = DB::raw("{$expr} as PAP_IDADE");
+            $groupByFields[] = DB::raw($expr);
+        } elseif (str_starts_with($field, 'APA_')) {
+            $selectFields[] = "apa.{$field}";
+            $groupByFields[] = "apa.{$field}";
         }
-        
+
         return ['select' => $selectFields, 'groupBy' => $groupByFields];
     }
 
     protected function getMatrixNumericFields($field, $tableAlias): array
     {
         $fields = [];
-        
+
         if ($field === 'PAP_QT_P') {
             $fields[] = DB::raw("SUM(CAST({$tableAlias}.PAP_QT_P as DECIMAL(15,2))) as total_quantidade");
         } elseif ($field === 'PAP_VALOR') {
@@ -762,7 +1083,7 @@ class RelatorioApacController extends BaseRelatorioController
         } elseif ($field === 'cismetro_total') {
             $fields[] = DB::raw("SUM(CAST({$tableAlias}.PAP_QT_P as DECIMAL(15,2)) * COALESCE(cs.valor, 0)) as cismetro_total");
         }
-        
+
         return $fields;
     }
 
@@ -776,8 +1097,18 @@ class RelatorioApacController extends BaseRelatorioController
             return ($item->cbo_codigo ?? '') . '|' . ($item->cbo_nome ?? '');
         } elseif ($field === 'cismetro_descricao') {
             return ($item->cismetro_codigo ?? '') . '|' . ($item->cismetro_descricao ?? '');
+        } elseif (in_array($field, $this->getFaixaEtariaFieldIds(), true)) {
+            return $item->{$field} ?? '';
+        } elseif (in_array($field, $this->getFormaFieldIds(), true)) {
+            return $item->{$field} ?? '';
+        } elseif ($field === 'tipo_relatorio') {
+            return $item->tipo_relatorio ?? '';
+        } elseif ($field === 'PAP_IDADE') {
+            return $this->idadeAgrupamentoKey($item->PAP_IDADE ?? null);
+        } elseif (str_starts_with($field, 'APA_')) {
+            return $item->{$field} ?? '';
         }
-        
+
         return $item->{$field} ?? '';
     }
 
@@ -785,56 +1116,20 @@ class RelatorioApacController extends BaseRelatorioController
     {
         switch ($field) {
             case 'PAP_QT_P':
-                return (float)($item->total_quantidade ?? 0);
+                return (float) ($item->total_quantidade ?? 0);
             case 'PAP_VALOR':
-                return (float)($item->valor_total ?? 0);
+                return (float) ($item->valor_total ?? 0);
             case 'cismetro_total':
-                return (float)($item->cismetro_total ?? 0);
+                return (float) ($item->cismetro_total ?? 0);
             case 'cismetro_valor':
-                return (float)($item->cismetro_valor ?? 0);
+                return (float) ($item->cismetro_valor ?? 0);
             default:
-                return (float)($item->{$field} ?? 0);
+                return (float) ($item->{$field} ?? 0);
         }
     }
-    
-    /**
-     * Get default numeric field for matrix
-     */
+
     protected function getDefaultNumericField(): ?string
     {
         return 'PAP_QT_P';
     }
-
-    /**
-     * Teste ultra simples
-     */
-    public function testUltraSimple()
-    {
-        try {
-            \Log::info('=== Test Ultra Simple ===');
-            
-            // Dados mínimos
-            $testData = collect([
-                ['Nome' => 'João', 'Idade' => '30'],
-                ['Nome' => 'Maria', 'Idade' => '25']
-            ]);
-            
-            \Log::info('Creating simple export...');
-            
-            $export = new \App\Exports\RelatorioApacExport($testData, [], []);
-            
-            \Log::info('Export created, starting download...');
-            
-            return \Maatwebsite\Excel\Facades\Excel::download($export, 'teste_ultra_simples.xlsx');
-            
-        } catch (\Exception $e) {
-            \Log::error('Test Ultra Simple Error: ' . $e->getMessage());
-            return response()->json([
-                'error' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile()
-            ], 500);
-        }
-    }
-
 }

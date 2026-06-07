@@ -10,7 +10,8 @@
 | # | Nome | Rota | Controller | Tabela principal |
 |---|------|------|------------|-----------------|
 | 1 | **Produção SIA** | `GET /relatorios` | `RelatorioController` | `s_prd` |
-| 2 | **APAC/OCI** | `GET /relatorios/apac` | `RelatorioApacController` | `s_pap` + `s_apa` |
+| 2 | **Relatório de APAC** | `GET /relatorios/apac` | `RelatorioApacController` | `s_pap` + `s_apa` |
+| 2b | **Produção Individualizada (BPI)** | `GET /relatorios/bpi` | `RelatorioBpiController` | `s_bpi` |
 | 3 | **Faturamento por Prestador** | `GET /relatorios/faturamento-prestador` | `FaturamentoPrestadorController` | `s_prd` |
 
 ---
@@ -70,26 +71,57 @@ SUM(CAST(sp.PRD_QT_P AS UNSIGNED) * COALESCE(cs.valor,0)) AS cismetro_total
 
 ---
 
-## 3. Relatório 2 — APAC/OCI (`s_pap` + `s_apa`)
+## 3. Relatório 2 — Relatório de APAC (`s_pap` + `s_apa`)
 
-### Campos exibíveis / filtráveis
+Paridade funcional com Produção Individualizada (BPI). Tabela principal: `s_pap` (procedimentos internos); `s_apa` (cabeçalho) via `LEFT JOIN` em `PAP_NUM = APA_NUM`.
+
+### Campos exibíveis / filtráveis — produção (`s_pap`)
 
 | Chave PHP | Label UI | Tipo | Tabela origem | CAST aplicado |
 |-----------|----------|------|---------------|---------------|
+| `PAP_CMP` | Data Competência | `date` | `s_pap` | `CONCAT(SUBSTRING, YYYY-MM)` |
+| `PAP_MVM` | Data Movimento | `date` | `s_pap` | `CONCAT(SUBSTRING, YYYY-MM)` |
 | `PAP_UID` | Unidade (CNES) | `lookup` | `prestador` | — |
-| `PAP_MVM` | Competência | `date` | `s_pap` | — |
+| `tipo_relatorio` | Tipo de Relatório | `text` | `prestador.relatorio` | — |
 | `PAP_PA` | Procedimento | `lookup` | `procedimento` | — |
+| `procedimento_descricao` | Descrição do Procedimento | `text` | `procedimento` | — (somente filtro) |
 | `PAP_CBO` | CBO Profissional | `lookup` | `cbo` | — |
 | `PAP_CIDPRI` | CID Principal | `text` | `s_pap` | — |
 | `PAP_QT_P` | Quantidade Produzida | `number` | `s_pap` | `CAST(PAP_QT_P AS DECIMAL(15,2))` ¹ |
 | `PAP_VALOR` | Valor (Unitário e Total) | `currency` | `procedimento.pa_total` | `CAST(PAP_QT_P AS DECIMAL(15,2)) * CAST(pc.pa_total AS DECIMAL(15,2))` |
-| `APA_PRIPAL` | Procedimento Principal APAC | `text` | `s_apa` | — |
-| `APA_NMPCN` | Nome do Paciente | `text` | `s_apa` | — |
+| `PAP_IDADE` | Idade | `number` | `s_pap` | — |
+| `faixa_etaria_1` | Faixa Etária (detalhada) | `calculated` | `s_pap` | CASE em `PAP_IDADE` |
+| `faixa_etaria_2` | Faixa Etária (resumida) | `calculated` | `s_pap` | CASE em `PAP_IDADE` |
+| `grupo` / `descgrupo` | Grupo | `text` | `forma` via `SUBSTRING(PAP_PA)` | — |
+| `subgrupo` / `descsubgrupo` | Subgrupo | `text` | `forma` | — |
+| `forma` / `descforma` | Forma de Organização | `text` | `forma` | — |
 | `cismetro_valor` | Cismetro — Valor Unitário | `currency` | `cismetro` | — |
 | `cismetro_total` | Cismetro — Valor Total | `currency` | calculado | `SUM(CAST(PAP_QT_P AS DECIMAL(15,2)) * COALESCE(cs.valor,0))` |
 | `cismetro_descricao` | Cismetro — Descrição | `lookup` | `cismetro` | — |
 
-¹ Atenção: APAC usa `DECIMAL(15,2)` para quantidades (vs `UNSIGNED` em PRD — diferença no legado).
+### Campos exibíveis / filtráveis — cabeçalho APAC (`s_apa`)
+
+| Chave PHP | Label UI | Tipo | Tabela origem |
+|-----------|----------|------|---------------|
+| `APA_NUM` | Número APAC | `text` | `s_apa` |
+| `APA_CMP` | Competência APAC | `date` | `s_apa` |
+| `APA_MVM` | Movimento APAC | `date` | `s_apa` |
+| `APA_PRIPAL` | Procedimento Principal APAC | `text` | `s_apa` |
+| `APA_NMPCN` | Nome do Paciente | `text` | `s_apa` |
+| `APA_CNSPCT` | CNS Paciente | `text` | `s_apa` |
+| `APA_DTNASC` | Data de Nascimento | `text` | `s_apa` |
+| `APA_SEXPCN` | Sexo | `choice` M/F | `s_apa` |
+| `APA_CIDCA` | CID Principal APAC | `text` | `s_apa` |
+| `APA_RACA` | Raça/Cor | `text` | `s_apa` |
+| `APA_DTINIC` | Data Início Validade | `text` | `s_apa` |
+| `APA_DTFIM` | Data Fim Validade | `text` | `s_apa` |
+| `APA_TPATEN` | Tipo de Atendimento | `text` | `s_apa` |
+| `APA_TPAPAC` | Tipo APAC | `text` | `s_apa` |
+
+¹ Atenção: APAC usa `DECIMAL(15,2)` para quantidades (vs `UNSIGNED` em PRD/BPI — diferença no legado).
+
+### Matriz pivot
+Eixo temporal: `PAP_CMP` **ou** `PAP_MVM` (mutuamente exclusivos na UI, igual BPI).
 
 ### Filtro especial OCI
 Campo virtual `filter_oci` (boolean). Quando `true`, o JOIN com `s_apa` é convertido de `LEFT JOIN` para `INNER JOIN` com condição `apa.APA_PRIPAL LIKE '09%'` (seleciona apenas procedimentos oncológicos).

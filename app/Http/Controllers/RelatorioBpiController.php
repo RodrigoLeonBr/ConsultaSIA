@@ -260,18 +260,14 @@ class RelatorioBpiController extends BaseRelatorioController
         return MatrixReportExport::class;
     }
 
-    protected function idadeIgnoradaCondition(string $alias): string
-    {
-        return "TRIM({$alias}.BPI_FLIDA) <> ''";
-    }
-
     protected function faixaEtaria1Expression(string $alias): string
     {
-        $ign = $this->idadeIgnoradaCondition($alias);
         $idade = "CAST({$alias}.BPI_IDADE AS SIGNED)";
 
+        $max = self::IDADE_MAXIMA_SIGTAP;
+
         return "CASE
-            WHEN {$ign} THEN 'Ignorado'
+            WHEN {$idade} > {$max} THEN 'Ignorado'
             WHEN {$idade} = 0 THEN 'Menor que 1 ano'
             WHEN {$idade} BETWEEN 1 AND 4 THEN '1 a 4 anos'
             WHEN {$idade} BETWEEN 5 AND 9 THEN '5 a 9 anos'
@@ -296,11 +292,12 @@ class RelatorioBpiController extends BaseRelatorioController
 
     protected function faixaEtaria2Expression(string $alias): string
     {
-        $ign = $this->idadeIgnoradaCondition($alias);
         $idade = "CAST({$alias}.BPI_IDADE AS SIGNED)";
 
+        $max = self::IDADE_MAXIMA_SIGTAP;
+
         return "CASE
-            WHEN {$ign} THEN 'Ignorado'
+            WHEN {$idade} > {$max} THEN 'Ignorado'
             WHEN {$idade} <= 9 THEN 'Criança'
             WHEN {$idade} BETWEEN 10 AND 17 THEN 'Infantil'
             WHEN {$idade} BETWEEN 18 AND 59 THEN 'Adulto'
@@ -524,8 +521,9 @@ class RelatorioBpiController extends BaseRelatorioController
                     $selectFields[] = DB::raw("({$expr}) as faixa_etaria_2");
                     $groupByFields[] = DB::raw("({$expr})");
                 } elseif ($field === 'BPI_IDADE') {
-                    $selectFields[] = 'sb.BPI_IDADE';
-                    $groupByFields[] = 'sb.BPI_IDADE';
+                    $expr = $this->idadeNormalizadaSql('sb.BPI_IDADE');
+                    $selectFields[] = DB::raw("{$expr} as BPI_IDADE");
+                    $groupByFields[] = DB::raw($expr);
                 } else {
                     $selectFields[] = "sb.{$field}";
                     $groupByFields[] = "sb.{$field}";
@@ -767,7 +765,7 @@ class RelatorioBpiController extends BaseRelatorioController
                 } elseif (in_array($field, $this->getFaixaEtariaFieldIds(), true)) {
                     $formatted[$fieldConfig['label']] = $row->{$field} ?? '';
                 } elseif ($field === 'BPI_IDADE') {
-                    $formatted['Idade'] = number_format((float)($row->BPI_IDADE ?? 0), 0, ',', '.');
+                    $formatted['Idade'] = $this->formatIdadeExibicao($row->BPI_IDADE ?? null);
                 } elseif (in_array($field, $this->getFormaFieldIds(), true)) {
                     $formatted[$fieldConfig['label']] = $row->{$field} ?? '';
                 } else {
@@ -1158,8 +1156,9 @@ class RelatorioBpiController extends BaseRelatorioController
             $selectFields[] = DB::raw("({$expr}) as faixa_etaria_2");
             $groupByFields[] = DB::raw("({$expr})");
         } elseif ($field === 'BPI_IDADE') {
-            $selectFields[] = "{$tableAlias}.BPI_IDADE";
-            $groupByFields[] = "{$tableAlias}.BPI_IDADE";
+            $expr = $this->idadeNormalizadaSql("{$tableAlias}.BPI_IDADE");
+            $selectFields[] = DB::raw("{$expr} as BPI_IDADE");
+            $groupByFields[] = DB::raw($expr);
         }
         
         return ['select' => $selectFields, 'groupBy' => $groupByFields];
@@ -1195,7 +1194,7 @@ class RelatorioBpiController extends BaseRelatorioController
         } elseif ($field === 'tipo_relatorio') {
             return $item->tipo_relatorio ?? '';
         } elseif ($field === 'BPI_IDADE') {
-            return (string)($item->BPI_IDADE ?? '');
+            return $this->idadeAgrupamentoKey($item->BPI_IDADE ?? null);
         }
         
         return $item->{$field} ?? '';

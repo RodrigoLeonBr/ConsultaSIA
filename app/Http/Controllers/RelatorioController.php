@@ -106,6 +106,24 @@ class RelatorioController extends BaseRelatorioController
                     'table' => 's_prd',
                     'operators' => ['=', 'like', 'starts_with']
                 ],
+                'PRD_IDADE' => [
+                    'label' => 'Idade',
+                    'type' => 'number',
+                    'table' => 's_prd',
+                    'operators' => ['=', '>=', '<=']
+                ],
+                'faixa_etaria_1' => [
+                    'label' => 'Faixa Etária (detalhada)',
+                    'type' => 'calculated',
+                    'table' => 's_prd',
+                    'operators' => []
+                ],
+                'faixa_etaria_2' => [
+                    'label' => 'Faixa Etária (resumida)',
+                    'type' => 'calculated',
+                    'table' => 's_prd',
+                    'operators' => []
+                ],
                 // NOVOS CAMPOS CISMETRO
                 'cismetro_valor' => [
                     'label' => 'Cismetro - Valor Unitário',
@@ -209,6 +227,71 @@ class RelatorioController extends BaseRelatorioController
     protected function getMatrixExportClass(): string
     {
         return MatrixReportExport::class;
+    }
+
+    protected function faixaEtaria1Expression(string $alias): string
+    {
+        $idade = "CAST({$alias}.PRD_IDADE AS SIGNED)";
+
+        $max = self::IDADE_MAXIMA_SIGTAP;
+
+        return "CASE
+            WHEN {$idade} > {$max} THEN 'Ignorado'
+            WHEN {$idade} = 0 THEN 'Menor que 1 ano'
+            WHEN {$idade} BETWEEN 1 AND 4 THEN '1 a 4 anos'
+            WHEN {$idade} BETWEEN 5 AND 9 THEN '5 a 9 anos'
+            WHEN {$idade} BETWEEN 10 AND 14 THEN '10 a 14 anos'
+            WHEN {$idade} BETWEEN 15 AND 19 THEN '15 a 19 anos'
+            WHEN {$idade} BETWEEN 20 AND 24 THEN '20 a 24 anos'
+            WHEN {$idade} BETWEEN 25 AND 29 THEN '25 a 29 anos'
+            WHEN {$idade} BETWEEN 30 AND 34 THEN '30 a 34 anos'
+            WHEN {$idade} BETWEEN 35 AND 39 THEN '35 a 39 anos'
+            WHEN {$idade} BETWEEN 40 AND 44 THEN '40 a 44 anos'
+            WHEN {$idade} BETWEEN 45 AND 49 THEN '45 a 49 anos'
+            WHEN {$idade} BETWEEN 50 AND 54 THEN '50 a 54 anos'
+            WHEN {$idade} BETWEEN 55 AND 59 THEN '55 a 59 anos'
+            WHEN {$idade} BETWEEN 60 AND 64 THEN '60 a 64 anos'
+            WHEN {$idade} BETWEEN 65 AND 69 THEN '65 a 69 anos'
+            WHEN {$idade} BETWEEN 70 AND 74 THEN '70 a 74 anos'
+            WHEN {$idade} BETWEEN 75 AND 79 THEN '75 a 79 anos'
+            WHEN {$idade} >= 80 THEN '80 anos ou mais'
+            ELSE 'Ignorado'
+        END";
+    }
+
+    protected function faixaEtaria2Expression(string $alias): string
+    {
+        $idade = "CAST({$alias}.PRD_IDADE AS SIGNED)";
+
+        $max = self::IDADE_MAXIMA_SIGTAP;
+
+        return "CASE
+            WHEN {$idade} > {$max} THEN 'Ignorado'
+            WHEN {$idade} <= 9 THEN 'Criança'
+            WHEN {$idade} BETWEEN 10 AND 17 THEN 'Infantil'
+            WHEN {$idade} BETWEEN 18 AND 59 THEN 'Adulto'
+            WHEN {$idade} >= 60 THEN 'Idoso'
+            ELSE 'Ignorado'
+        END";
+    }
+
+    protected function faixaEtaria1OrderExpression(string $alias): string
+    {
+        $expr = $this->faixaEtaria1Expression($alias);
+
+        return "FIELD(({$expr}), 'Menor que 1 ano', '1 a 4 anos', '5 a 9 anos', '10 a 14 anos', '15 a 19 anos', '20 a 24 anos', '25 a 29 anos', '30 a 34 anos', '35 a 39 anos', '40 a 44 anos', '45 a 49 anos', '50 a 54 anos', '55 a 59 anos', '60 a 64 anos', '65 a 69 anos', '70 a 74 anos', '75 a 79 anos', '80 anos ou mais', 'Ignorado')";
+    }
+
+    protected function faixaEtaria2OrderExpression(string $alias): string
+    {
+        $expr = $this->faixaEtaria2Expression($alias);
+
+        return "FIELD(({$expr}), 'Criança', 'Infantil', 'Adulto', 'Idoso', 'Ignorado')";
+    }
+
+    protected function getFaixaEtariaFieldIds(): array
+    {
+        return ['faixa_etaria_1', 'faixa_etaria_2'];
     }
 
     /**
@@ -401,6 +484,18 @@ class RelatorioController extends BaseRelatorioController
                 } elseif ($field === 'tipo_relatorio') {
                     $selectFields[] = 'pr.relatorio as tipo_relatorio';
                     $groupByFields[] = 'pr.relatorio';
+                } elseif ($field === 'faixa_etaria_1') {
+                    $expr = $this->faixaEtaria1Expression('sp');
+                    $selectFields[] = DB::raw("({$expr}) as faixa_etaria_1");
+                    $groupByFields[] = DB::raw("({$expr})");
+                } elseif ($field === 'faixa_etaria_2') {
+                    $expr = $this->faixaEtaria2Expression('sp');
+                    $selectFields[] = DB::raw("({$expr}) as faixa_etaria_2");
+                    $groupByFields[] = DB::raw("({$expr})");
+                } elseif ($field === 'PRD_IDADE') {
+                    $expr = $this->idadeNormalizadaSql('sp.PRD_IDADE');
+                    $selectFields[] = DB::raw("{$expr} as PRD_IDADE");
+                    $groupByFields[] = DB::raw($expr);
                 } else {
                     $selectFields[] = "sp.{$field}";
                     $groupByFields[] = "sp.{$field}";
@@ -420,8 +515,16 @@ class RelatorioController extends BaseRelatorioController
             $query->groupBy($groupByFields);
         }
         
-        // Order by first field
-        if (!empty($groupByFields)) {
+        // Order by first dimensional field
+        $firstOrderField = collect($selectedFields)->first(
+            fn ($field) => !in_array($field, ['PRD_QT_P', 'PRD_VL_P', 'cismetro_total', 'procedimento_descricao'], true)
+        );
+
+        if ($firstOrderField === 'faixa_etaria_1') {
+            $query->orderBy(DB::raw($this->faixaEtaria1OrderExpression('sp')));
+        } elseif ($firstOrderField === 'faixa_etaria_2') {
+            $query->orderBy(DB::raw($this->faixaEtaria2OrderExpression('sp')));
+        } elseif (!empty($groupByFields)) {
             $query->orderBy($groupByFields[0]);
         }
         
@@ -636,6 +739,10 @@ class RelatorioController extends BaseRelatorioController
                     $formatted['Data Competência'] = $row->competencia ?? '';
                 } elseif ($field === 'prd_mvm') {
                     $formatted['Data Movimento'] = $row->movimento ?? '';
+                } elseif (in_array($field, $this->getFaixaEtariaFieldIds(), true)) {
+                    $formatted[$fieldConfig['label']] = $row->{$field} ?? '';
+                } elseif ($field === 'PRD_IDADE') {
+                    $formatted['Idade'] = $this->formatIdadeExibicao($row->PRD_IDADE ?? null);
                 } elseif (in_array($field, $this->getFormaFieldIds(), true)) {
                     $formatted[$fieldConfig['label']] = $row->{$field} ?? '';
                 } else {
@@ -783,6 +890,24 @@ class RelatorioController extends BaseRelatorioController
                 'type' => 'text',
                 'table' => 's_prd',
                 'operators' => ['=', 'like', 'starts_with']
+            ],
+            'PRD_IDADE' => [
+                'label' => 'Idade',
+                'type' => 'number',
+                'table' => 's_prd',
+                'operators' => ['=', '>=', '<=']
+            ],
+            'faixa_etaria_1' => [
+                'label' => 'Faixa Etária (detalhada)',
+                'type' => 'calculated',
+                'table' => 's_prd',
+                'operators' => []
+            ],
+            'faixa_etaria_2' => [
+                'label' => 'Faixa Etária (resumida)',
+                'type' => 'calculated',
+                'table' => 's_prd',
+                'operators' => []
             ],
             // CAMPOS CISMETRO
             'cismetro_valor' => [
@@ -976,6 +1101,18 @@ class RelatorioController extends BaseRelatorioController
         } elseif ($field === 'tipo_relatorio') {
             $selectFields[] = 'pr.relatorio as tipo_relatorio';
             $groupByFields[] = 'pr.relatorio';
+        } elseif ($field === 'faixa_etaria_1') {
+            $expr = $this->faixaEtaria1Expression($tableAlias);
+            $selectFields[] = DB::raw("({$expr}) as faixa_etaria_1");
+            $groupByFields[] = DB::raw("({$expr})");
+        } elseif ($field === 'faixa_etaria_2') {
+            $expr = $this->faixaEtaria2Expression($tableAlias);
+            $selectFields[] = DB::raw("({$expr}) as faixa_etaria_2");
+            $groupByFields[] = DB::raw("({$expr})");
+        } elseif ($field === 'PRD_IDADE') {
+            $expr = $this->idadeNormalizadaSql("{$tableAlias}.PRD_IDADE");
+            $selectFields[] = DB::raw("{$expr} as PRD_IDADE");
+            $groupByFields[] = DB::raw($expr);
         }
         
         return ['select' => $selectFields, 'groupBy' => $groupByFields];
@@ -1012,6 +1149,10 @@ class RelatorioController extends BaseRelatorioController
             return $item->{$field} ?? '';
         } elseif ($field === 'tipo_relatorio') {
             return $item->tipo_relatorio ?? '';
+        } elseif (in_array($field, $this->getFaixaEtariaFieldIds(), true)) {
+            return $item->{$field} ?? '';
+        } elseif ($field === 'PRD_IDADE') {
+            return $this->idadeAgrupamentoKey($item->PRD_IDADE ?? null);
         }
         
         return $item->{$field} ?? '';

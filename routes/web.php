@@ -4,7 +4,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CboController;
 use App\Http\Controllers\PrestadorController;
+use App\Http\Controllers\PrestadorImportController;
 use App\Http\Controllers\ProcedimentoController;
+use App\Http\Controllers\ProcedimentoImportController;
 use App\Http\Controllers\SRubController;
 use App\Http\Controllers\SPapController;
 use App\Http\Controllers\SApaController;
@@ -56,7 +58,15 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
         // CRUD Modules for healthcare system
         Route::resource('cbo', CboController::class);
         Route::resource('prestador', PrestadorController::class);
+        Route::get('/prestador-import', [PrestadorImportController::class, 'create'])->name('prestador.import');
+        Route::post('/prestador-import', [PrestadorImportController::class, 'store'])->name('prestador.import.store');
+        Route::get('/prestador-import/preview', [PrestadorImportController::class, 'preview'])->name('prestador.import.preview');
+        Route::post('/prestador-import/apply', [PrestadorImportController::class, 'apply'])->name('prestador.import.apply');
         Route::resource('procedimento', ProcedimentoController::class);
+        Route::get('/procedimento-import', [ProcedimentoImportController::class, 'create'])->name('procedimento.import');
+        Route::post('/procedimento-import', [ProcedimentoImportController::class, 'store'])->name('procedimento.import.store');
+        Route::get('/procedimento-import/preview', [ProcedimentoImportController::class, 'preview'])->name('procedimento.import.preview');
+        Route::post('/procedimento-import/apply', [ProcedimentoImportController::class, 'apply'])->name('procedimento.import.apply');
         Route::resource('srub', SRubController::class);
         Route::resource('cismetro', CismetroController::class);
         

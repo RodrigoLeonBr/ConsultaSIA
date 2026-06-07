@@ -57,11 +57,15 @@
             background: #94a3b8;
         }
         
-        /* Smooth transitions */
-        * {
-            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+        /* Smooth transitions (evita animar background do sidebar ativo) */
+        *:not([data-nav-item]):not([data-nav-item] *) {
+            transition-property: color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
             transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
             transition-duration: 150ms;
+        }
+
+        [data-nav-item] {
+            transition: color 150ms ease, box-shadow 150ms ease, ring-color 150ms ease;
         }
         
         /* Loading animation */
@@ -104,31 +108,7 @@
     <div class="min-h-screen flex">
         
         <!-- Sidebar -->
-        @php
-            $activeRoute = 'dashboard';
-            if (request()->routeIs('admin.*')) {
-                $activeRoute = 'admin';
-            } elseif (request()->routeIs('cbo.*')) {
-                $activeRoute = 'cbo';
-            } elseif (request()->routeIs('prestador.*')) {
-                $activeRoute = 'prestador';
-            } elseif (request()->routeIs('procedimento.*')) {
-                $activeRoute = 'procedimento';
-            } elseif (request()->routeIs('cismetro.*')) {
-                $activeRoute = 'cismetro';
-            } elseif (request()->routeIs('srub.*')) {
-                $activeRoute = 'srub';
-            } elseif (request()->routeIs('relatorios.bpi.*')) {
-                $activeRoute = 'bpi';
-            } elseif (request()->routeIs('relatorios.apac.*')) {
-                $activeRoute = 'apac';
-            } elseif (request()->routeIs('faturamento-prestador.*')) {
-                $activeRoute = 'faturamento';
-            } elseif (request()->routeIs('relatorios.*')) {
-                $activeRoute = 'relatorios';
-            }
-        @endphp
-        <x-sidebar :active="$activeRoute" />
+        <x-sidebar />
         
         <!-- Main content -->
         <div class="flex-1 flex flex-col lg:ml-64">
@@ -141,7 +121,7 @@
                 
                 <!-- Flash Messages -->
                 @if (session('success'))
-                    <div class="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center">
+                    <div class="flash-alert mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
@@ -150,7 +130,7 @@
                 @endif
 
                 @if (session('error'))
-                    <div class="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center">
+                    <div class="flash-alert mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
@@ -159,7 +139,7 @@
                 @endif
 
                 @if (session('warning'))
-                    <div class="mb-6 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg flex items-center">
+                    <div class="flash-alert mb-6 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                         </svg>
@@ -168,7 +148,7 @@
                 @endif
 
                 @if (session('info'))
-                    <div class="mb-6 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg flex items-center">
+                    <div class="flash-alert mb-6 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
@@ -248,9 +228,9 @@
             document.getElementById('loading-overlay').classList.add('hidden');
         };
         
-        // Auto-hide flash messages
+        // Auto-hide apenas alertas flash do conteúdo principal (nunca o sidebar)
         document.addEventListener('DOMContentLoaded', function() {
-            const flashMessages = document.querySelectorAll('[class*="bg-green-50"], [class*="bg-red-50"], [class*="bg-yellow-50"], [class*="bg-blue-50"]');
+            const flashMessages = document.querySelectorAll('main .flash-alert');
             flashMessages.forEach(message => {
                 setTimeout(() => {
                     message.style.opacity = '0';

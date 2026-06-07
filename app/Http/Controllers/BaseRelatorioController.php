@@ -372,5 +372,44 @@ abstract class BaseRelatorioController extends Controller
                 break;
         }
     }
+
+    protected const IDADE_MAXIMA_SIGTAP = 150;
+
+    protected function formatIdadeExibicao($idade): string
+    {
+        if ($idade === null || $idade === '') {
+            return 'Ignorado';
+        }
+
+        $n = (int) $idade;
+
+        if ($n > self::IDADE_MAXIMA_SIGTAP) {
+            return 'Ignorado';
+        }
+
+        return number_format($n, 0, ',', '.');
+    }
+
+    protected function idadeAgrupamentoKey($idade): string
+    {
+        if ($idade === null || $idade === '') {
+            return 'Ignorado';
+        }
+
+        $n = (int) $idade;
+
+        if ($n > self::IDADE_MAXIMA_SIGTAP) {
+            return 'Ignorado';
+        }
+
+        return (string) $n;
+    }
+
+    protected function idadeNormalizadaSql(string $column): string
+    {
+        $max = self::IDADE_MAXIMA_SIGTAP;
+
+        return "CASE WHEN CAST({$column} AS SIGNED) > {$max} THEN NULL ELSE {$column} END";
+    }
 }
 
