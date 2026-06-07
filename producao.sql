@@ -617,6 +617,17 @@ ALTER TABLE `s_prd`
   ADD KEY `idx_forma` (`forma`);
 
 --
+-- Índices de tabela `s_bpi`
+--
+ALTER TABLE `s_bpi`
+  ADD KEY `idx_composite` (`BPI_UID`,`BPI_CMP`,`BPI_FLH`,`BPI_SEQ`),
+  ADD KEY `idx_bpi_uid` (`BPI_UID`),
+  ADD KEY `idx_bpi_cmp` (`BPI_CMP`),
+  ADD KEY `idx_bpi_pa` (`BPI_PA`),
+  ADD KEY `idx_bpi_cbo` (`BPI_CBO`),
+  ADD KEY `idx_bpi_cnsmed` (`BPI_CNSMED`);
+
+--
 -- Índices de tabela `users`
 --
 ALTER TABLE `users`

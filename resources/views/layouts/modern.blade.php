@@ -118,6 +118,8 @@
                 $activeRoute = 'cismetro';
             } elseif (request()->routeIs('srub.*')) {
                 $activeRoute = 'srub';
+            } elseif (request()->routeIs('relatorios.bpi.*')) {
+                $activeRoute = 'bpi';
             } elseif (request()->routeIs('relatorios.apac.*')) {
                 $activeRoute = 'apac';
             } elseif (request()->routeIs('faturamento-prestador.*')) {

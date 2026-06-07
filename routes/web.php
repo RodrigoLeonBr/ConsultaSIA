@@ -75,6 +75,14 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
         Route::post('/relatorios/debug', [App\Http\Controllers\RelatorioController::class, 'debug'])->name('relatorios.debug');
         Route::get('/relatorios/test-excel', [App\Http\Controllers\RelatorioController::class, 'testExcel'])->name('relatorios.test-excel');
         
+        // Relatórios Produção Individualizada (s_bpi)
+        Route::get('/relatorios/bpi', [App\Http\Controllers\RelatorioBpiController::class, 'index'])->name('relatorios.bpi.index');
+        Route::get('/relatorios/bpi/fields', [App\Http\Controllers\RelatorioBpiController::class, 'getFields'])->name('relatorios.bpi.fields');
+        Route::get('/relatorios/bpi/lookup', [App\Http\Controllers\RelatorioBpiController::class, 'getLookupData'])->name('relatorios.bpi.lookup');
+        Route::post('/relatorios/bpi/generate', [App\Http\Controllers\RelatorioBpiController::class, 'generate'])->name('relatorios.bpi.generate');
+        Route::post('/relatorios/bpi/generate-matrix', [App\Http\Controllers\RelatorioBpiController::class, 'generateMatrix'])->name('relatorios.bpi.generate-matrix');
+        Route::post('/relatorios/bpi/debug', [App\Http\Controllers\RelatorioBpiController::class, 'debug'])->name('relatorios.bpi.debug');
+
         // Relatórios APAC/OCI (s_pap/s_apa)
         Route::get('/relatorios/apac', [App\Http\Controllers\RelatorioApacController::class, 'index'])->name('relatorios.apac.index');
         Route::get('/relatorios/apac/fields', [App\Http\Controllers\RelatorioApacController::class, 'getFields'])->name('relatorios.apac.fields');
