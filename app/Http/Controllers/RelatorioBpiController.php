@@ -32,6 +32,12 @@ class RelatorioBpiController extends BaseRelatorioController
                     'table' => 's_bpi',
                     'operators' => ['=', '>=', '<=', 'between']
                 ],
+                'BPI_MVM' => [
+                    'label' => 'Data Movimento',
+                    'type' => 'date',
+                    'table' => 's_bpi',
+                    'operators' => ['=', '>=', '<=', 'between']
+                ],
                 'BPI_UID' => [
                     'label' => 'Prestador',
                     'type' => 'lookup',
@@ -227,6 +233,11 @@ class RelatorioBpiController extends BaseRelatorioController
     protected function getCompetenciaField(): string
     {
         return 'BPI_CMP';
+    }
+
+    protected function getMovimentoField(): ?string
+    {
+        return 'BPI_MVM';
     }
 
     protected function getExportClass(): string
@@ -480,6 +491,9 @@ class RelatorioBpiController extends BaseRelatorioController
                     // Format competencia as YYYY-MM
                     $selectFields[] = DB::raw("CONCAT(SUBSTRING(sb.BPI_CMP, 1, 4), '-', SUBSTRING(sb.BPI_CMP, 5, 2)) as competencia");
                     $groupByFields[] = "sb.BPI_CMP";
+                } elseif ($field === 'BPI_MVM') {
+                    $selectFields[] = DB::raw("CONCAT(SUBSTRING(sb.BPI_MVM, 1, 4), '-', SUBSTRING(sb.BPI_MVM, 5, 2)) as movimento");
+                    $groupByFields[] = "sb.BPI_MVM";
                 } elseif ($field === 'grupo') {
                     $selectFields[] = DB::raw('SUBSTRING(sb.BPI_PA, 1, 2) as grupo');
                     $groupByFields[] = DB::raw('SUBSTRING(sb.BPI_PA, 1, 2)');
@@ -747,7 +761,9 @@ class RelatorioBpiController extends BaseRelatorioController
                 } elseif ($field === 'BPI_QT_P') {
                     $formatted['Quantidade Total'] = number_format((float)($row->total_quantidade ?? 0), 0, ',', '.');
                 } elseif ($field === 'BPI_CMP') {
-                    $formatted['Competência'] = $row->competencia ?? '';
+                    $formatted['Data Competência'] = $row->competencia ?? '';
+                } elseif ($field === 'BPI_MVM') {
+                    $formatted['Data Movimento'] = $row->movimento ?? '';
                 } elseif (in_array($field, $this->getFaixaEtariaFieldIds(), true)) {
                     $formatted[$fieldConfig['label']] = $row->{$field} ?? '';
                 } elseif ($field === 'BPI_IDADE') {
@@ -819,6 +835,12 @@ class RelatorioBpiController extends BaseRelatorioController
         $fields = [
             'BPI_CMP' => [
                 'label' => 'Data Competência',
+                'type' => 'date',
+                'table' => 's_bpi',
+                'operators' => ['=', '>=', '<=', 'between']
+            ],
+            'BPI_MVM' => [
+                'label' => 'Data Movimento',
                 'type' => 'date',
                 'table' => 's_bpi',
                 'operators' => ['=', '>=', '<=', 'between']

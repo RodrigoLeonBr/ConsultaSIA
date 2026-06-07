@@ -8,7 +8,41 @@ use Illuminate\Support\Facades\DB;
 trait HasMatrixReport
 {
     /**
-     * Generate matrix report based on competencia field
+     * Campo de data movimento para matriz (opcional; relatórios com CMP+MVM)
+     */
+    protected function getMovimentoField(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Campos elegíveis como eixo de colunas na matriz
+     */
+    protected function getMatrixPivotFieldCandidates(): array
+    {
+        $fields = [$this->getCompetenciaField()];
+        $movimento = $this->getMovimentoField();
+
+        if ($movimento) {
+            $fields[] = $movimento;
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Pivot fields selecionados (competência e/ou movimento)
+     */
+    protected function getSelectedMatrixPivotFields(array $selectedFields): array
+    {
+        return array_values(array_filter(
+            $this->getMatrixPivotFieldCandidates(),
+            fn ($field) => in_array($field, $selectedFields, true)
+        ));
+    }
+
+    /**
+     * Generate matrix report based on competencia or movimento field
      */
     public function generateMatrix(Request $request)
     {
@@ -16,21 +50,34 @@ trait HasMatrixReport
             $selectedFields = $request->get('fields', []);
             $filters = $request->get('filters', []);
             $format = $request->get('format', 'html');
-            
-            $competenciaField = $this->getCompetenciaField();
-            
-            // Validar que competência está selecionada
-            if (!in_array($competenciaField, $selectedFields)) {
+
+            $selectedPivot = $this->getSelectedMatrixPivotFields($selectedFields);
+            $pivotCandidates = $this->getMatrixPivotFieldCandidates();
+
+            if (count($selectedPivot) === 0) {
+                $labels = collect($pivotCandidates)
+                    ->map(fn ($field) => $this->getFieldConfig($field)['label'] ?? $field)
+                    ->implode('" ou "');
+
                 return response()->json([
-                    'error' => 'Campo "' . $this->getFieldConfig($competenciaField)['label'] . '" é obrigatório para visualização matriz'
+                    'error' => 'Para visualização matriz, selecione "Data Competência" ou "Data Movimento" (apenas um deles).'
                 ], 400);
             }
-            
-            // Validar que há pelo menos um campo além da competência
-            $groupFields = array_filter($selectedFields, fn($field) => $field !== $competenciaField);
+
+            if (count($selectedPivot) > 1) {
+                return response()->json([
+                    'error' => 'Não é possível selecionar "Data Competência" e "Data Movimento" ao mesmo tempo na matriz.'
+                ], 400);
+            }
+
+            $pivotField = $selectedPivot[0];
+            $pivotLabel = $this->getFieldConfig($pivotField)['label'] ?? $pivotField;
+
+            // Validar que há pelo menos um campo além do eixo temporal
+            $groupFields = array_filter($selectedFields, fn ($field) => $field !== $pivotField);
             if (empty($groupFields)) {
                 return response()->json([
-                    'error' => 'Pelo menos um campo além de "' . $this->getFieldConfig($competenciaField)['label'] . '" deve ser selecionado'
+                    'error' => 'Pelo menos um campo além de "' . $pivotLabel . '" deve ser selecionado'
                 ], 400);
             }
             
@@ -88,12 +135,12 @@ trait HasMatrixReport
     {
         $tableName = $this->getTableName();
         $tableAlias = $this->getTableAlias();
-        $competenciaField = $this->getCompetenciaField();
+        $pivotField = $this->getSelectedMatrixPivotFields($selectedFields)[0];
         
         $query = DB::table("{$tableName} as {$tableAlias}");
         
-        // Campos de agrupamento (exceto competência)
-        $groupFields = array_filter($selectedFields, fn($field) => $field !== $competenciaField);
+        // Campos de agrupamento (exceto eixo temporal da matriz)
+        $groupFields = array_filter($selectedFields, fn ($field) => $field !== $pivotField);
         
         // Verificar se precisa de joins
         $needsCismetro = collect($selectedFields)->contains(function($field) {
@@ -131,9 +178,9 @@ trait HasMatrixReport
         $selectFields = [];
         $groupByFields = [];
         
-        // Sempre incluir competência
-        $selectFields[] = "{$tableAlias}.{$competenciaField} as competencia";
-        $groupByFields[] = "{$tableAlias}.{$competenciaField}";
+        // Sempre incluir eixo temporal (competência ou movimento)
+        $selectFields[] = "{$tableAlias}.{$pivotField} as competencia";
+        $groupByFields[] = "{$tableAlias}.{$pivotField}";
         
         // Processar outros campos
         foreach ($groupFields as $field) {
@@ -181,8 +228,8 @@ trait HasMatrixReport
             $query->groupBy($groupByFields);
         }
         
-        // Ordenar por competência e primeiro campo de agrupamento
-        $query->orderBy("{$tableAlias}.{$competenciaField}");
+        // Ordenar por eixo temporal e primeiro campo de agrupamento
+        $query->orderBy("{$tableAlias}.{$pivotField}");
         if (!empty($groupByFields) && count($groupByFields) > 1) {
             $query->orderBy($groupByFields[1]);
         }
@@ -305,15 +352,15 @@ trait HasMatrixReport
      */
     protected function pivotData($data, $selectedFields)
     {
-        $competenciaField = $this->getCompetenciaField();
+        $pivotField = $this->getSelectedMatrixPivotFields($selectedFields)[0];
         $splitField = $this->getMatrixSplitField($selectedFields);
         
-        // Identificar competências únicas
+        // Identificar períodos únicos (competência ou movimento)
         $competencias = $data->pluck('competencia')->unique()->sort()->values();
         
-        // Identificar campos de agrupamento (excluindo competência e campo de quebra)
-        $groupFields = array_filter($selectedFields, function($field) use ($competenciaField, $splitField) {
-            return $field !== $competenciaField && $field !== $splitField;
+        // Identificar campos de agrupamento (excluindo eixo temporal e campo de quebra)
+        $groupFields = array_filter($selectedFields, function ($field) use ($pivotField, $splitField) {
+            return $field !== $pivotField && $field !== $splitField;
         });
         $numericFields = $this->getNumericFields($selectedFields);
         

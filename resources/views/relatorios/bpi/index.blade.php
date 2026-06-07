@@ -106,14 +106,14 @@
                             </label>
                             <label class="inline-flex items-center cursor-pointer group">
                                 <input type="radio" name="view_type" value="matrix" class="form-radio text-blue-600">
-                                <span class="ml-2 text-sm text-gray-700 group-hover:text-gray-900">Matriz por Competência</span>
+                                <span class="ml-2 text-sm text-gray-700 group-hover:text-gray-900">Matriz por Competência/Movimento</span>
                                 <span class="ml-1 text-xs text-gray-400 hidden sm:inline">(pivot table)</span>
                             </label>
                         </div>
                         <div id="visualization-help" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg" style="display: none;">
                             <div class="text-xs text-blue-800">
                                 <p class="mb-2"><strong>Lista Simples:</strong> Exibe dados em formato de tabela tradicional, uma linha por registro.</p>
-                                <p><strong>Matriz por Competência:</strong> Transforma competências em colunas e outros campos em linhas. Ideal para:</p>
+                                <p><strong>Matriz por Competência/Movimento:</strong> Transforma períodos (competência ou movimento) em colunas e outros campos em linhas. Selecione apenas um dos dois campos de data. Ideal para:</p>
                                 <ul class="list-disc list-inside mt-1 ml-2">
                                     <li>Análises temporais e comparativas</li>
                                     <li>Visualizar tendências por período</li>
@@ -122,7 +122,7 @@
                             </div>
                         </div>
                         <p class="text-xs text-gray-500 mt-2">
-                            <strong>Dica:</strong> A matriz funciona melhor com filtros de competência para limitar o período.
+                            <strong>Dica:</strong> A matriz funciona melhor com filtros de competência ou movimento para limitar o período.
                         </p>
                     </div>
 
@@ -231,6 +231,9 @@
         let selectedFields = [];
         let appliedFilters = [];
         let filterCounter = 0;
+        const COMPETENCIA_FIELD = 'BPI_CMP';
+        const MOVIMENTO_FIELD = 'BPI_MVM';
+        const MATRIX_DATE_FIELDS = [COMPETENCIA_FIELD, MOVIMENTO_FIELD];
         
         // Aliases para funções do módulo compartilhado
         const showLoading = RelatoriosBase.showLoading;
@@ -304,6 +307,11 @@
             // Field selection
             document.addEventListener('change', function(e) {
                 if (e.target.classList.contains('field-checkbox')) {
+                    enforceMatrixDateExclusion(e.target);
+                    updateSelectedFields();
+                }
+                if (e.target.name === 'view_type' && e.target.value === 'matrix') {
+                    enforceMatrixDateExclusionOnViewSwitch();
                     updateSelectedFields();
                 }
             });
@@ -330,19 +338,52 @@
                 .map(checkbox => checkbox.value);
             
             // Detectar se competência está selecionada para mostrar controles de matriz
-            checkCompetenciaSelection();
+            checkMatrixDateSelection();
         }
 
-        // Check if competencia field is selected and show/hide matrix controls
-        function checkCompetenciaSelection() {
-            const hasCompetencia = selectedFields.includes('BPI_CMP');
+        function uncheckField(fieldKey) {
+            const checkbox = document.getElementById(`field-${fieldKey}`);
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+        }
+
+        function getSelectedMatrixDateFields() {
+            return MATRIX_DATE_FIELDS.filter(field => selectedFields.includes(field));
+        }
+
+        function isMatrixViewSelected() {
+            return document.querySelector('input[name="view_type"][value="matrix"]')?.checked === true;
+        }
+
+        function enforceMatrixDateExclusion(checkbox) {
+            if (!isMatrixViewSelected() || !checkbox.checked) {
+                return;
+            }
+            if (checkbox.value === COMPETENCIA_FIELD) {
+                uncheckField(MOVIMENTO_FIELD);
+            } else if (checkbox.value === MOVIMENTO_FIELD) {
+                uncheckField(COMPETENCIA_FIELD);
+            }
+        }
+
+        function enforceMatrixDateExclusionOnViewSwitch() {
+            const selectedDates = MATRIX_DATE_FIELDS.filter(field =>
+                document.getElementById(`field-${field}`)?.checked
+            );
+            if (selectedDates.length > 1) {
+                uncheckField(MOVIMENTO_FIELD);
+            }
+        }
+
+        function checkMatrixDateSelection() {
+            const hasMatrixDate = getSelectedMatrixDateFields().length > 0;
             const visualizationControls = document.getElementById('visualization-controls');
             
-            if (hasCompetencia) {
+            if (hasMatrixDate) {
                 visualizationControls.style.display = 'block';
             } else {
                 visualizationControls.style.display = 'none';
-                // Reset to list view when competencia is not selected
                 document.querySelector('input[name="view_type"][value="list"]').checked = true;
             }
         }
@@ -530,8 +571,13 @@
             const isMatrixView = viewType === 'matrix';
             
             // Validar se matriz é possível
-            if (isMatrixView && !selectedFields.includes('BPI_CMP')) {
-                alert('Para visualização em matriz, o campo "Data Competência" deve estar selecionado.');
+            const selectedMatrixDates = getSelectedMatrixDateFields();
+            if (isMatrixView && selectedMatrixDates.length === 0) {
+                alert('Para visualização em matriz, selecione "Data Competência" ou "Data Movimento".');
+                return;
+            }
+            if (isMatrixView && selectedMatrixDates.length > 1) {
+                alert('Não é possível selecionar "Data Competência" e "Data Movimento" ao mesmo tempo na matriz.');
                 return;
             }
 

@@ -32,6 +32,12 @@ class RelatorioController extends BaseRelatorioController
                     'table' => 's_prd',
                     'operators' => ['=', '>=', '<=', 'between']
                 ],
+                'prd_mvm' => [
+                    'label' => 'Data Movimento',
+                    'type' => 'date',
+                    'table' => 's_prd',
+                    'operators' => ['=', '>=', '<=', 'between']
+                ],
                 'prd_uid' => [
                     'label' => 'Prestador',
                     'type' => 'lookup',
@@ -178,6 +184,11 @@ class RelatorioController extends BaseRelatorioController
     protected function getCompetenciaField(): string
     {
         return 'prd_cmp';
+    }
+
+    protected function getMovimentoField(): ?string
+    {
+        return 'prd_mvm';
     }
 
     protected function getExportClass(): string
@@ -366,6 +377,9 @@ class RelatorioController extends BaseRelatorioController
                     // Format competencia as YYYY-MM
                     $selectFields[] = DB::raw("CONCAT(SUBSTRING(sp.prd_cmp, 1, 4), '-', SUBSTRING(sp.prd_cmp, 5, 2)) as competencia");
                     $groupByFields[] = "sp.prd_cmp";
+                } elseif ($field === 'prd_mvm') {
+                    $selectFields[] = DB::raw("CONCAT(SUBSTRING(sp.prd_mvm, 1, 4), '-', SUBSTRING(sp.prd_mvm, 5, 2)) as movimento");
+                    $groupByFields[] = "sp.prd_mvm";
                 } elseif ($field === 'grupo') {
                     $selectFields[] = DB::raw('SUBSTRING(sp.prd_pa, 1, 2) as grupo');
                     $groupByFields[] = DB::raw('SUBSTRING(sp.prd_pa, 1, 2)');
@@ -619,7 +633,9 @@ class RelatorioController extends BaseRelatorioController
                 } elseif ($field === 'PRD_VL_P') {
                     $formatted['Valor Total'] = 'R$ ' . number_format((float)($row->total_valor ?? 0), 2, ',', '.');
                 } elseif ($field === 'prd_cmp') {
-                    $formatted['Competência'] = $row->competencia ?? '';
+                    $formatted['Data Competência'] = $row->competencia ?? '';
+                } elseif ($field === 'prd_mvm') {
+                    $formatted['Data Movimento'] = $row->movimento ?? '';
                 } elseif (in_array($field, $this->getFormaFieldIds(), true)) {
                     $formatted[$fieldConfig['label']] = $row->{$field} ?? '';
                 } else {
@@ -690,6 +706,12 @@ class RelatorioController extends BaseRelatorioController
         $fields = [
             'prd_cmp' => [
                 'label' => 'Data Competência',
+                'type' => 'date',
+                'table' => 's_prd',
+                'operators' => ['=', '>=', '<=', 'between']
+            ],
+            'prd_mvm' => [
+                'label' => 'Data Movimento',
                 'type' => 'date',
                 'table' => 's_prd',
                 'operators' => ['=', '>=', '<=', 'between']
