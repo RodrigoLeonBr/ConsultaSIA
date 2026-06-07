@@ -13,13 +13,13 @@ const worker_service_1 = require("./worker.service");
 const report_job_entity_1 = require("../reports/entities/report-job.entity");
 const report_result_header_entity_1 = require("../reports/entities/report-result-header.entity");
 const report_result_rows_entity_1 = require("../reports/entities/report-result-rows.entity");
-const s_pap_entity_1 = require("../sia/entities/s-pap.entity");
+const s_prd_entity_1 = require("../sia/entities/s-prd.entity");
 let WorkerModule = class WorkerModule {
 };
 exports.WorkerModule = WorkerModule;
 exports.WorkerModule = WorkerModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([report_job_entity_1.ReportJob, report_result_header_entity_1.ReportResultHeader, report_result_rows_entity_1.ReportResultRow, s_pap_entity_1.SPap])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([report_job_entity_1.ReportJob, report_result_header_entity_1.ReportResultHeader, report_result_rows_entity_1.ReportResultRow, s_prd_entity_1.SPrd])],
         providers: [worker_service_1.WorkerService],
     })
 ], WorkerModule);

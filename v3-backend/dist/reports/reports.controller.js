@@ -30,6 +30,10 @@ let ReportsController = class ReportsController {
     async getJobResults(jobId, page, limit) {
         return this.reportsService.getResultPage(jobId, page, limit);
     }
+    async downloadFile(id, res) {
+        const { fullPath, filename } = await this.reportsService.getJobFilePath(id);
+        res.download(fullPath, filename);
+    }
 };
 exports.ReportsController = ReportsController;
 __decorate([
@@ -55,6 +59,14 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number, Number]),
     __metadata("design:returntype", Promise)
 ], ReportsController.prototype, "getJobResults", null);
+__decorate([
+    (0, common_1.Get)('jobs/:id/download'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], ReportsController.prototype, "downloadFile", null);
 exports.ReportsController = ReportsController = __decorate([
     (0, common_1.Controller)('reports'),
     __metadata("design:paramtypes", [reports_service_1.ReportsService])

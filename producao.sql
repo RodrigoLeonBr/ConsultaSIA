@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 07/01/2026 às 12:25
+-- Tempo de geração: 07/06/2026 às 03:36
 -- Versão do servidor: 10.4.32-MariaDB
 -- Versão do PHP: 8.2.12
 
@@ -31,7 +31,7 @@ CREATE TABLE `cache` (
   `key` varchar(255) NOT NULL,
   `value` mediumtext NOT NULL,
   `expiration` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -43,7 +43,7 @@ CREATE TABLE `cache_locks` (
   `key` varchar(255) NOT NULL,
   `owner` varchar(255) NOT NULL,
   `expiration` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -52,18 +52,9 @@ CREATE TABLE `cache_locks` (
 --
 
 CREATE TABLE `cbo` (
-  `cbo` varchar(6) NOT NULL,
-  `ds_cbo` varchar(120) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Despejando dados para a tabela `cbo`
---
-
-INSERT INTO `cbo` (`cbo`, `ds_cbo`) VALUES
-('225125', 'MÉDICO CLÍNICO'),
-('225142', 'MÉDICO GINECOLOGISTA E OBSTETRA'),
-('225170', 'MÉDICO PEDIATRA');
+  `CBO` varchar(6) NOT NULL,
+  `DS_CBO` varchar(120) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
 
@@ -75,7 +66,7 @@ CREATE TABLE `cismetro` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `codigo` varchar(11) NOT NULL,
   `credenciamento` varchar(40) NOT NULL,
-  `grupo` varchar(40) NOT NULL,
+  `grupo` varchar(80) NOT NULL,
   `descricao` varchar(180) NOT NULL,
   `valor` decimal(15,2) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -96,7 +87,7 @@ CREATE TABLE `failed_jobs` (
   `payload` longtext NOT NULL,
   `exception` longtext NOT NULL,
   `failed_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -126,7 +117,7 @@ CREATE TABLE `jobs` (
   `reserved_at` int(10) UNSIGNED DEFAULT NULL,
   `available_at` int(10) UNSIGNED NOT NULL,
   `created_at` int(10) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -145,40 +136,7 @@ CREATE TABLE `job_batches` (
   `cancelled_at` int(11) DEFAULT NULL,
   `created_at` int(11) NOT NULL,
   `finished_at` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Estrutura para tabela `migrations`
---
-
-CREATE TABLE `migrations` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `migration` varchar(255) NOT NULL,
-  `batch` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Despejando dados para a tabela `migrations`
---
-
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
-(1, '0001_01_01_000000_create_users_table', 1),
-(2, '0001_01_01_000001_create_cache_table', 1),
-(3, '0001_01_01_000002_create_jobs_table', 1),
-(4, '2025_09_17_182713_create_cbo_table', 1),
-(5, '2025_09_17_182716_create_prestador_table', 1),
-(6, '2025_09_17_182717_create_procedimento_table', 1),
-(7, '2025_09_17_182718_create_s_rub_table', 1),
-(8, '2025_09_17_182719_create_s_prd_table', 1),
-(9, '2025_09_17_184500_add_must_change_password_to_users_table', 1),
-(12, '2025_10_16_191832_create_forma_table', 1),
-(13, '2025_10_22_125451_create_cismetro_table', 1),
-(14, '2025_10_23_130415_update_prestador_relatorio_field_size', 1),
-(15, '2025_12_17_152908_add_matrix_performance_indexes', 1),
-(17, '2025_09_19_160001_create_s_pap_table', 3),
-(19, '2025_09_19_160000_create_s_apa_table', 4);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -190,7 +148,7 @@ CREATE TABLE `password_reset_tokens` (
   `email` varchar(255) NOT NULL,
   `token` varchar(255) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -209,91 +167,70 @@ CREATE TABLE `prestador` (
   `ativo` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+
 --
--- Despejando dados para a tabela `prestador`
+-- Estrutura para tabela `procedimento`
 --
 
-INSERT INTO `prestador` (`re_cunid`, `re_cnome`, `re_tipo`, `cnpj`, `area`, `tipouni`, `relatorio`, `ativo`) VALUES
-('2048205', 'NUCLEO DE ESPECIALIDADES', 'P', NULL, 4, 'M', 'Aten??o Ambu', 1),
-('2080486', 'HOSP INFANTIL ANDRE LUIZ', 'P', '44.682.821/000', 4, 'M', 'Hospitalar', 1),
-('2082179', 'HOSPITAL SAO FRANCISCO', 'P', '43.252.758/000', 1, 'F', 'Hospitalar', 1),
-('2047020', 'P.M. 01 VILA MATHIENSEN', 'U', NULL, 10, 'M', 'Aten??o B?si', 1),
-('2047039', 'P.M. 02 PRAIA AZUL', 'U', NULL, 3, 'M', 'Aten??o B?si', 1),
-('2047047', 'P.M. 03 SAO VITO', 'U', NULL, 4, 'M', 'Aten??o B?si', 1),
-('2067471', 'P.M. 04 JD. GUANABARA', 'U', NULL, 4, 'M', 'Aten??o B?si', 1),
-('2063425', 'P.M. 05 VILA DAINESE', 'U', NULL, 7, 'M', 'Aten??o B?si', 1),
-('2028042', 'P.M. 06 JD. IPIRANGA', 'U', NULL, 8, 'M', 'Aten??o B?si', 1),
-('2028050', 'PRONTO SOCORRO ZANAGA', 'P', NULL, 2, 'M', 'Aten??o B?si', 1),
-('2028034', 'P.M. 10 ZANAGA II', 'U', NULL, 2, 'M', 'Aten??o B?si', 1),
-('2040530', 'P.M. 08 JD ALVORADA', 'U', NULL, 10, 'M', 'Aten??o B?si', 1),
-('2042592', 'P.M. 09 CARIOBINHA', 'U', NULL, 4, 'M', 'Aten??o B?si', 1),
-('2058790', 'FUSAME HOSP MUNICIPAL', 'M', '47.716.204/000', 5, 'M', 'Hospitalar', 1),
-('2075040', 'P.M. 11 - PQUE GRAMADO', 'U', NULL, 6, 'M', 'Aten??o B?si', 1),
-('2066289', 'P.M. 12 SAO LUIZ', 'U', NULL, 5, 'M', 'Aten??o B?si', 1),
-('2074923', 'P.M. 13 ANTONIO ZANAGA II', 'U', NULL, 2, 'M', 'Aten??o B?si', 1),
-('2033771', 'RAD SIDNEY S. ALMEIDA', 'P', '51.413.185/000', 1, 'P', 'Aten??o Ambu', 1),
-('2042584', 'CLINICA JONES', 'P', NULL, 1, 'P', 'Aten??o Ambu', 1),
-('2034271', 'CLIN MED. ODONTO ZANAGA', 'U', NULL, 2, 'M', 'Aten??o B?si', 1),
-('2040840', 'UNIDADE AMBULATORIAL D SAUDE MENTAL', 'P', NULL, 1, 'M', 'Aten??o Psic', 1),
-('2073420', 'P.M. 14 JARDIM BRASIL', 'U', NULL, 2, 'M', 'Aten??o B?si', 1),
-('2047985', 'UNIDADE DE VIGILANCIA EM SAUDE', 'P', NULL, 5, 'M', 'Aten??o Ambu', 1),
-('2066807', 'P.M. 15 SAO DOMINGOS', 'U', NULL, 7, 'M', 'Aten??o B?si', 1),
-('2027992', 'P.M. 16 VILA GALO', 'U', NULL, 9, 'M', 'Aten??o B?si', 1),
-('2688263', 'CORPO DE BOMBEIROS', 'P', NULL, 5, 'E', 'Aten??o Ambu', 1),
-('2030748', 'UNID ATEND DOMICILIAR', 'P', NULL, 9, 'M', 'Aten??o Ambu', 1),
-('2047993', 'P.M. 22 JD AMERICA II', 'U', NULL, 3, 'M', 'Aten??o B?si', 1),
-('2047977', 'POSTO MEDICO DO CAIC', 'U', '', 6, 'M', 'Atenção Bási', 0),
-('2047969', 'P.M. 19 PQ. DA LIBERDADE', 'U', NULL, 6, 'M', 'Aten??o B?si', 1),
-('2028026', 'APAE  - AMERICANA', 'P', NULL, 8, 'F', 'Aten??o Ambu', 1),
-('2073331', 'POSTO MEDICO 20 - CENTRAL', 'U', NULL, 1, 'M', 'Aten??o B?si', 1),
-('2066297', 'CENTRO FISIOT RE ESTETICA SC LTDA', 'P', NULL, 5, 'P', 'Aten??o Ambu', 1),
-('2067633', 'UNIFISIO FISIOTERAPIA E REAB S/C LT', 'P', '', 1, 'P', 'Atenção Ambu', 0),
-('2059045', 'LITOCLINICA', 'P', '02.267.972/000', 1, 'P', 'Aten??o Ambu', 1),
-('0009326', 'UNICAMP', 'P', '46.068.425/000', 0, 'M', 'Aten??o Ambu', 1),
-('2716607', 'CENTRO DE ATENCAO PSICO SOCIAL', 'P', NULL, 1, 'M', 'Aten??o Psic', 1),
-('2688239', 'FASP', 'P', NULL, 2, 'P', 'Aten??o Ambu', 1),
-('2688247', 'P.M. 21 PARQUE DAS NACOES', 'U', NULL, 6, 'M', 'Aten??o B?si', 1),
-('3939782', 'INSTITUTO DE OLHOS AMERICANA S/C LT', 'P', NULL, 8, 'P', 'Aten??o Ambu', 1),
-('5129915', 'CENTRO ATEN??O PSICOSOCIAL INFANTIL', 'P', '45781176000166', 9, 'M', 'Aten??o Psic', 1),
-('6063470', 'CENTRO ODONTOLOGICO INTEGRADO', 'U', '45781176000166', 2, 'M', 'Aten??o B?si', 1),
-('2067641', 'CETAM', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('6449786', 'ESF 24 MARIO COVAS', 'U', NULL, 0, 'M', 'Aten??o B?si', 1),
-('6458203', 'PM 17 SAO JOSE', 'U', NULL, 0, 'M', 'Aten??o B?si', 1),
-('6458130', 'ESF JAGUARI', 'U', NULL, 0, 'M', 'Aten??o B?si', 1),
-('6673554', 'UBS Cillos / CLIN FONO', 'U', NULL, 0, 'M', 'Aten??o B?si', 1),
-('6695965', 'CLINICA VIVERE', 'P', '11055873000118', 0, 'P', 'Aten??o Ambu', 1),
-('6928544', 'SAE - DST/HIV/AIDS', 'P', NULL, 0, 'M', 'Aten??o Ambu', 1),
-('3852989', 'PRO COR DO CORACAO LTDA', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('7169698', 'CAFI - CENTRO DE ASSIST?NCIA A FAMI', 'U', NULL, 0, 'M', 'Aten??o B?si', 1),
-('7218893', 'CENTRO AT ? SA?DE DO HOMEM E MULHER', 'U', NULL, 0, 'M', 'Aten??o B?si', 1),
-('7261004', 'INTERCARE CLINICA CARDIOLOGICA', 'P', '07313106000194', 0, 'P', 'Aten??o Ambu', 1),
-('7446861', 'CAPS AD - NOVA VIDA', 'P', NULL, 0, '', 'Aten??o Psic', 1),
-('7417772', 'ATRIUM', 'P', '00.777.199/000', 0, 'P', 'Aten??o Ambu', 1),
-('9580565', 'CONSULTEMED', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('9579885', 'CLINICA ADAMSON', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('3769054', 'WAGNER FRANCOZO', 'P', '', 0, 'P', 'Atenção Ambu', 0),
-('3599647', 'ROSANGELA GALLARDO DE MORAES', 'P', '', 0, 'P', 'Atenção Ambu', 0),
-('3597938', 'GUSTAVO LEME FRANCO DE ANDRADE', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('6101437', 'OTOFONO', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('9194983', 'CLIMED', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('3598128', 'CINCOR', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('9663134', 'CLINICA VITAL VIDA SAUDE E BEM ESTA', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('0148806', 'CLINICA DE ANGIOLOGIA DIACOV', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('9050965', 'CORREA & BERGAMO', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('2028077', 'DIGIMAX UNIDADE RADIOL?GICA', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('9971947', 'DUE VITAE', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('5881846', 'DA VINCI CL?NICA M?DICA/DR HERMINIO', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('9752749', 'CLINIPLAST - 20/20', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('9993452', 'ENDOSKOPICA', 'P', '25.107.055/000', 0, 'P', 'Aten??o Ambu', 1),
-('3120368', 'ASSISTENCIA E SA?DE', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('0751073', 'B&B SERVI?OS M?DICOS', 'P', '', 0, 'P', 'Atenção Ambu', 1),
-('3687554', 'CLINICA M?DICA C?SIMO', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('4006356', 'HDO', 'P', NULL, 0, 'P', 'Aten??o Ambu', 1),
-('7471777', 'UPA AVENIDA CILLOS', 'P', '', 0, 'P', 'Aten??o B?si', 1),
-('4032128', 'UBS DONA ROSA', 'U', '', 6, 'M', 'Aten??o B?si', 1),
-('7406207', 'CDP AMERICANA', 'U', '', 0, 'M', 'Aten??o B?si', 1),
-('4777220', 'UPA DONA ROSA', 'P', '', 0, 'P', 'Aten??o B?si', 1),
-('4781104', 'DIMAZE', 'P', '000000000', 0, 'P', 'Aten??o Ambu', 1);
+CREATE TABLE `procedimento` (
+  `codigo` varchar(10) NOT NULL DEFAULT '',
+  `procedimento` varchar(63) NOT NULL DEFAULT '',
+  `PA_TOTAL` decimal(12,2) DEFAULT 0.00,
+  `RUB_TOTAL` varchar(4) DEFAULT '',
+  `RUB_DC` varchar(40) DEFAULT '',
+  `PA_RUB` varchar(4) DEFAULT '',
+  `PA_ID` varchar(9) NOT NULL,
+  `FINANCIAMENTO` varchar(60) DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `report_job`
+--
+
+CREATE TABLE `report_job` (
+  `id` int(11) NOT NULL,
+  `status` enum('queued','running','done','failed') NOT NULL DEFAULT 'queued',
+  `type` varchar(80) NOT NULL,
+  `parameters` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`parameters`)),
+  `error_message` varchar(2000) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `started_at` datetime DEFAULT NULL,
+  `completed_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `report_result_header`
+--
+
+CREATE TABLE `report_result_header` (
+  `id` int(11) NOT NULL,
+  `job_id` int(11) NOT NULL,
+  `report_type` varchar(80) DEFAULT NULL,
+  `competence` varchar(6) DEFAULT NULL,
+  `total_rows_fetched` int(11) NOT NULL DEFAULT 0,
+  `columns_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`columns_json`)),
+  `source_tables_versions_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`source_tables_versions_json`)),
+  `ttl` datetime NOT NULL,
+  `created_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `report_result_rows`
+--
+
+CREATE TABLE `report_result_rows` (
+  `id` int(11) NOT NULL,
+  `header_id` int(11) NOT NULL,
+  `row_index` int(11) NOT NULL,
+  `row_json` longtext NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -308,7 +245,7 @@ CREATE TABLE `sessions` (
   `user_agent` text DEFAULT NULL,
   `payload` longtext NOT NULL,
   `last_activity` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -382,6 +319,46 @@ CREATE TABLE `s_apa` (
 -- --------------------------------------------------------
 
 --
+-- Estrutura para tabela `s_bpi`
+--
+
+CREATE TABLE `s_bpi` (
+  `BPI_UID` char(7) DEFAULT '',
+  `BPI_CMP` char(6) DEFAULT '',
+  `BPI_CNSMED` char(15) DEFAULT '',
+  `BPI_CBO` char(6) DEFAULT '',
+  `BPI_FLH` char(3) DEFAULT '',
+  `BPI_SEQ` char(2) DEFAULT '',
+  `BPI_PA` char(10) DEFAULT '',
+  `BPI_CNSPAC` char(15) DEFAULT '',
+  `BPI_NMPAC` char(30) DEFAULT '',
+  `BPI_DTNASC` char(8) DEFAULT '',
+  `BPI_SEXO` char(1) DEFAULT '',
+  `BPI_IBGE` char(6) DEFAULT '',
+  `BPI_DTATEN` char(8) DEFAULT '',
+  `BPI_CID` char(4) DEFAULT '',
+  `BPI_CATEN` char(2) DEFAULT '',
+  `BPI_NAUT` char(13) DEFAULT '',
+  `BPI_QT_P` int(6) DEFAULT 0,
+  `BPI_QT_A` int(6) DEFAULT 0,
+  `BPI_IDADE` int(3) DEFAULT 0,
+  `BPI_MVM` char(6) DEFAULT '',
+  `BPI_ORG` char(3) DEFAULT '',
+  `BPI_TPFIN` char(1) DEFAULT '',
+  `BPI_RMS` char(4) DEFAULT '',
+  `BPI_FLPA` char(1) DEFAULT '',
+  `BPI_FLCID` char(1) DEFAULT '',
+  `BPI_FLCBO` char(1) DEFAULT '',
+  `BPI_FLCA` char(1) DEFAULT '',
+  `BPI_FLIDA` char(1) DEFAULT '',
+  `BPI_FLQT` char(1) DEFAULT '',
+  `BPI_FLER` char(1) DEFAULT '',
+  `BPI_RACA` char(2) DEFAULT ''
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estrutura para tabela `s_pap`
 --
 
@@ -422,23 +399,63 @@ CREATE TABLE `s_pap` (
 -- --------------------------------------------------------
 
 --
+-- Estrutura para tabela `s_prd`
+--
+
+CREATE TABLE `s_prd` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `prd_uid` varchar(7) NOT NULL,
+  `prd_cmp` varchar(6) NOT NULL,
+  `prd_flh` char(3) NOT NULL,
+  `prd_seq` char(2) NOT NULL,
+  `prd_pa` varchar(10) NOT NULL,
+  `prd_cbo` varchar(8) NOT NULL,
+  `PRD_IDADE` int(3) DEFAULT NULL,
+  `PRD_QT_P` int(6) DEFAULT NULL,
+  `PRD_QT_A` int(6) DEFAULT NULL,
+  `PRD_VL_P` decimal(15,2) DEFAULT NULL,
+  `PRD_VL_A` decimal(15,2) DEFAULT NULL,
+  `PRD_MVM` varchar(6) DEFAULT '',
+  `PRD_ORG` char(3) DEFAULT '',
+  `PRD_FLPA` char(1) DEFAULT '',
+  `PRD_FLCBO` char(1) DEFAULT '',
+  `PRD_FLCA` char(1) DEFAULT '',
+  `PRD_FLIDA` char(1) DEFAULT '',
+  `PRD_FLQT` char(1) DEFAULT '',
+  `PRD_FLER` char(1) DEFAULT '',
+  `PRD_APANUM` varchar(13) DEFAULT '',
+  `PRD_CNSMED` varchar(15) DEFAULT NULL,
+  `PRD_RMS` varchar(4) DEFAULT '',
+  `PRD_CNPJ` varchar(14) DEFAULT '',
+  `PRD_NFIS` varchar(6) DEFAULT '',
+  `PRD_RESID` varchar(6) DEFAULT '',
+  `PRD_RUB` varchar(6) DEFAULT '',
+  `PRD_CPX` char(1) DEFAULT '',
+  `PRD_TPFIN` char(1) DEFAULT '',
+  `PRD_QTDATR` int(6) DEFAULT NULL,
+  `PRD_QTDATU` int(6) DEFAULT NULL,
+  `PRD_RC` varchar(4) DEFAULT '',
+  `PRD_CIDPRI` varchar(6) DEFAULT '',
+  `PRD_CIDSEC` varchar(6) DEFAULT '',
+  `PRD_CIDCAS` varchar(6) DEFAULT '',
+  `PRD_INCOUT` varchar(4) DEFAULT '',
+  `PRD_INCURG` varchar(4) DEFAULT '',
+  `grupo` varchar(2) GENERATED ALWAYS AS (left(`prd_pa`,2)) STORED,
+  `subgrupo` varchar(4) GENERATED ALWAYS AS (left(`prd_pa`,4)) STORED,
+  `forma` varchar(6) GENERATED ALWAYS AS (left(`prd_pa`,6)) STORED
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estrutura para tabela `s_rub`
 --
 
 CREATE TABLE `s_rub` (
-  `rub_id` char(4) NOT NULL,
-  `rub_dc` char(40) NOT NULL DEFAULT '',
-  `rub_total` char(2) NOT NULL DEFAULT ''
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Despejando dados para a tabela `s_rub`
---
-
-INSERT INTO `s_rub` (`rub_id`, `rub_dc`, `rub_total`) VALUES
-('01', 'TESOURO NACIONAL', ''),
-('02', 'RECURSOS PRÓPRIOS', ''),
-('03', 'CONVÊNIOS', '');
+  `RUB_ID` char(4) NOT NULL DEFAULT '',
+  `RUB_DC` char(40) NOT NULL DEFAULT '',
+  `RUB_TOTAL` char(2) DEFAULT ''
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -459,14 +476,7 @@ CREATE TABLE `users` (
   `password_changed_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Despejando dados para a tabela `users`
---
-
-INSERT INTO `users` (`id`, `username`, `password`, `email`, `first_name`, `last_name`, `role`, `active`, `must_change_password`, `password_changed_at`, `created_at`, `updated_at`) VALUES
-(1, 'admin', '$2y$12$RnFF6RB5JhbqzhxDqz7ki.0Cz47kcgmsCNt6dATL2ZcS2//bVTTV.', 'admin@sistema.com', 'Administrador', 'Sistema', 'admin', 1, 0, '2025-12-24 04:10:24', '2025-12-24 04:10:25', '2025-12-24 04:10:25');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Índices para tabelas despejadas
@@ -483,12 +493,6 @@ ALTER TABLE `cache`
 --
 ALTER TABLE `cache_locks`
   ADD PRIMARY KEY (`key`);
-
---
--- Índices de tabela `cbo`
---
-ALTER TABLE `cbo`
-  ADD PRIMARY KEY (`cbo`);
 
 --
 -- Índices de tabela `cismetro`
@@ -529,12 +533,6 @@ ALTER TABLE `job_batches`
   ADD PRIMARY KEY (`id`);
 
 --
--- Índices de tabela `migrations`
---
-ALTER TABLE `migrations`
-  ADD PRIMARY KEY (`id`);
-
---
 -- Índices de tabela `password_reset_tokens`
 --
 ALTER TABLE `password_reset_tokens`
@@ -549,6 +547,34 @@ ALTER TABLE `prestador`
   ADD KEY `idx_ativo` (`ativo`);
 
 --
+-- Índices de tabela `procedimento`
+--
+ALTER TABLE `procedimento`
+  ADD PRIMARY KEY (`codigo`),
+  ADD KEY `idx_pa_id` (`PA_ID`);
+
+--
+-- Índices de tabela `report_job`
+--
+ALTER TABLE `report_job`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_status_created` (`status`,`created_at`);
+
+--
+-- Índices de tabela `report_result_header`
+--
+ALTER TABLE `report_result_header`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_job_id` (`job_id`);
+
+--
+-- Índices de tabela `report_result_rows`
+--
+ALTER TABLE `report_result_rows`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_header_idx` (`header_id`,`row_index`);
+
+--
 -- Índices de tabela `sessions`
 --
 ALTER TABLE `sessions`
@@ -560,27 +586,35 @@ ALTER TABLE `sessions`
 -- Índices de tabela `s_apa`
 --
 ALTER TABLE `s_apa`
-  ADD KEY `s_apa_apa_num_index` (`APA_NUM`),
-  ADD KEY `s_apa_apa_uid_index` (`APA_UID`),
-  ADD KEY `s_apa_apa_pripal_index` (`APA_PRIPAL`),
-  ADD KEY `s_apa_apa_mvm_index` (`APA_MVM`);
+  ADD KEY `idx_apa_num` (`APA_NUM`),
+  ADD KEY `idx_apa_uid` (`APA_UID`),
+  ADD KEY `idx_apa_pripal` (`APA_PRIPAL`),
+  ADD KEY `idx_apa_mvm` (`APA_MVM`);
 
 --
 -- Índices de tabela `s_pap`
 --
 ALTER TABLE `s_pap`
   ADD KEY `idx_pap_composite` (`PAP_UID`,`PAP_CMP`,`PAP_NUM`),
-  ADD KEY `s_pap_pap_num_index` (`PAP_NUM`),
-  ADD KEY `s_pap_pap_uid_index` (`PAP_UID`),
-  ADD KEY `s_pap_pap_pa_index` (`PAP_PA`),
-  ADD KEY `s_pap_pap_cbo_index` (`PAP_CBO`),
-  ADD KEY `s_pap_pap_mvm_index` (`PAP_MVM`);
+  ADD KEY `idx_pap_num` (`PAP_NUM`),
+  ADD KEY `idx_pap_uid` (`PAP_UID`),
+  ADD KEY `idx_pap_pa` (`PAP_PA`),
+  ADD KEY `idx_pap_cbo` (`PAP_CBO`),
+  ADD KEY `idx_pap_mvm` (`PAP_MVM`);
 
 --
--- Índices de tabela `s_rub`
+-- Índices de tabela `s_prd`
 --
-ALTER TABLE `s_rub`
-  ADD PRIMARY KEY (`rub_id`);
+ALTER TABLE `s_prd`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_composite` (`prd_uid`,`prd_cmp`,`prd_flh`,`prd_seq`),
+  ADD KEY `idx_prd_uid` (`prd_uid`),
+  ADD KEY `idx_prd_cmp` (`prd_cmp`),
+  ADD KEY `idx_prd_pa` (`prd_pa`),
+  ADD KEY `idx_prd_cbo` (`prd_cbo`),
+  ADD KEY `idx_grupo` (`grupo`),
+  ADD KEY `idx_subgrupo` (`subgrupo`),
+  ADD KEY `idx_forma` (`forma`);
 
 --
 -- Índices de tabela `users`
@@ -610,22 +644,46 @@ ALTER TABLE `failed_jobs`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de tabela `forma`
+--
+ALTER TABLE `forma`
+  MODIFY `id_registro` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de tabela `jobs`
 --
 ALTER TABLE `jobs`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de tabela `migrations`
+-- AUTO_INCREMENT de tabela `report_job`
 --
-ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+ALTER TABLE `report_job`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `report_result_header`
+--
+ALTER TABLE `report_result_header`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `report_result_rows`
+--
+ALTER TABLE `report_result_rows`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `s_prd`
+--
+ALTER TABLE `s_prd`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de tabela `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

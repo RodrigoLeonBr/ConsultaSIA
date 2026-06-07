@@ -16,6 +16,7 @@ exports.ReportsService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
+const path_1 = require("path");
 const report_job_entity_1 = require("./entities/report-job.entity");
 const report_result_header_entity_1 = require("./entities/report-result-header.entity");
 const report_result_rows_entity_1 = require("./entities/report-result-rows.entity");
@@ -61,6 +62,23 @@ let ReportsService = class ReportsService {
                 totalRowsFetched: count,
             }
         };
+    }
+    async getJobFilePath(jobId) {
+        const header = await this.headerRepository.findOne({
+            where: { job: { id: jobId } },
+            relations: ['job'],
+        });
+        if (!header) {
+            throw new common_1.NotFoundException(`Resultado do job #${jobId} não encontrado.`);
+        }
+        const filePath = header.sourceTablesVersionsJson?.filePath;
+        const format = header.sourceTablesVersionsJson?.format ?? 'bin';
+        if (!filePath) {
+            throw new common_1.NotFoundException(`O job #${jobId} não possui arquivo para download.`);
+        }
+        const fullPath = (0, path_1.join)(process.cwd(), 'uploads', filePath);
+        const filename = `relatorio-${jobId}.${format}`;
+        return { fullPath, format, filename };
     }
 };
 exports.ReportsService = ReportsService;

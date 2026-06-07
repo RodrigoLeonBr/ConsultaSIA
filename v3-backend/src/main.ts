@@ -8,6 +8,11 @@ async function bootstrap() {
   // Habilita validação global (Transforma DTOs e impõe pipes)
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }));
 
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    methods: ['GET', 'POST'],
+  });
+
   // Interceptador para medir Response Time / p95 do endpoint
   app.useGlobalInterceptors(new LoggingInterceptor());
 

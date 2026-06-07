@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { join } from 'path';
 import { ReportJob } from './entities/report-job.entity';
 import { ReportResultHeader } from './entities/report-result-header.entity';
 import { ReportResultRow } from './entities/report-result-rows.entity';
@@ -55,5 +56,32 @@ export class ReportsService {
                 totalRowsFetched: count,
             }
         };
+    }
+
+    /**
+     * Retorna o path absoluto do arquivo gerado por um job de exportação.
+     * Lança NotFoundException se o job não existir, não for exportação ou não tiver arquivo.
+     */
+    async getJobFilePath(jobId: number): Promise<{ fullPath: string; format: string; filename: string }> {
+        const header = await this.headerRepository.findOne({
+            where: { job: { id: jobId } },
+            relations: ['job'],
+        });
+
+        if (!header) {
+            throw new NotFoundException(`Resultado do job #${jobId} não encontrado.`);
+        }
+
+        const filePath: string | undefined = header.sourceTablesVersionsJson?.filePath;
+        const format: string = header.sourceTablesVersionsJson?.format ?? 'bin';
+
+        if (!filePath) {
+            throw new NotFoundException(`O job #${jobId} não possui arquivo para download.`);
+        }
+
+        const fullPath = join(process.cwd(), 'uploads', filePath);
+        const filename = `relatorio-${jobId}.${format}`;
+
+        return { fullPath, format, filename };
     }
 }

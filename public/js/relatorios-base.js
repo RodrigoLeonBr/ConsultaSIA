@@ -226,18 +226,22 @@ const RelatoriosBase = (function () {
             return;
         }
 
-        // Check if we have multiple providers (prestadores structure)
+        // Múltiplas tabelas: quebra por prestador, tipo de relatório, etc.
         if (matrixData.prestadores && Object.keys(matrixData.prestadores).length > 0) {
             let html = '';
+            const splitLabels = {
+                prd_uid: 'Prestador',
+                tipo_relatorio: 'Tipo de Relatório'
+            };
+            const splitLabel = splitLabels[matrixData.split_field] || 'Grupo';
 
-            // Loop through each provider and render a table
-            Object.values(matrixData.prestadores).forEach(prestadorData => {
+            Object.values(matrixData.prestadores).forEach(sectionData => {
                 html += `
                     <div class="mb-8 border-b-4 border-blue-200 pb-8 last:border-0 last:pb-0">
                         <h3 class="text-lg font-bold text-gray-800 mb-3 px-1 border-l-4 border-blue-500 pl-2">
-                            ${prestadorData.nome || 'Prestador Sem Nome'}
+                            ${splitLabel}: ${sectionData.nome || 'Sem nome'}
                         </h3>
-                        ${renderMatrixTable(prestadorData)}
+                        ${renderMatrixTable(sectionData)}
                     </div>
                 `;
             });

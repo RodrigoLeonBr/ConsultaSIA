@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(mysql:*)",
+      "Bash(/e/xampp/mysql/bin/mysql.exe:*)",
+      "Bash(python3:*)",
+      "Bash(netstat:*)",
+      "Bash(npm run start:worker:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(node:*)",
+      "Bash(node -e:*)",
+      "Bash(\"e:/xampp/htdocs/consultasia/v3-frontend/src/pages/JobResultsPage.tsx\":*)"
+    ]
+  }
+}

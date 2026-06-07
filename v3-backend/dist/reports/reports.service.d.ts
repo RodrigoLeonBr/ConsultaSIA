@@ -18,4 +18,9 @@ export declare class ReportsService {
             totalRowsFetched: number;
         };
     }>;
+    getJobFilePath(jobId: number): Promise<{
+        fullPath: string;
+        format: string;
+        filename: string;
+    }>;
 }

@@ -7,6 +7,10 @@ const logging_interceptor_1 = require("./common/interceptors/logging.interceptor
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.useGlobalPipes(new common_1.ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }));
+    app.enableCors({
+        origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+        methods: ['GET', 'POST'],
+    });
     app.useGlobalInterceptors(new logging_interceptor_1.LoggingInterceptor());
     if (process.env.RUN_WORKER !== 'true') {
         await app.listen(process.env.PORT ?? 3000);

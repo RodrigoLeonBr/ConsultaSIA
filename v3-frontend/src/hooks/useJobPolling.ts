@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import { apiEndpoints } from '../services/api';
 
 interface JobResponse {
     id: number;
     status: 'queued' | 'running' | 'done' | 'failed';
-    error_message: string | null;
+    errorMessage: string | null;
 }
 
-export function useJobPolling(jobId: number | null) {
+export function useJobPolling(jobId: number | null, intervalMs: number = 2000) {
     const [status, setStatus] = useState<JobResponse['status'] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const isPolling = useRef(false);
@@ -25,13 +25,13 @@ export function useJobPolling(jobId: number | null) {
 
         const checkStatus = async () => {
             try {
-                const { data } = await axios.get<JobResponse>(`http://localhost:3000/reports/jobs/${jobId}`);
+                const { data } = await apiEndpoints.getJobStatus(jobId);
                 setStatus(data.status);
 
                 if (data.status === 'done' || data.status === 'failed') {
                     isPolling.current = false;
                     if (data.status === 'failed') {
-                        setError(data.error_message || 'Erro desconhecido durante o processamento.');
+                        setError(data.errorMessage || 'Erro desconhecido durante o processamento.');
                     }
                 }
             } catch (err: any) {
@@ -51,7 +51,7 @@ export function useJobPolling(jobId: number | null) {
                 return;
             }
             checkStatus();
-        }, 2000);
+        }, intervalMs);
 
         return () => {
             isPolling.current = false;

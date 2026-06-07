@@ -122,6 +122,10 @@ trait HasMatrixReport
             });
             $joins[] = 'cismetro';
         }
+
+        if (method_exists($this, 'addReportJoins')) {
+            $this->addReportJoins($query, $selectedFields, $filters, $tableAlias, $joins);
+        }
         
         // Campos de seleção
         $selectFields = [];
@@ -152,6 +156,13 @@ trait HasMatrixReport
                 // Campo apenas para filtro, ignorar na seleção/agrupamento
                 continue;
             } else {
+                $customFields = $this->getMatrixLookupFields($field, $tableAlias);
+                if (!empty($customFields['select'])) {
+                    $selectFields = array_merge($selectFields, $customFields['select']);
+                    $groupByFields = array_merge($groupByFields, $customFields['groupBy']);
+                    continue;
+                }
+
                 // Campos de texto simples
                 $selectFields[] = "{$tableAlias}.{$field}";
                 $groupByFields[] = "{$tableAlias}.{$field}";
@@ -267,26 +278,47 @@ trait HasMatrixReport
     }
 
     /**
+     * Campos que geram múltiplas tabelas na visualização matriz (ordem = prioridade)
+     */
+    protected function getMatrixSplitCandidates(): array
+    {
+        return [$this->getPrestadorField()];
+    }
+
+    /**
+     * Campo ativo para quebra da matriz em múltiplas tabelas
+     */
+    protected function getMatrixSplitField($selectedFields)
+    {
+        foreach ($this->getMatrixSplitCandidates() as $candidate) {
+            if ($candidate && in_array($candidate, $selectedFields, true)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Transform linear data into pivot structure
-     * Supports grouping by prestador if prestador field is present
+     * Supports grouping by split field (e.g. prestador, tipo_relatorio)
      */
     protected function pivotData($data, $selectedFields)
     {
         $competenciaField = $this->getCompetenciaField();
-        $prestadorField = $this->getPrestadorFieldForMatrix($selectedFields);
+        $splitField = $this->getMatrixSplitField($selectedFields);
         
         // Identificar competências únicas
         $competencias = $data->pluck('competencia')->unique()->sort()->values();
         
-        // Identificar campos de agrupamento (excluindo competência e prestador se presente)
-        $groupFields = array_filter($selectedFields, function($field) use ($competenciaField, $prestadorField) {
-            return $field !== $competenciaField && $field !== $prestadorField;
+        // Identificar campos de agrupamento (excluindo competência e campo de quebra)
+        $groupFields = array_filter($selectedFields, function($field) use ($competenciaField, $splitField) {
+            return $field !== $competenciaField && $field !== $splitField;
         });
         $numericFields = $this->getNumericFields($selectedFields);
         
-        // Se há campo de prestador, agrupar por prestador
-        if ($prestadorField) {
-            return $this->pivotDataByPrestador($data, $competencias, $groupFields, $numericFields, $prestadorField);
+        if ($splitField) {
+            return $this->pivotDataBySplitField($data, $competencias, $groupFields, $numericFields, $splitField);
         }
         
         // Estrutura de resultado padrão (sem agrupamento por prestador)
@@ -366,13 +398,12 @@ trait HasMatrixReport
     }
     
     /**
-     * Transform data into pivot structure grouped by prestador
+     * Transform data into pivot structure grouped by split field
      */
-    protected function pivotDataByPrestador($data, $competencias, $groupFields, $numericFields, $prestadorField)
+    protected function pivotDataBySplitField($data, $competencias, $groupFields, $numericFields, $splitField)
     {
-        // Agrupar dados por prestador primeiro
-        $prestadorGroups = $data->groupBy(function($item) use ($prestadorField) {
-            return $this->getPrestadorKey($item, $prestadorField);
+        $splitGroups = $data->groupBy(function ($item) use ($splitField) {
+            return $this->getSplitGroupKey($item, $splitField);
         });
         
         $result = [
@@ -382,29 +413,26 @@ trait HasMatrixReport
                     'label' => $this->formatCompetencia($comp)
                 ];
             }),
-            'prestadores' => []
+            'prestadores' => [],
+            'split_field' => $splitField,
         ];
         
-        // Processar cada prestador
-        foreach ($prestadorGroups as $prestadorKey => $prestadorData) {
-            $prestadorInfo = $this->getPrestadorInfo($prestadorData->first(), $prestadorField);
-            $prestadorCode = $prestadorInfo['code'];
-            $prestadorNome = $prestadorInfo['nome'];
+        foreach ($splitGroups as $splitKey => $splitData) {
+            $splitInfo = $this->getSplitGroupInfo($splitData->first(), $splitField);
+            $splitCode = $splitInfo['code'];
+            $splitNome = $splitInfo['nome'];
             
-            // Criar estrutura de matriz para este prestador
-            $prestadorMatrix = [
+            $splitMatrix = [
                 'competencias' => $result['competencias'],
                 'rows' => [],
                 'totals' => [],
                 'grand_totals' => []
             ];
             
-            // Agrupar dados por categoria (linhas) para este prestador
-            $groupedData = $prestadorData->groupBy(function($item) use ($groupFields) {
+            $groupedData = $splitData->groupBy(function($item) use ($groupFields) {
                 return $this->getGroupKey($item, $groupFields);
             });
             
-            // Processar cada grupo (linha da matriz)
             foreach ($groupedData as $groupKey => $groupItems) {
                 $rowData = [
                     'category' => $this->formatRowCategory($groupKey, $groupFields),
@@ -412,7 +440,6 @@ trait HasMatrixReport
                     'totals' => []
                 ];
                 
-                // Inicializar valores para todas as competências
                 foreach ($competencias as $comp) {
                     $rowData['values'][$comp] = [];
                     foreach ($numericFields as $field) {
@@ -420,7 +447,6 @@ trait HasMatrixReport
                     }
                 }
                 
-                // Preencher valores reais
                 foreach ($groupItems as $item) {
                     $comp = $item->competencia;
                     foreach ($numericFields as $field) {
@@ -429,7 +455,6 @@ trait HasMatrixReport
                     }
                 }
                 
-                // Calcular totais da linha
                 foreach ($numericFields as $field) {
                     $rowData['totals'][$field] = 0;
                     foreach ($competencias as $comp) {
@@ -437,30 +462,28 @@ trait HasMatrixReport
                     }
                 }
                 
-                $prestadorMatrix['rows'][] = $rowData;
+                $splitMatrix['rows'][] = $rowData;
             }
             
-            // Calcular totais das colunas para este prestador
             foreach ($competencias as $comp) {
-                $prestadorMatrix['totals'][$comp] = [];
+                $splitMatrix['totals'][$comp] = [];
                 foreach ($numericFields as $field) {
-                    $prestadorMatrix['totals'][$comp][$field] = 0;
-                    foreach ($prestadorMatrix['rows'] as $row) {
-                        $prestadorMatrix['totals'][$comp][$field] += $row['values'][$comp][$field] ?? 0;
+                    $splitMatrix['totals'][$comp][$field] = 0;
+                    foreach ($splitMatrix['rows'] as $row) {
+                        $splitMatrix['totals'][$comp][$field] += $row['values'][$comp][$field] ?? 0;
                     }
                 }
             }
             
-            // Calcular total geral para este prestador
             foreach ($numericFields as $field) {
-                $prestadorMatrix['grand_totals'][$field] = 0;
+                $splitMatrix['grand_totals'][$field] = 0;
                 foreach ($competencias as $comp) {
-                    $prestadorMatrix['grand_totals'][$field] += $prestadorMatrix['totals'][$comp][$field] ?? 0;
+                    $splitMatrix['grand_totals'][$field] += $splitMatrix['totals'][$comp][$field] ?? 0;
                 }
             }
             
-            $result['prestadores'][$prestadorCode] = array_merge($prestadorMatrix, [
-                'nome' => $prestadorNome
+            $result['prestadores'][$splitCode] = array_merge($splitMatrix, [
+                'nome' => $splitNome
             ]);
         }
         
@@ -468,33 +491,28 @@ trait HasMatrixReport
     }
     
     /**
-     * Get prestador field name for matrix grouping (if present in selected fields)
+     * @deprecated Use getMatrixSplitField()
      */
     protected function getPrestadorFieldForMatrix($selectedFields)
     {
-        $prestadorField = $this->getPrestadorField();
-        return in_array($prestadorField, $selectedFields) ? $prestadorField : null;
+        return $this->getMatrixSplitField($selectedFields);
     }
     
-    /**
-     * Get prestador key from item
-     */
-    protected function getPrestadorKey($item, $prestadorField)
+    protected function getSplitGroupKey($item, $splitField)
     {
-        return $this->getGroupKeyPart($item, $prestadorField);
+        return $this->getGroupKeyPart($item, $splitField);
     }
     
-    /**
-     * Get prestador info (code and name) from item
-     */
-    protected function getPrestadorInfo($item, $prestadorField)
+    protected function getSplitGroupInfo($item, $splitField)
     {
-        $key = $this->getPrestadorKey($item, $prestadorField);
+        $key = $this->getSplitGroupKey($item, $splitField);
         $parts = explode('|', $key);
+        $fieldConfig = $this->getFieldConfig($splitField);
+        $fallback = $fieldConfig['label'] ?? 'Grupo';
         
         return [
             'code' => $parts[0] ?? '',
-            'nome' => $parts[1] ?? $parts[0] ?? 'Prestador Desconhecido'
+            'nome' => $parts[1] ?? $parts[0] ?? "{$fallback} não informado"
         ];
     }
 
@@ -607,11 +625,10 @@ trait HasMatrixReport
         try {
             $exportClass = $this->getMatrixExportClass();
             $numericFields = $this->getNumericFields($selectedFields);
-            $prestadorField = $this->getPrestadorFieldForMatrix($selectedFields);
+            $splitField = $this->getMatrixSplitField($selectedFields);
             
-            // Se há prestador e dados agrupados por prestador, usar exportação com múltiplas planilhas
-            if ($prestadorField && isset($pivotData['prestadores'])) {
-                $export = new \App\Exports\MatrixReportByPrestadorExport($pivotData, $numericFields, $prestadorField);
+            if ($splitField && isset($pivotData['prestadores'])) {
+                $export = new \App\Exports\MatrixReportByPrestadorExport($pivotData, $numericFields, $splitField);
             } else {
                 $export = new $exportClass($pivotData, $numericFields);
             }

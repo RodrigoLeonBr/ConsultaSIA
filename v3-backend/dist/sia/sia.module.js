@@ -11,13 +11,13 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const sia_controller_1 = require("./sia.controller");
 const sia_service_1 = require("./sia.service");
-const s_pap_entity_1 = require("./entities/s-pap.entity");
+const s_prd_entity_1 = require("./entities/s-prd.entity");
 let SiaModule = class SiaModule {
 };
 exports.SiaModule = SiaModule;
 exports.SiaModule = SiaModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([s_pap_entity_1.SPap])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([s_prd_entity_1.SPrd])],
         controllers: [sia_controller_1.SiaController],
         providers: [sia_service_1.SiaService],
     })

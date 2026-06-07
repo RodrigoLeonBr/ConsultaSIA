@@ -16,6 +16,8 @@ exports.SiaController = void 0;
 const common_1 = require("@nestjs/common");
 const sia_service_1 = require("./sia.service");
 const get_sia_reports_dto_1 = require("./dto/get-sia-reports.dto");
+const get_billing_provider_dto_1 = require("./dto/get-billing-provider.dto");
+const sia_production_query_dto_1 = require("./dto/sia-production-query.dto");
 let SiaController = class SiaController {
     siaService;
     constructor(siaService) {
@@ -23,6 +25,15 @@ let SiaController = class SiaController {
     }
     async getReports(query) {
         return this.siaService.getReports(query);
+    }
+    async getBillingProvider(query) {
+        return this.siaService.getBillingProvider(query);
+    }
+    getMetadata() {
+        return this.siaService.getMetadata();
+    }
+    async getProduction(body) {
+        return this.siaService.getDynamicProduction(body);
     }
 };
 exports.SiaController = SiaController;
@@ -33,6 +44,26 @@ __decorate([
     __metadata("design:paramtypes", [get_sia_reports_dto_1.GetSiaReportsDto]),
     __metadata("design:returntype", Promise)
 ], SiaController.prototype, "getReports", null);
+__decorate([
+    (0, common_1.Get)('faturamento-prestador'),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [get_billing_provider_dto_1.GetBillingProviderDto]),
+    __metadata("design:returntype", Promise)
+], SiaController.prototype, "getBillingProvider", null);
+__decorate([
+    (0, common_1.Get)('metadata'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], SiaController.prototype, "getMetadata", null);
+__decorate([
+    (0, common_1.Post)('production'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [sia_production_query_dto_1.SiaProductionQueryDto]),
+    __metadata("design:returntype", Promise)
+], SiaController.prototype, "getProduction", null);
 exports.SiaController = SiaController = __decorate([
     (0, common_1.Controller)('reports/sia'),
     __metadata("design:paramtypes", [sia_service_1.SiaService])

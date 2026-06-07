@@ -16,9 +16,18 @@ export class ReportResultHeader {
     @Column({ name: 'row_count', default: 0 })
     rowCount: number;
 
+    @Column({ type: 'varchar', name: 'competence', length: 10, nullable: true })
+    competence: string | null;
+
+    @Column({ type: 'varchar', name: 'filters_hash', length: 64, nullable: true })
+    filtersHash: string | null;
+
     @Column({ type: 'json', nullable: true, name: 'source_tables_versions_json' })
     sourceTablesVersionsJson: any;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
+
+    @Column({ type: 'timestamp', nullable: true, name: 'ttl_expires_at' })
+    ttlExpiresAt: Date | null;
 }

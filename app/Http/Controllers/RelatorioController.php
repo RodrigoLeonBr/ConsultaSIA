@@ -41,6 +41,13 @@ class RelatorioController extends BaseRelatorioController
                     'lookup_display' => 're_cnome',
                     'operators' => ['=', 'in']
                 ],
+                'tipo_relatorio' => [
+                    'label' => 'Tipo de Relatório',
+                    'type' => 'text',
+                    'table' => 'prestador',
+                    'field' => 'relatorio',
+                    'operators' => ['=', 'like', 'starts_with']
+                ],
                 'prd_cbo' => [
                     'label' => 'CBO',
                     'type' => 'lookup',
@@ -114,6 +121,42 @@ class RelatorioController extends BaseRelatorioController
                     'lookup_key' => 'codigo',
                     'lookup_display' => 'descricao',
                     'operators' => ['=', 'like']
+                ],
+                'grupo' => [
+                    'label' => 'Grupo',
+                    'type' => 'text',
+                    'table' => 'forma',
+                    'operators' => ['=', 'like', 'starts_with']
+                ],
+                'descgrupo' => [
+                    'label' => 'Descrição do Grupo',
+                    'type' => 'text',
+                    'table' => 'forma',
+                    'operators' => []
+                ],
+                'subgrupo' => [
+                    'label' => 'Subgrupo',
+                    'type' => 'text',
+                    'table' => 'forma',
+                    'operators' => ['=', 'like', 'starts_with']
+                ],
+                'descsubgrupo' => [
+                    'label' => 'Descrição do Subgrupo',
+                    'type' => 'text',
+                    'table' => 'forma',
+                    'operators' => []
+                ],
+                'forma' => [
+                    'label' => 'Forma de Organização',
+                    'type' => 'text',
+                    'table' => 'forma',
+                    'operators' => ['=', 'like', 'starts_with']
+                ],
+                'descforma' => [
+                    'label' => 'Descrição da Forma',
+                    'type' => 'text',
+                    'table' => 'forma',
+                    'operators' => ['=', 'like', 'starts_with']
                 ]
             ]
         ]);
@@ -158,6 +201,85 @@ class RelatorioController extends BaseRelatorioController
     }
 
     /**
+     * Campos derivados da tabela forma via s_prd.prd_pa
+     */
+    protected function getFormaFieldIds(): array
+    {
+        return ['grupo', 'descgrupo', 'subgrupo', 'descsubgrupo', 'forma', 'descforma'];
+    }
+
+    /**
+     * Verifica se campos forma são necessários (seleção ou filtros)
+     */
+    protected function needsFormaJoins(array $selectedFields, array $filters): bool
+    {
+        $referenced = array_merge(
+            $selectedFields,
+            array_column($filters, 'field')
+        );
+
+        return collect($referenced)->contains(fn ($field) => in_array($field, $this->getFormaFieldIds(), true));
+    }
+
+    /**
+     * JOINs forma: grupo (??0000), subgrupo (????00), forma (6 chars de prd_pa)
+     */
+    protected function addFormaJoins($query): void
+    {
+        $query->leftJoin('forma as fg', function ($join) {
+            $join->on(DB::raw('SUBSTRING(sp.prd_pa, 1, 2)'), '=', 'fg.grupo')
+                 ->where('fg.subgrupo', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "00")'))
+                 ->where('fg.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "0000")'));
+        });
+        $query->leftJoin('forma as fs', function ($join) {
+            $join->on(DB::raw('SUBSTRING(sp.prd_pa, 1, 4)'), '=', 'fs.subgrupo')
+                 ->where('fs.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 4), "00")'));
+        });
+        $query->leftJoin('forma as ff', function ($join) {
+            $join->on(DB::raw('SUBSTRING(sp.prd_pa, 1, 6)'), '=', 'ff.forma');
+        });
+    }
+
+    /**
+     * Verifica se join prestador é necessário para tipo_relatorio
+     */
+    protected function needsPrestadorJoin(array $selectedFields, array $filters): bool
+    {
+        $referenced = array_merge(
+            $selectedFields,
+            array_column($filters, 'field')
+        );
+
+        return in_array('tipo_relatorio', $referenced, true);
+    }
+
+    /**
+     * JOIN prestador (alias pr) quando tipo_relatorio é usado sem prd_uid
+     */
+    protected function addPrestadorJoinIfNeeded($query, &$joins): void
+    {
+        if (!in_array('prestador', $joins, true)) {
+            $query->leftJoin('prestador as pr', 'sp.prd_uid', '=', 'pr.re_cunid');
+            $joins[] = 'prestador';
+        }
+    }
+
+    /**
+     * Hook para relatório matriz (HasMatrixReport)
+     */
+    protected function addReportJoins($query, $selectedFields, $filters, $tableAlias, &$joins): void
+    {
+        if ($this->needsPrestadorJoin($selectedFields, $filters)) {
+            $this->addPrestadorJoinIfNeeded($query, $joins);
+        }
+
+        if ($this->needsFormaJoins($selectedFields, $filters) && !in_array('forma', $joins, true)) {
+            $this->addFormaJoins($query);
+            $joins[] = 'forma';
+        }
+    }
+
+    /**
      * Build database query based on filters and selected fields
      */
     protected function buildQuery($selectedFields, $filters, $groupBy = true)
@@ -167,7 +289,7 @@ class RelatorioController extends BaseRelatorioController
         // Check if cismetro fields are needed
         $needsCismetro = collect($selectedFields)->contains(function($field) {
             return str_starts_with($field, 'cismetro_');
-        });
+        }) || collect($filters)->contains(fn ($f) => str_starts_with($f['field'] ?? '', 'cismetro_'));
         
         // Add joins based on selected fields
         $joins = [];
@@ -182,6 +304,8 @@ class RelatorioController extends BaseRelatorioController
                 }
             }
         }
+
+        $this->addReportJoins($query, $selectedFields, $filters, 'sp', $joins);
         
         // Add cismetro join if needed
         if ($needsCismetro && !in_array('cismetro', $joins)) {
@@ -242,6 +366,27 @@ class RelatorioController extends BaseRelatorioController
                     // Format competencia as YYYY-MM
                     $selectFields[] = DB::raw("CONCAT(SUBSTRING(sp.prd_cmp, 1, 4), '-', SUBSTRING(sp.prd_cmp, 5, 2)) as competencia");
                     $groupByFields[] = "sp.prd_cmp";
+                } elseif ($field === 'grupo') {
+                    $selectFields[] = DB::raw('SUBSTRING(sp.prd_pa, 1, 2) as grupo');
+                    $groupByFields[] = DB::raw('SUBSTRING(sp.prd_pa, 1, 2)');
+                } elseif ($field === 'descgrupo') {
+                    $selectFields[] = 'fg.descricao as descgrupo';
+                    $groupByFields[] = 'fg.descricao';
+                } elseif ($field === 'subgrupo') {
+                    $selectFields[] = DB::raw('SUBSTRING(sp.prd_pa, 1, 4) as subgrupo');
+                    $groupByFields[] = DB::raw('SUBSTRING(sp.prd_pa, 1, 4)');
+                } elseif ($field === 'descsubgrupo') {
+                    $selectFields[] = 'fs.descricao as descsubgrupo';
+                    $groupByFields[] = 'fs.descricao';
+                } elseif ($field === 'forma') {
+                    $selectFields[] = DB::raw('SUBSTRING(sp.prd_pa, 1, 6) as forma');
+                    $groupByFields[] = DB::raw('SUBSTRING(sp.prd_pa, 1, 6)');
+                } elseif ($field === 'descforma') {
+                    $selectFields[] = 'ff.descricao as descforma';
+                    $groupByFields[] = 'ff.descricao';
+                } elseif ($field === 'tipo_relatorio') {
+                    $selectFields[] = 'pr.relatorio as tipo_relatorio';
+                    $groupByFields[] = 'pr.relatorio';
                 } else {
                     $selectFields[] = "sp.{$field}";
                     $groupByFields[] = "sp.{$field}";
@@ -338,6 +483,27 @@ class RelatorioController extends BaseRelatorioController
             
             return;
         }
+
+        if ($field === 'grupo') {
+            $this->applyFormaCodeFilter($query, 2, $operator, $value);
+            return;
+        }
+        if ($field === 'subgrupo') {
+            $this->applyFormaCodeFilter($query, 4, $operator, $value);
+            return;
+        }
+        if ($field === 'forma') {
+            $this->applyFormaCodeFilter($query, 6, $operator, $value);
+            return;
+        }
+        if ($field === 'descforma') {
+            $this->applyTextFilter($query, 'ff.descricao', $operator, $value);
+            return;
+        }
+        if ($field === 'tipo_relatorio') {
+            $this->applyTextFilter($query, 'pr.relatorio', $operator, $value);
+            return;
+        }
         
         // Handle cismetro fields in filters
         if ($field === 'cismetro_valor') {
@@ -389,7 +555,35 @@ class RelatorioController extends BaseRelatorioController
                 }
                 break;
         }
-    } 
+    }
+
+    /**
+     * Filtro em código derivado de prd_pa (grupo/subgrupo/forma)
+     */
+    protected function applyFormaCodeFilter($query, int $length, string $operator, $value): void
+    {
+        $expr = DB::raw("SUBSTRING(sp.prd_pa, 1, {$length})");
+        $this->applyTextFilter($query, $expr, $operator, $value);
+    }
+
+    /**
+     * Filtro textual (=, contém, inicia com)
+     */
+    protected function applyTextFilter($query, $field, string $operator, $value): void
+    {
+        switch ($operator) {
+            case '=':
+                $query->where($field, '=', $value);
+                break;
+            case 'like':
+                $query->where($field, 'like', '%' . $value . '%');
+                break;
+            case 'starts_with':
+                $query->where($field, 'like', $value . '%');
+                break;
+        }
+    }
+
     /**
      * Override formatData to handle specific field mappings
      */
@@ -426,6 +620,8 @@ class RelatorioController extends BaseRelatorioController
                     $formatted['Valor Total'] = 'R$ ' . number_format((float)($row->total_valor ?? 0), 2, ',', '.');
                 } elseif ($field === 'prd_cmp') {
                     $formatted['Competência'] = $row->competencia ?? '';
+                } elseif (in_array($field, $this->getFormaFieldIds(), true)) {
+                    $formatted[$fieldConfig['label']] = $row->{$field} ?? '';
                 } else {
                     $value = $row->{$field} ?? '';
                     
@@ -507,6 +703,13 @@ class RelatorioController extends BaseRelatorioController
                 'lookup_display' => 're_cnome',
                 'operators' => ['=', 'in']
             ],
+            'tipo_relatorio' => [
+                'label' => 'Tipo de Relatório',
+                'type' => 'text',
+                'table' => 'prestador',
+                'field' => 'relatorio',
+                'operators' => ['=', 'like', 'starts_with']
+            ],
             'prd_cbo' => [
                 'label' => 'CBO',
                 'type' => 'lookup',
@@ -580,6 +783,42 @@ class RelatorioController extends BaseRelatorioController
                 'lookup_key' => 'codigo',
                 'lookup_display' => 'descricao',
                 'operators' => ['=', 'like']
+            ],
+            'grupo' => [
+                'label' => 'Grupo',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => ['=', 'like', 'starts_with']
+            ],
+            'descgrupo' => [
+                'label' => 'Descrição do Grupo',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => []
+            ],
+            'subgrupo' => [
+                'label' => 'Subgrupo',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => ['=', 'like', 'starts_with']
+            ],
+            'descsubgrupo' => [
+                'label' => 'Descrição do Subgrupo',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => []
+            ],
+            'forma' => [
+                'label' => 'Forma de Organização',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => ['=', 'like', 'starts_with']
+            ],
+            'descforma' => [
+                'label' => 'Descrição da Forma',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => ['=', 'like', 'starts_with']
             ]
         ];
         
@@ -644,6 +883,11 @@ class RelatorioController extends BaseRelatorioController
         return 'prd_uid';
     }
 
+    protected function getMatrixSplitCandidates(): array
+    {
+        return [$this->getPrestadorField(), 'tipo_relatorio'];
+    }
+
     protected function getCboField(): string
     {
         return 'prd_cbo';
@@ -689,6 +933,27 @@ class RelatorioController extends BaseRelatorioController
             $selectFields[] = "cs.descricao as cismetro_descricao";
             $groupByFields[] = "{$tableAlias}.prd_pa";
             $groupByFields[] = "cs.descricao";
+        } elseif ($field === 'grupo') {
+            $selectFields[] = DB::raw("SUBSTRING({$tableAlias}.prd_pa, 1, 2) as grupo");
+            $groupByFields[] = DB::raw("SUBSTRING({$tableAlias}.prd_pa, 1, 2)");
+        } elseif ($field === 'descgrupo') {
+            $selectFields[] = 'fg.descricao as descgrupo';
+            $groupByFields[] = 'fg.descricao';
+        } elseif ($field === 'subgrupo') {
+            $selectFields[] = DB::raw("SUBSTRING({$tableAlias}.prd_pa, 1, 4) as subgrupo");
+            $groupByFields[] = DB::raw("SUBSTRING({$tableAlias}.prd_pa, 1, 4)");
+        } elseif ($field === 'descsubgrupo') {
+            $selectFields[] = 'fs.descricao as descsubgrupo';
+            $groupByFields[] = 'fs.descricao';
+        } elseif ($field === 'forma') {
+            $selectFields[] = DB::raw("SUBSTRING({$tableAlias}.prd_pa, 1, 6) as forma");
+            $groupByFields[] = DB::raw("SUBSTRING({$tableAlias}.prd_pa, 1, 6)");
+        } elseif ($field === 'descforma') {
+            $selectFields[] = 'ff.descricao as descforma';
+            $groupByFields[] = 'ff.descricao';
+        } elseif ($field === 'tipo_relatorio') {
+            $selectFields[] = 'pr.relatorio as tipo_relatorio';
+            $groupByFields[] = 'pr.relatorio';
         }
         
         return ['select' => $selectFields, 'groupBy' => $groupByFields];
@@ -721,6 +986,10 @@ class RelatorioController extends BaseRelatorioController
             return ($item->rubrica_codigo ?? '') . '|' . ($item->rubrica_nome ?? '');
         } elseif ($field === 'cismetro_descricao') {
             return ($item->cismetro_codigo ?? '') . '|' . ($item->cismetro_descricao ?? '');
+        } elseif (in_array($field, $this->getFormaFieldIds(), true)) {
+            return $item->{$field} ?? '';
+        } elseif ($field === 'tipo_relatorio') {
+            return $item->tipo_relatorio ?? '';
         }
         
         return $item->{$field} ?? '';

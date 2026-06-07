@@ -2,40 +2,52 @@ import React, { useState, useEffect, useRef } from 'react';
 import { apiEndpoints } from '../services/api';
 import { DataGrid } from '../components/DataGrid';
 
-// Schema do payload do backend
+// Reflete os campos de SPrd (s_prd) retornados pelo endpoint
 interface SiaReportRow {
-    papNum: string;
+    id: number;
+    prestadorCnes: string;
     competence: string;
-    providerId: string;
     procedureCode: string;
-    quantityApproved: number;
-    federalValue: number;
     cbo: string;
+    quantityPresented: number;
+    quantityApproved: number;
+    valuePresented: string;  // decimal vem como string do TypeORM
+    valueApproved: string;
+    financingType: string;
+    grupo: string;
+    subgrupo: string;
+    forma: string;
 }
 
+const formatDecimal = (v: string | number) =>
+    `R$ ${Number(v).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+
 export function SiaReportsPage() {
-    // Estado Visual / Data
     const [data, setData] = useState<SiaReportRow[]>([]);
     const [meta, setMeta] = useState<any>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Pagination Params aplicados na query
     const [activePage, setActivePage] = useState<number>(1);
     const [activeLimit, setActiveLimit] = useState<number>(50);
 
-    // Custom Filters aplicados na query (Validados)
+    // Filtros validados — só disparam fetch quando o usuário clicar em "Aplicar"
     const [activeFilters, setActiveFilters] = useState<{ competence?: string; providerId?: string }>({});
 
-    // Inputs controlados do formulário (que o usuário digita mas ainda não aplicou)
+    // Inputs controlados (não disparam fetch no onChange)
     const [formCompetence, setFormCompetence] = useState<string>('');
     const [formProviderId, setFormProviderId] = useState<string>('');
 
-    // Controle de requisições pendentes (AbortController)
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    const fetchSiaData = async (page: number, limit: number, filters: any) => {
-        // Cancela requests anteriores se o usuário mudar de ideia de pagina ou filtro rápido d+
+    const fetchSiaData = async (page: number, limit: number, filters: typeof activeFilters) => {
+        // Guard obrigatório — sem competência não faz request (proteção de full table scan)
+        if (!filters.competence) {
+            setData([]);
+            setMeta(null);
+            return;
+        }
+
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
         }
@@ -47,14 +59,13 @@ export function SiaReportsPage() {
         try {
             const response = await apiEndpoints.getSiaReports(
                 { page, limit, ...filters },
-                { signal: abortControllerRef.current.signal }
+                { signal: abortControllerRef.current.signal },
             );
 
             setData(response.data.data);
             setMeta(response.data.meta);
         } catch (err: any) {
             if (err.name === 'CanceledError') {
-                console.log('Request cancelada pelo AbortController');
                 return;
             }
             const msg = err.response?.data?.message || err.message || 'Erro de comunicação com a API';
@@ -66,23 +77,15 @@ export function SiaReportsPage() {
         }
     };
 
-    // Efeito disparador de fetchData reativo à página, limite e *filtros ativados*
     useEffect(() => {
         fetchSiaData(activePage, activeLimit, activeFilters);
-
-        // Cleanup de desmontagem
-        return () => {
-            if (abortControllerRef.current) abortControllerRef.current.abort();
-        }
+        return () => { abortControllerRef.current?.abort(); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activePage, activeLimit, activeFilters]);
 
-    // Handlers
     const handleApplyFilters = (e: React.FormEvent) => {
         e.preventDefault();
-        // Reseta página para a primeira sempre que novos filtros são aplicados
         setActivePage(1);
-
-        // Empurra os filtros do formulário para o estado ATIVO da Query
         setActiveFilters({
             competence: formCompetence || undefined,
             providerId: formProviderId || undefined,
@@ -97,62 +100,120 @@ export function SiaReportsPage() {
     };
 
     const columns = [
-        { key: 'papNum', header: 'Autorização (PAP)' },
+        { key: 'prestadorCnes', header: 'CNES Prestador' },
         { key: 'competence', header: 'Competência' },
-        { key: 'providerId', header: 'CNPJ Prestador' },
         { key: 'procedureCode', header: 'Proc. SIA' },
-        { key: 'quantityApproved', header: 'Qtd. Aprovada' },
+        { key: 'grupo', header: 'Grupo' },
+        { key: 'subgrupo', header: 'Subgrupo' },
+        { key: 'financingType', header: 'Tipo Fin.' },
+        { key: 'quantityApproved', header: 'Qtd Aprovada' },
         {
-            key: 'federalValue',
-            header: 'Valor Fed. (R$)',
-            render: (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`
+            key: 'valueApproved',
+            header: 'Valor Aprovado',
+            render: (v: string) => formatDecimal(v),
         },
         { key: 'cbo', header: 'CBO' },
     ];
 
-    return (
-        <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif' }}>
-            <h2>Consulta SIA de Produção (Síncrono V3)</h2>
-            <p style={{ color: '#555' }}>Esta tela consome paginadores nativos e filtros aplicados manualmente para proteger o banco legado.</p>
+    const noCompetence = !activeFilters.competence;
 
-            {/* Box de Filtros - Botão Aplicar Explícito */}
-            <form onSubmit={handleApplyFilters} style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'flex-end', border: '1px solid #ddd' }}>
+    return (
+        <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'sans-serif' }}>
+            <h2>Consulta SIA de Produção (Síncrono V3)</h2>
+            <p style={{ color: '#555' }}>
+                Tabela <code>s_prd</code> — consulta paginada, server-side. Competência obrigatória.
+            </p>
+
+            {/* Filtros — disparo exclusivo via botão "Aplicar" */}
+            <form
+                onSubmit={handleApplyFilters}
+                style={{
+                    background: '#f9f9f9',
+                    padding: '15px',
+                    borderRadius: '8px',
+                    marginBottom: '20px',
+                    display: 'flex',
+                    gap: '15px',
+                    alignItems: 'flex-end',
+                    border: '1px solid #ddd',
+                    flexWrap: 'wrap',
+                }}
+            >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    <label htmlFor="comp">Competência (AAAAMM)</label>
+                    <label htmlFor="comp">
+                        Competência (AAAAMM) <span style={{ color: '#dc3545' }}>*</span>
+                    </label>
                     <input
                         id="comp"
                         type="text"
                         value={formCompetence}
                         onChange={(e) => setFormCompetence(e.target.value)}
-                        placeholder="Ex: 202607"
+                        placeholder="Ex: 202301"
                         maxLength={6}
                         style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
                     />
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    <label htmlFor="cnpj">CNPJ do Prestador</label>
+                    <label htmlFor="cnes">
+                        CNES do Prestador <span style={{ color: '#888', fontSize: '0.85rem' }}>(opcional)</span>
+                    </label>
                     <input
-                        id="cnpj"
+                        id="cnes"
                         type="text"
                         value={formProviderId}
                         onChange={(e) => setFormProviderId(e.target.value)}
-                        placeholder="Ex: 12345678000199"
-                        maxLength={14}
-                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '180px' }}
+                        placeholder="Ex: 2058790"
+                        maxLength={7}
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '120px' }}
                     />
                 </div>
 
-                <button type="submit" style={{ padding: '9px 20px', backgroundColor: '#0056b3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                <button
+                    type="submit"
+                    style={{
+                        padding: '9px 20px',
+                        backgroundColor: '#0056b3',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                    }}
+                >
                     Aplicar Filtros
                 </button>
 
-                <button type="button" onClick={handleClearFilters} style={{ padding: '9px 20px', backgroundColor: '#e2e6ea', color: '#333', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>
+                <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    style={{
+                        padding: '9px 20px',
+                        backgroundColor: '#e2e6ea',
+                        color: '#333',
+                        border: '1px solid #ccc',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                    }}
+                >
                     Limpar
                 </button>
             </form>
 
-            {/* Motor de Tabela (DataGrid) */}
+            {/* Aviso quando nenhuma competência foi aplicada */}
+            {noCompetence && !loading && (
+                <div style={{
+                    padding: '16px',
+                    background: '#fff3cd',
+                    border: '1px solid #ffc107',
+                    borderRadius: '6px',
+                    color: '#856404',
+                    marginBottom: '16px',
+                }}>
+                    Informe a <strong>competência</strong> e clique em "Aplicar Filtros" para iniciar a consulta.
+                </div>
+            )}
+
             <DataGrid
                 columns={columns}
                 data={data}
@@ -162,7 +223,7 @@ export function SiaReportsPage() {
                 onPageChange={(page) => setActivePage(page)}
                 onLimitChange={(limit) => {
                     setActiveLimit(limit);
-                    setActivePage(1); // Reseta a paginacao ao alterar o scale
+                    setActivePage(1);
                 }}
                 onRetry={() => fetchSiaData(activePage, activeLimit, activeFilters)}
             />

@@ -35,15 +35,15 @@ __decorate([
     __metadata("design:type", Number)
 ], GetSiaReportsDto.prototype, "limit", void 0);
 __decorate([
-    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.Length)(6, 6),
     __metadata("design:type", String)
 ], GetSiaReportsDto.prototype, "competence", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.Length)(14, 14),
+    (0, class_validator_1.Length)(1, 7),
     __metadata("design:type", String)
 ], GetSiaReportsDto.prototype, "providerId", void 0);
 //# sourceMappingURL=get-sia-reports.dto.js.map

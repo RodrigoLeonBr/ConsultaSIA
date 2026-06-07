@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsInt, Min, Max, Length } from 'class-validator';
+import { IsOptional, IsString, IsInt, IsNotEmpty, Min, Max, Length } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class GetSiaReportsDto {
@@ -15,13 +15,15 @@ export class GetSiaReportsDto {
     @Max(500)
     limit?: number = 50;
 
-    @IsOptional()
+    // Competência obrigatória — sem ela a query faz full table scan em 6M+ rows
     @IsString()
+    @IsNotEmpty()
     @Length(6, 6)
-    competence?: string;
+    competence: string;
 
+    // CNES do prestador (s_prd.prd_uid = prestador.re_cunid, varchar 7) — opcional
     @IsOptional()
     @IsString()
-    @Length(14, 14)
+    @Length(1, 7)
     providerId?: string;
 }

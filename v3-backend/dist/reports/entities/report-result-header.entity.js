@@ -17,8 +17,11 @@ let ReportResultHeader = class ReportResultHeader {
     job;
     reportType;
     rowCount;
+    competence;
+    filtersHash;
     sourceTablesVersionsJson;
     createdAt;
+    ttlExpiresAt;
 };
 exports.ReportResultHeader = ReportResultHeader;
 __decorate([
@@ -39,6 +42,14 @@ __decorate([
     __metadata("design:type", Number)
 ], ReportResultHeader.prototype, "rowCount", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', name: 'competence', length: 10, nullable: true }),
+    __metadata("design:type", Object)
+], ReportResultHeader.prototype, "competence", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', name: 'filters_hash', length: 64, nullable: true }),
+    __metadata("design:type", Object)
+], ReportResultHeader.prototype, "filtersHash", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'json', nullable: true, name: 'source_tables_versions_json' }),
     __metadata("design:type", Object)
 ], ReportResultHeader.prototype, "sourceTablesVersionsJson", void 0);
@@ -46,6 +57,10 @@ __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)
 ], ReportResultHeader.prototype, "createdAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true, name: 'ttl_expires_at' }),
+    __metadata("design:type", Object)
+], ReportResultHeader.prototype, "ttlExpiresAt", void 0);
 exports.ReportResultHeader = ReportResultHeader = __decorate([
     (0, typeorm_1.Entity)('report_result_header', { database: 'producao' })
 ], ReportResultHeader);

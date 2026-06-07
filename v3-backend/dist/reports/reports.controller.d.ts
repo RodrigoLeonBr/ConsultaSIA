@@ -1,3 +1,4 @@
+import type { Response } from 'express';
 import { ReportsService } from './reports.service';
 import { CreateJobDto } from './dto/create-job.dto';
 export declare class ReportsController {
@@ -13,4 +14,5 @@ export declare class ReportsController {
             totalRowsFetched: number;
         };
     }>;
+    downloadFile(id: number, res: Response): Promise<void>;
 }

@@ -1,4 +1,5 @@
-import { Controller, Post, Body, Get, Param, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Query, ParseIntPipe, DefaultValuePipe, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { ReportsService } from './reports.service';
 import { CreateJobDto } from './dto/create-job.dto';
 
@@ -23,5 +24,18 @@ export class ReportsController {
         @Query('limit', new DefaultValuePipe(200), ParseIntPipe) limit: number,
     ) {
         return this.reportsService.getResultPage(jobId, page, limit);
+    }
+
+    /**
+     * Download do arquivo gerado por um job de exportação (xlsx, csv ou pdf).
+     * O job deve estar no status "done" e ter um arquivo associado.
+     */
+    @Get('jobs/:id/download')
+    async downloadFile(
+        @Param('id', ParseIntPipe) id: number,
+        @Res() res: Response,
+    ) {
+        const { fullPath, filename } = await this.reportsService.getJobFilePath(id);
+        res.download(fullPath, filename);
     }
 }
