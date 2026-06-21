@@ -13,9 +13,71 @@ class RelatorioAihPaController extends BaseRelatorioController
 
     // ── Field ID helpers ──────────────────────────────────────────────────────
 
+    protected function getFaixaEtariaFieldIds(): array
+    {
+        return ['faixa_etaria_1', 'faixa_etaria_2'];
+    }
+
     protected function getFormaFieldIds(): array
     {
         return ['grupo', 'descgrupo', 'subgrupo', 'descsubgrupo', 'forma', 'descforma'];
+    }
+
+    private function getAihHeaderFieldIds(): array
+    {
+        return ['IDADE', 'DIAG_PRINCIPAL', 'faixa_etaria_1', 'faixa_etaria_2'];
+    }
+
+    // ── Faixa etária expressions (based on aih.IDADE from JOIN) ──────────────
+
+    private function faixaEtaria1Expression(): string
+    {
+        return "CASE
+            WHEN CAST(aih.IDADE AS SIGNED) > 150 THEN 'Ignorado'
+            WHEN CAST(aih.IDADE AS SIGNED) = 0 THEN 'Menor que 1 ano'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 1 AND 4 THEN '1 a 4 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 5 AND 9 THEN '5 a 9 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 10 AND 14 THEN '10 a 14 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 15 AND 19 THEN '15 a 19 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 20 AND 24 THEN '20 a 24 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 25 AND 29 THEN '25 a 29 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 30 AND 34 THEN '30 a 34 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 35 AND 39 THEN '35 a 39 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 40 AND 44 THEN '40 a 44 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 45 AND 49 THEN '45 a 49 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 50 AND 54 THEN '50 a 54 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 55 AND 59 THEN '55 a 59 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 60 AND 64 THEN '60 a 64 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 65 AND 69 THEN '65 a 69 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 70 AND 74 THEN '70 a 74 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 75 AND 79 THEN '75 a 79 anos'
+            WHEN CAST(aih.IDADE AS SIGNED) >= 80 THEN '80 anos ou mais'
+            ELSE 'Ignorado'
+        END";
+    }
+
+    private function faixaEtaria2Expression(): string
+    {
+        return "CASE
+            WHEN CAST(aih.IDADE AS SIGNED) > 150 THEN 'Ignorado'
+            WHEN CAST(aih.IDADE AS SIGNED) <= 9 THEN 'Criança'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 10 AND 17 THEN 'Infantil'
+            WHEN CAST(aih.IDADE AS SIGNED) BETWEEN 18 AND 59 THEN 'Adulto'
+            WHEN CAST(aih.IDADE AS SIGNED) >= 60 THEN 'Idoso'
+            ELSE 'Ignorado'
+        END";
+    }
+
+    private function faixaEtaria1OrderExpression(): string
+    {
+        $expr = $this->faixaEtaria1Expression();
+        return "FIELD(({$expr}), 'Menor que 1 ano','1 a 4 anos','5 a 9 anos','10 a 14 anos','15 a 19 anos','20 a 24 anos','25 a 29 anos','30 a 34 anos','35 a 39 anos','40 a 44 anos','45 a 49 anos','50 a 54 anos','55 a 59 anos','60 a 64 anos','65 a 69 anos','70 a 74 anos','75 a 79 anos','80 anos ou mais','Ignorado')";
+    }
+
+    private function faixaEtaria2OrderExpression(): string
+    {
+        $expr = $this->faixaEtaria2Expression();
+        return "FIELD(({$expr}), 'Criança','Infantil','Adulto','Idoso','Ignorado')";
     }
 
     // ── Field definitions ─────────────────────────────────────────────────────
@@ -84,6 +146,28 @@ class RelatorioAihPaController extends BaseRelatorioController
                 'type'      => 'text',
                 'operators' => ['=', 'like', 'starts_with'],
             ],
+            // ── Campos da AIH (via JOIN s_aih) ──────────────────────────────
+            'IDADE' => [
+                'label'     => 'Idade do Paciente (da AIH)',
+                'type'      => 'number',
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
+            ],
+            'faixa_etaria_1' => [
+                'label'     => 'Faixa Etária (detalhada)',
+                'type'      => 'calculated',
+                'operators' => [],
+            ],
+            'faixa_etaria_2' => [
+                'label'     => 'Faixa Etária (resumida)',
+                'type'      => 'calculated',
+                'operators' => [],
+            ],
+            'DIAG_PRINCIPAL' => [
+                'label'     => 'Diagnóstico Principal (da AIH)',
+                'type'      => 'text',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            // ── Lookups ──────────────────────────────────────────────────────
             'CBO_PROFISSIONAL' => [
                 'label'          => 'CBO Profissional',
                 'type'           => 'lookup',
@@ -146,6 +230,22 @@ class RelatorioAihPaController extends BaseRelatorioController
     protected function getDefaultNumericField(): ?string { return 'QUANTIDADE'; }
 
     // ── Join helpers ──────────────────────────────────────────────────────────
+
+    private function needsAihHeaderJoin(array $selectedFields, array $filters): bool
+    {
+        $all = array_merge($selectedFields, array_column($filters, 'field'));
+        return (bool) array_intersect($this->getAihHeaderFieldIds(), $all);
+    }
+
+    private function addAihHeaderJoin($query): void
+    {
+        // JOIN on AIH + CNES + COMPETENCIA for uniqueness
+        $query->leftJoin('s_aih as aih', function ($join) {
+            $join->on(DB::raw('sp.AIH COLLATE utf8mb4_unicode_ci'), '=', DB::raw('aih.AIH COLLATE utf8mb4_unicode_ci'))
+                 ->on(DB::raw('sp.CNES COLLATE utf8mb4_unicode_ci'), '=', DB::raw('aih.CNES COLLATE utf8mb4_unicode_ci'))
+                 ->on(DB::raw('sp.COMPETENCIA COLLATE utf8mb4_unicode_ci'), '=', DB::raw('aih.COMPETENCIA COLLATE utf8mb4_unicode_ci'));
+        });
+    }
 
     private function needsFormaJoins(array $selectedFields, array $filters): bool
     {
@@ -224,6 +324,12 @@ class RelatorioAihPaController extends BaseRelatorioController
         if ($this->needsFormaJoins($selectedFields, $filters) && !in_array('forma', $joins, true)) {
             $this->addFormaJoins($query);
             $joins[] = 'forma';
+        }
+
+        // s_aih header JOIN (IDADE, DIAG_PRINCIPAL, faixa etária)
+        if ($this->needsAihHeaderJoin($selectedFields, $filters) && !in_array('s_aih', $joins, true)) {
+            $this->addAihHeaderJoin($query);
+            $joins[] = 's_aih';
         }
 
         $selectFields  = [];
@@ -315,6 +421,29 @@ class RelatorioAihPaController extends BaseRelatorioController
                     $selectFields[] = DB::raw('SUM(CAST(sp.VALOR_ITEM AS DECIMAL(12,2))) as VALOR_ITEM');
                     break;
 
+                // ── Campos da AIH (via JOIN) ──────────────────────────────
+
+                case 'IDADE':
+                    $selectFields[] = DB::raw('AVG(CAST(aih.IDADE AS UNSIGNED)) as IDADE');
+                    break;
+
+                case 'faixa_etaria_1':
+                    $expr = $this->faixaEtaria1Expression();
+                    $selectFields[]  = DB::raw("({$expr}) as faixa_etaria_1");
+                    $groupByFields[] = DB::raw("({$expr})");
+                    break;
+
+                case 'faixa_etaria_2':
+                    $expr = $this->faixaEtaria2Expression();
+                    $selectFields[]  = DB::raw("({$expr}) as faixa_etaria_2");
+                    $groupByFields[] = DB::raw("({$expr})");
+                    break;
+
+                case 'DIAG_PRINCIPAL':
+                    $selectFields[]  = 'aih.DIAG_PRINCIPAL';
+                    $groupByFields[] = 'aih.DIAG_PRINCIPAL';
+                    break;
+
                 default:
                     $selectFields[]  = "sp.{$field}";
                     $groupByFields[] = "sp.{$field}";
@@ -329,6 +458,17 @@ class RelatorioAihPaController extends BaseRelatorioController
 
         if ($groupBy && !empty($groupByFields)) {
             $query->groupBy($groupByFields);
+        }
+
+        // Ordering for faixa etária
+        $firstOrder = collect($selectedFields)->first(fn ($f) => !in_array($f, [
+            'QUANTIDADE', 'VALOR_ITEM', 'IDADE', 'proc_detalhado_descricao',
+        ], true));
+
+        if ($firstOrder === 'faixa_etaria_1') {
+            $query->orderBy(DB::raw($this->faixaEtaria1OrderExpression()));
+        } elseif ($firstOrder === 'faixa_etaria_2') {
+            $query->orderBy(DB::raw($this->faixaEtaria2OrderExpression()));
         }
 
         return $query;
@@ -369,6 +509,22 @@ class RelatorioAihPaController extends BaseRelatorioController
         if ($field === 'descgrupo') { $this->applySubstringFilter($query, 'fg.descricao', $operator, $value); return; }
         if ($field === 'descsubgrupo') { $this->applySubstringFilter($query, 'fs.descricao', $operator, $value); return; }
         if ($field === 'descforma') { $this->applySubstringFilter($query, 'ff.descricao', $operator, $value); return; }
+
+        // Campos da AIH via join — filtrar com alias aih.*
+        if ($field === 'DIAG_PRINCIPAL') {
+            $this->applySubstringFilter($query, 'aih.DIAG_PRINCIPAL', $operator, $value);
+            return;
+        }
+
+        if ($field === 'IDADE') {
+            $this->applySubstringFilter($query, DB::raw('CAST(aih.IDADE AS UNSIGNED)'), $operator, $value);
+            return;
+        }
+
+        // faixa etária não é filtrável (operators=[])
+        if (in_array($field, $this->getFaixaEtariaFieldIds(), true)) {
+            return;
+        }
 
         parent::applyFilter($query, $filter);
     }
@@ -435,6 +591,18 @@ class RelatorioAihPaController extends BaseRelatorioController
                 'select'  => ['ff.descricao as descforma'],
                 'groupBy' => ['ff.descricao'],
             ],
+            $field === 'faixa_etaria_1' => [
+                'select'  => [DB::raw('(' . $this->faixaEtaria1Expression() . ') as faixa_etaria_1')],
+                'groupBy' => [DB::raw('(' . $this->faixaEtaria1Expression() . ')')],
+            ],
+            $field === 'faixa_etaria_2' => [
+                'select'  => [DB::raw('(' . $this->faixaEtaria2Expression() . ') as faixa_etaria_2')],
+                'groupBy' => [DB::raw('(' . $this->faixaEtaria2Expression() . ')')],
+            ],
+            $field === 'DIAG_PRINCIPAL' => [
+                'select'  => ['aih.DIAG_PRINCIPAL'],
+                'groupBy' => ['aih.DIAG_PRINCIPAL'],
+            ],
             default => ['select' => [], 'groupBy' => []],
         };
     }
@@ -444,6 +612,7 @@ class RelatorioAihPaController extends BaseRelatorioController
         return match ($field) {
             'QUANTIDADE' => [DB::raw('SUM(CAST(sp.QUANTIDADE AS UNSIGNED)) as QUANTIDADE')],
             'VALOR_ITEM' => [DB::raw('SUM(CAST(sp.VALOR_ITEM AS DECIMAL(12,2))) as VALOR_ITEM')],
+            'IDADE'      => [DB::raw('AVG(CAST(aih.IDADE AS UNSIGNED)) as IDADE')],
             default      => [],
         };
     }
@@ -458,12 +627,16 @@ class RelatorioAihPaController extends BaseRelatorioController
         if (in_array($field, $this->getFormaFieldIds(), true)) {
             return $item->{$field} ?? '';
         }
+        if (in_array($field, $this->getFaixaEtariaFieldIds(), true)) {
+            return $item->{$field} ?? '';
+        }
 
         return match ($field) {
             'CNES'                  => ($item->CNES ?? '') . '|' . ($item->CNES_display ?? ''),
             'PROC_DETALHADO'        => ($item->PROC_DETALHADO ?? '') . '|' . ($item->PROC_DETALHADO_display ?? ''),
             'CBO_PROFISSIONAL'      => ($item->CBO_PROFISSIONAL ?? '') . '|' . ($item->CBO_PROFISSIONAL_display ?? ''),
             'FINANCIAMENTO_DETALHE' => ($item->FINANCIAMENTO_DETALHE ?? '') . '|' . ($item->FINANCIAMENTO_DETALHE_display ?? ''),
+            'DIAG_PRINCIPAL'        => $item->DIAG_PRINCIPAL ?? '',
             default                 => parent::getGroupKeyPart($item, $field),
         };
     }
@@ -503,6 +676,12 @@ class RelatorioAihPaController extends BaseRelatorioController
         }
         if (in_array($field, $this->getFormaFieldIds(), true)) {
             return [$fieldConfig['label'] => $row->{$field} ?? ''];
+        }
+        if (in_array($field, $this->getFaixaEtariaFieldIds(), true)) {
+            return [$fieldConfig['label'] => $row->{$field} ?? ''];
+        }
+        if ($field === 'DIAG_PRINCIPAL') {
+            return ['Diagnóstico' => $row->DIAG_PRINCIPAL ?? ''];
         }
         if ($field === 'proc_detalhado_descricao') {
             return []; // filter-only
