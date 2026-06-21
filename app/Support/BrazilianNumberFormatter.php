@@ -44,6 +44,12 @@ class BrazilianNumberFormatter
             return (float) $numericValue;
         }
 
+        // Strings começando com '0' são códigos (CNES, procedimento, grupo, etc.)
+        // Nunca converter — preservar zeros à esquerda.
+        if (str_starts_with($value, '0')) {
+            return $value;
+        }
+
         if (preg_match('/^\d{1,3}(\.\d{3})*$/', $value)) {
             return (int) str_replace('.', '', $value);
         }
@@ -93,6 +99,40 @@ class BrazilianNumberFormatter
             'numero',
         ] as $keyword) {
             if (str_contains($header, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Colunas cujo conteúdo é código alfanumérico (CNES, procedimento, grupo etc.).
+     * Devem ser formatadas como texto (@) no Excel para preservar zeros à esquerda.
+     */
+    public static function isCodeHeader(string $header): bool
+    {
+        $lower = mb_strtolower(trim($header));
+
+        foreach ([
+            'cnes',
+            'grupo',
+            'subgrupo',
+            'forma de',
+            'proc.',
+            'procedimento',
+            'especialidade',
+            'complexidade',
+            'motivo',
+            'financiamento',
+            'diag',
+            'diagnós',
+            'aih',
+            'enfermaria',
+            'sexo',
+            'cbo',
+        ] as $keyword) {
+            if (str_contains($lower, $keyword)) {
                 return true;
             }
         }

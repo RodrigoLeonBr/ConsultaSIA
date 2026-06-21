@@ -17,11 +17,14 @@ trait FormatsBrazilianExcelColumns
 
         foreach ($headers as $index => $header) {
             $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
+            $header = (string) $header;
 
-            if (BrazilianNumberFormatter::isCurrencyHeader((string) $header)) {
+            if (BrazilianNumberFormatter::isCurrencyHeader($header)) {
                 $formats[$columnLetter] = BrazilianNumberFormatter::EXCEL_CURRENCY;
-            } elseif (BrazilianNumberFormatter::isNumberHeader((string) $header)) {
+            } elseif (BrazilianNumberFormatter::isNumberHeader($header)) {
                 $formats[$columnLetter] = BrazilianNumberFormatter::EXCEL_INTEGER;
+            } elseif (BrazilianNumberFormatter::isCodeHeader($header)) {
+                $formats[$columnLetter] = \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT;
             }
         }
 
