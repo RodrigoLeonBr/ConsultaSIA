@@ -55,6 +55,18 @@ class Sidebar extends Component
             return 'faturamento';
         }
 
+        if (request()->routeIs('aih.import*')) {
+            return 'aih-import';
+        }
+
+        if (request()->routeIs('relatorios.aih-pa.*')) {
+            return 'aih-pa';
+        }
+
+        if (request()->routeIs('relatorios.aih.*')) {
+            return 'aih';
+        }
+
         if (request()->routeIs('relatorios.*')) {
             return 'relatorios';
         }
@@ -91,6 +103,14 @@ class Sidebar extends Component
                     ['id' => 'bpi', 'label' => 'Produção Individualizada', 'route' => 'relatorios.bpi.index', 'icon' => 'bpi'],
                     ['id' => 'apac', 'label' => 'Relatório de APAC', 'route' => 'relatorios.apac.index', 'icon' => 'apac'],
                     ['id' => 'faturamento', 'label' => 'Faturamento por Prestador', 'route' => 'faturamento-prestador.index', 'icon' => 'faturamento'],
+                ],
+            ],
+            [
+                'label' => 'Internações (SIH)',
+                'items' => [
+                    ['id' => 'aih-import', 'label' => 'Importar AIH',         'route' => 'aih.import',              'icon' => 'aih-import'],
+                    ['id' => 'aih',        'label' => 'Internações AIH',       'route' => 'relatorios.aih.index',    'icon' => 'aih'],
+                    ['id' => 'aih-pa',     'label' => 'Procedimentos AIH',     'route' => 'relatorios.aih-pa.index', 'icon' => 'aih-pa'],
                 ],
             ],
             [
