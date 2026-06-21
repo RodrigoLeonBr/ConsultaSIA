@@ -186,14 +186,14 @@ class AihTextImportService
     }
 
     /**
-     * Apply import: insert or replace records per CNES+COMPETENCIA.
+     * Apply import with selective replace.
      *
-     * @param  array  $aihRecords   Parsed AIH header records
-     * @param  array  $hpaRecords   Parsed HPA records
-     * @param  bool   $replace      If true, deletes existing before inserting
+     * @param  array  $aihRecords           Parsed AIH header records
+     * @param  array  $hpaRecords           Parsed HPA records
+     * @param  array  $competenciasToReplace Keys 'CNES|COMPETENCIA' that the user confirmed replacing
      * @return array  ['inserted_aih' => N, 'inserted_hpa' => N, 'replaced' => [...], 'skipped' => [...]]
      */
-    public function applyImport(array $aihRecords, array $hpaRecords, bool $replace): array
+    public function applyImport(array $aihRecords, array $hpaRecords, array $competenciasToReplace): array
     {
         $competencias = $this->detectCompetencias($aihRecords);
         $competencias = $this->checkExisting($competencias);
@@ -203,8 +203,10 @@ class AihTextImportService
         $skipped   = [];
 
         foreach ($competencias as $pair) {
+            $key = $pair['CNES'] . '|' . $pair['COMPETENCIA'];
+
             if ($pair['exists_db']) {
-                if ($replace) {
+                if (in_array($key, $competenciasToReplace, true)) {
                     DB::table('s_aih')
                         ->where('CNES', $pair['CNES'])
                         ->where('COMPETENCIA', $pair['COMPETENCIA'])
@@ -216,16 +218,15 @@ class AihTextImportService
                         ->delete();
 
                     $replaced[] = $pair['CNES'] . '/' . $pair['COMPETENCIA'];
-                    $toInsert[] = $pair['CNES'] . '|' . $pair['COMPETENCIA'];
+                    $toInsert[] = $key;
                 } else {
                     $skipped[] = $pair['CNES'] . '/' . $pair['COMPETENCIA'];
                 }
             } else {
-                $toInsert[] = $pair['CNES'] . '|' . $pair['COMPETENCIA'];
+                $toInsert[] = $key;
             }
         }
 
-        // Bulk insert AIH
         $aihToInsert = array_filter(
             $aihRecords,
             fn ($r) => in_array($r['CNES'] . '|' . $r['COMPETENCIA'], $toInsert, true)
@@ -255,5 +256,43 @@ class AihTextImportService
             'replaced'     => $replaced,
             'skipped'      => $skipped,
         ];
+    }
+
+    /**
+     * Returns history of imported CNES+COMPETENCIA from s_aih and s_aih_pa.
+     */
+    public function getImportHistory(): array
+    {
+        $aihHistory = DB::table('s_aih')
+            ->select('CNES', 'COMPETENCIA', DB::raw('COUNT(*) as count_aih'))
+            ->groupBy('CNES', 'COMPETENCIA')
+            ->orderByDesc('COMPETENCIA')
+            ->orderBy('CNES')
+            ->get();
+
+        if ($aihHistory->isEmpty()) {
+            return [];
+        }
+
+        $hpaCounts = DB::table('s_aih_pa')
+            ->select('CNES', 'COMPETENCIA', DB::raw('COUNT(*) as count_hpa'))
+            ->groupBy('CNES', 'COMPETENCIA')
+            ->get()
+            ->keyBy(fn ($r) => $r->CNES . '|' . $r->COMPETENCIA);
+
+        $prestadores = DB::table('prestador')
+            ->whereIn('re_cunid', $aihHistory->pluck('CNES')->unique())
+            ->pluck('re_cnome', 're_cunid');
+
+        return $aihHistory->map(function ($row) use ($hpaCounts, $prestadores) {
+            $key = $row->CNES . '|' . $row->COMPETENCIA;
+            return [
+                'CNES'        => $row->CNES,
+                'CNES_nome'   => $prestadores[$row->CNES] ?? '',
+                'COMPETENCIA' => $row->COMPETENCIA,
+                'count_aih'   => $row->count_aih,
+                'count_hpa'   => $hpaCounts[$key]->count_hpa ?? 0,
+            ];
+        })->all();
     }
 }

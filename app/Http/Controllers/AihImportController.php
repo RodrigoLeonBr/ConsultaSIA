@@ -11,9 +11,10 @@ class AihImportController extends Controller
 {
     private const SESSION_KEY = 'aih_import_preview';
 
-    public function create()
+    public function create(AihTextImportService $service)
     {
-        return view('aih.import');
+        $history = $service->getImportHistory();
+        return view('aih.import', compact('history'));
     }
 
     public function store(Request $request, AihTextImportService $service)
@@ -96,13 +97,14 @@ class AihImportController extends Controller
                 ->with('error', 'Sessão de importação expirada. Envie os arquivos novamente.');
         }
 
-        $replace = $request->input('replace', '0') === '1';
+        // Competências que o usuário confirmou substituir (checkbox por competência)
+        $competenciasToReplace = $request->input('replace', []);
 
         try {
             $aihRecords = $service->parseAihFile(Storage::disk('local')->path($preview['aih_path']));
             $hpaRecords = $service->parseHpaFile(Storage::disk('local')->path($preview['hpa_path']));
 
-            $result = $service->applyImport($aihRecords, $hpaRecords, $replace);
+            $result = $service->applyImport($aihRecords, $hpaRecords, $competenciasToReplace);
 
             Session::forget(self::SESSION_KEY);
 

@@ -83,6 +83,45 @@
                 </form>
             </div>
         </div>
+
+        {{-- Histórico de competências importadas --}}
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-800">Histórico de Importações</h2>
+                <span class="text-sm text-gray-500">{{ count($history) }} competência(s) no banco</span>
+            </div>
+
+            @if (empty($history))
+                <div class="p-6 text-sm text-gray-500">Nenhuma importação registrada ainda.</div>
+            @else
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CNES</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prestador</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Competência</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">AIH</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Procedimentos HPA</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach ($history as $row)
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-3 text-sm font-mono">{{ $row['CNES'] }}</td>
+                                    <td class="px-6 py-3 text-sm text-gray-700">{{ $row['CNES_nome'] ?: '—' }}</td>
+                                    <td class="px-6 py-3 text-sm font-mono">
+                                        {{ substr($row['COMPETENCIA'], 4, 2) }}/{{ substr($row['COMPETENCIA'], 0, 4) }}
+                                    </td>
+                                    <td class="px-6 py-3 text-sm text-right">{{ number_format($row['count_aih'], 0, ',', '.') }}</td>
+                                    <td class="px-6 py-3 text-sm text-right">{{ number_format($row['count_hpa'], 0, ',', '.') }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 @endsection
