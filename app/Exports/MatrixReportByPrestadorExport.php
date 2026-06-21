@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Support\BrazilianNumberFormatter;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
 class MatrixReportByPrestadorExport implements WithMultipleSheets
@@ -155,6 +156,7 @@ class MatrixReportByPrestadorExport implements WithMultipleSheets
 }
 
 use Maatwebsite\Excel\Concerns\FromArray;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
@@ -164,7 +166,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-class MatrixReportSheet implements FromArray, WithHeadings, WithStyles, WithColumnWidths, WithTitle
+class MatrixReportSheet implements FromArray, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithColumnFormatting
 {
     protected $matrixData;
     protected $numericFields;
@@ -204,37 +206,16 @@ class MatrixReportSheet implements FromArray, WithHeadings, WithStyles, WithColu
             // Add values for each competencia
             foreach ($this->matrixData['competencias'] as $comp) {
                 $values = $row['values'][$comp['code']] ?? [];
-                $cellValue = '';
-                
-                foreach ($this->numericFields as $field) {
-                    $value = $values[$field] ?? 0;
-                    if ($field === 'PRD_VL_P' || $field === 'PAP_VALOR') {
-                        $cellValue .= number_format($value, 2, ',', '.');
-                    } else {
-                        $cellValue .= number_format($value, 0, ',', '.');
-                    }
-                    if (count($this->numericFields) > 1) {
-                        $cellValue .= ' / ';
-                    }
-                }
-                
-                $rowData[] = rtrim($cellValue, ' / ') ?: '0';
+                $rowData[] = BrazilianNumberFormatter::formatMatrixExportValues(
+                    $this->numericFields,
+                    $values
+                );
             }
-            
-            // Add row total
-            $totalValue = '';
-            foreach ($this->numericFields as $field) {
-                $value = $row['totals'][$field] ?? 0;
-                if ($field === 'PRD_VL_P' || $field === 'PAP_VALOR') {
-                    $totalValue .= number_format($value, 2, ',', '.');
-                } else {
-                    $totalValue .= number_format($value, 0, ',', '.');
-                }
-                if (count($this->numericFields) > 1) {
-                    $totalValue .= ' / ';
-                }
-            }
-            $rowData[] = rtrim($totalValue, ' / ') ?: '0';
+
+            $rowData[] = BrazilianNumberFormatter::formatMatrixExportValues(
+                $this->numericFields,
+                $row['totals'] ?? []
+            );
             
             $data[] = $rowData;
         }
@@ -243,36 +224,16 @@ class MatrixReportSheet implements FromArray, WithHeadings, WithStyles, WithColu
         $totalsRow = ['TOTAL'];
         foreach ($this->matrixData['competencias'] as $comp) {
             $totals = $this->matrixData['totals'][$comp['code']] ?? [];
-            $totalValue = '';
-            
-            foreach ($this->numericFields as $field) {
-                $value = $totals[$field] ?? 0;
-                if ($field === 'PRD_VL_P' || $field === 'PAP_VALOR') {
-                    $totalValue .= number_format($value, 2, ',', '.');
-                } else {
-                    $totalValue .= number_format($value, 0, ',', '.');
-                }
-                if (count($this->numericFields) > 1) {
-                    $totalValue .= ' / ';
-                }
-            }
-            $totalsRow[] = rtrim($totalValue, ' / ') ?: '0';
+            $totalsRow[] = BrazilianNumberFormatter::formatMatrixExportValues(
+                $this->numericFields,
+                $totals
+            );
         }
-        
-        // Grand total
-        $grandTotalValue = '';
-        foreach ($this->numericFields as $field) {
-            $value = $this->matrixData['grand_totals'][$field] ?? 0;
-            if ($field === 'PRD_VL_P' || $field === 'PAP_VALOR') {
-                $grandTotalValue .= number_format($value, 2, ',', '.');
-            } else {
-                $grandTotalValue .= number_format($value, 0, ',', '.');
-            }
-            if (count($this->numericFields) > 1) {
-                $grandTotalValue .= ' / ';
-            }
-        }
-        $totalsRow[] = rtrim($grandTotalValue, ' / ') ?: '0';
+
+        $totalsRow[] = BrazilianNumberFormatter::formatMatrixExportValues(
+            $this->numericFields,
+            $this->matrixData['grand_totals'] ?? []
+        );
         
         $data[] = $totalsRow;
         
@@ -358,6 +319,28 @@ class MatrixReportSheet implements FromArray, WithHeadings, WithStyles, WithColu
     /**
      * @return array
      */
+    public function columnFormats(): array
+    {
+        if (count($this->numericFields) !== 1) {
+            return [];
+        }
+
+        $format = BrazilianNumberFormatter::excelFormatForField($this->numericFields[0]);
+        if ($format === null) {
+            return [];
+        }
+
+        $formats = [];
+        $lastColumn = count($this->matrixData['competencias']) + 2;
+
+        for ($columnIndex = 2; $columnIndex <= $lastColumn; $columnIndex++) {
+            $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($columnIndex);
+            $formats[$columnLetter] = $format;
+        }
+
+        return $formats;
+    }
+
     public function columnWidths(): array
     {
         $widths = ['A' => 30]; // Category column

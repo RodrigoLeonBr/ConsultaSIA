@@ -12,6 +12,9 @@ use App\Http\Controllers\SPapController;
 use App\Http\Controllers\SApaController;
 use App\Http\Controllers\CismetroController;
 use App\Http\Controllers\FaturamentoPrestadorController;
+use App\Http\Controllers\AihImportController;
+use App\Http\Controllers\RelatorioAihController;
+use App\Http\Controllers\RelatorioAihPaController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -111,6 +114,26 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
         })->name('relatorios.standalone');
 
         
+        // Importação AIH (SIHD)
+        Route::get('/aih-import', [AihImportController::class, 'create'])->name('aih.import');
+        Route::post('/aih-import', [AihImportController::class, 'store'])->name('aih.import.store');
+        Route::get('/aih-import/preview', [AihImportController::class, 'preview'])->name('aih.import.preview');
+        Route::post('/aih-import/apply', [AihImportController::class, 'apply'])->name('aih.import.apply');
+
+        // Relatórios AIH — Internações (s_aih)
+        Route::get('/relatorios/aih', [RelatorioAihController::class, 'index'])->name('relatorios.aih.index');
+        Route::get('/relatorios/aih/fields', [RelatorioAihController::class, 'getFields'])->name('relatorios.aih.fields');
+        Route::get('/relatorios/aih/lookup', [RelatorioAihController::class, 'getLookupData'])->name('relatorios.aih.lookup');
+        Route::post('/relatorios/aih/generate', [RelatorioAihController::class, 'generate'])->name('relatorios.aih.generate');
+        Route::post('/relatorios/aih/generate-matrix', [RelatorioAihController::class, 'generateMatrix'])->name('relatorios.aih.generate-matrix');
+
+        // Relatórios AIH — Procedimentos (s_aih_pa)
+        Route::get('/relatorios/aih-pa', [RelatorioAihPaController::class, 'index'])->name('relatorios.aih-pa.index');
+        Route::get('/relatorios/aih-pa/fields', [RelatorioAihPaController::class, 'getFields'])->name('relatorios.aih-pa.fields');
+        Route::get('/relatorios/aih-pa/lookup', [RelatorioAihPaController::class, 'getLookupData'])->name('relatorios.aih-pa.lookup');
+        Route::post('/relatorios/aih-pa/generate', [RelatorioAihPaController::class, 'generate'])->name('relatorios.aih-pa.generate');
+        Route::post('/relatorios/aih-pa/generate-matrix', [RelatorioAihPaController::class, 'generateMatrix'])->name('relatorios.aih-pa.generate-matrix');
+
         // Additional custom routes if needed
         Route::patch('/prestador/{prestador}/toggle-status', [PrestadorController::class, 'toggleStatus'])->name('prestador.toggle-status');
     });

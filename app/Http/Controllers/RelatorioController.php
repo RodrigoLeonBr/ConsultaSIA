@@ -415,7 +415,7 @@ class RelatorioController extends BaseRelatorioController
             $fieldConfig = $this->getFieldConfig($field);
             if ($fieldConfig) {
                 if ($fieldConfig['type'] === 'lookup') {
-                    $alias = $this->getTableAlias($fieldConfig['lookup_table']);
+                    $alias = $this->getTableAliasForJoin($fieldConfig['lookup_table']);
                     
                     // Add both code and display fields
                     if ($field === 'prd_uid') {

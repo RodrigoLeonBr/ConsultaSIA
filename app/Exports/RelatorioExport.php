@@ -2,13 +2,17 @@
 
 namespace App\Exports;
 
+use App\Exports\Concerns\FormatsBrazilianExcelColumns;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class RelatorioExport implements FromCollection, WithHeadings, WithStyles
+class RelatorioExport implements FromCollection, WithHeadings, WithStyles, WithColumnFormatting
 {
+    use FormatsBrazilianExcelColumns;
+
     protected $data;
     protected $selectedFields;
     protected $totals;
@@ -23,33 +27,37 @@ class RelatorioExport implements FromCollection, WithHeadings, WithStyles
     public function collection()
     {
         try {
-            // Convert data to collection if it isn't already
             $dataCollection = collect($this->data);
-            
+
             if ($dataCollection->isEmpty()) {
                 return collect([]);
             }
-            
+
             $collection = $dataCollection->map(function ($row) {
-                // Ensure row is an array
                 if (is_object($row)) {
                     $row = (array) $row;
                 }
-                return array_values($row);
+
+                $processedRow = [];
+                foreach ($row as $value) {
+                    $processedRow[] = $this->processValueForExcel($value);
+                }
+
+                return $processedRow;
             });
-            
-            // Add totals if available
+
             if (!empty($this->totals)) {
-                $collection->push([]); // Empty row
+                $collection->push([]);
                 $collection->push(['TOTAIS']);
                 foreach ($this->totals as $label => $value) {
-                    $collection->push([$label, $value]);
+                    $collection->push([$label, $this->processValueForExcel($value)]);
                 }
             }
-            
+
             return $collection;
         } catch (\Exception $e) {
             \Log::error('Error in RelatorioExport collection: ' . $e->getMessage());
+
             return collect([]);
         }
     }
@@ -58,29 +66,33 @@ class RelatorioExport implements FromCollection, WithHeadings, WithStyles
     {
         try {
             $dataCollection = collect($this->data);
-            
+
             if ($dataCollection->isNotEmpty()) {
                 $firstRow = $dataCollection->first();
-                
-                // Ensure first row is an array
+
                 if (is_object($firstRow)) {
                     $firstRow = (array) $firstRow;
                 }
-                
+
                 return array_keys($firstRow);
             }
-            
+
             return [];
         } catch (\Exception $e) {
             \Log::error('Error in RelatorioExport headings: ' . $e->getMessage());
+
             return [];
         }
+    }
+
+    public function columnFormats(): array
+    {
+        return $this->columnFormatsForHeaders($this->headings());
     }
 
     public function styles(Worksheet $sheet)
     {
         return [
-            // Style the first row as bold text
             1 => ['font' => ['bold' => true]],
         ];
     }

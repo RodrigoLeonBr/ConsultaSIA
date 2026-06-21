@@ -16,6 +16,84 @@ const RelatoriosBase = (function () {
         sqlDisplayId: 'sql-display'
     };
 
+    const CURRENCY_FIELDS = new Set([
+        'PRD_VL_P', 'PAP_VALOR', 'BPI_VL_P', 'cismetro_total', 'cismetro_valor'
+    ]);
+
+    const INTEGER_FIELDS = new Set([
+        'PRD_QT_P', 'PAP_QT_P', 'BPI_QT_P'
+    ]);
+
+    function isAlreadyBrFormatted(value) {
+        return typeof value === 'string' && (
+            value.startsWith('R$') ||
+            /^\d{1,3}(\.\d{3})*(,\d+)?$/.test(value)
+        );
+    }
+
+    function formatBrInteger(value) {
+        const num = Number(value);
+        if (!Number.isFinite(num)) {
+            return value ?? '';
+        }
+
+        return num.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+    }
+
+    function formatBrCurrency(value) {
+        const num = Number(value);
+        if (!Number.isFinite(num)) {
+            return value ?? '';
+        }
+
+        return 'R$ ' + num.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function formatMatrixFieldValue(field, value) {
+        if (CURRENCY_FIELDS.has(field)) {
+            return formatBrCurrency(value);
+        }
+
+        if (INTEGER_FIELDS.has(field)) {
+            return formatBrInteger(value);
+        }
+
+        const num = Number(value);
+        if (Number.isFinite(num)) {
+            return num.toLocaleString('pt-BR');
+        }
+
+        return value ?? '';
+    }
+
+    function formatDisplayValue(value) {
+        if (value === null || value === undefined || value === '') {
+            return '';
+        }
+
+        if (isAlreadyBrFormatted(value)) {
+            return value;
+        }
+
+        if (typeof value === 'number') {
+            return Number.isInteger(value)
+                ? formatBrInteger(value)
+                : formatBrCurrency(value);
+        }
+
+        if (typeof value === 'string' && /^-?\d+(\.\d+)?$/.test(value.trim())) {
+            const num = Number(value);
+            return Number.isInteger(num)
+                ? formatBrInteger(num)
+                : formatBrCurrency(num);
+        }
+
+        return value;
+    }
+
     /**
      * Show loading indicator
      */
@@ -173,7 +251,7 @@ const RelatoriosBase = (function () {
 
         const rows = data.data.map(row => {
             const cells = Object.values(row).map(value =>
-                `<td class="px-2 py-1 border text-xs">${value || ''}</td>`
+                `<td class="px-2 py-1 border text-xs">${formatDisplayValue(value)}</td>`
             ).join('');
             return `<tr>${cells}</tr>`;
         }).join('');
@@ -181,7 +259,7 @@ const RelatoriosBase = (function () {
         let totalsHtml = '';
         if (data.totals && Object.keys(data.totals).length > 0) {
             const totalRows = Object.entries(data.totals).map(([label, value]) =>
-                `<tr class="bg-blue-50"><td class="px-2 py-1 border font-semibold text-xs">${label}</td><td class="px-2 py-1 border font-semibold text-xs">${value}</td></tr>`
+                `<tr class="bg-blue-50"><td class="px-2 py-1 border font-semibold text-xs">${label}</td><td class="px-2 py-1 border font-semibold text-xs">${formatDisplayValue(value)}</td></tr>`
             ).join('');
 
             totalsHtml = `
@@ -300,13 +378,7 @@ const RelatoriosBase = (function () {
                     // Format numeric values
                     Object.keys(values).forEach(field => {
                         const value = values[field] || 0;
-                        if (field === 'PRD_QT_P' || field === 'PAP_QT_P') {
-                            cellContent += value.toLocaleString('pt-BR');
-                        } else if (field === 'PRD_VL_P' || field === 'PAP_VALOR') {
-                            cellContent += 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                        } else {
-                            cellContent += value.toLocaleString('pt-BR');
-                        }
+                        cellContent += formatMatrixFieldValue(field, value);
                         cellContent += '<br>';
                     });
 
@@ -319,13 +391,7 @@ const RelatoriosBase = (function () {
                 if (row.totals) {
                     Object.keys(row.totals).forEach(field => {
                         const value = row.totals[field] || 0;
-                        if (field === 'PRD_QT_P' || field === 'PAP_QT_P') {
-                            totalContent += value.toLocaleString('pt-BR');
-                        } else if (field === 'PRD_VL_P' || field === 'PAP_VALOR') {
-                            totalContent += 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                        } else {
-                            totalContent += value.toLocaleString('pt-BR');
-                        }
+                        totalContent += formatMatrixFieldValue(field, value);
                         totalContent += '<br>';
                     });
                 }
@@ -347,13 +413,7 @@ const RelatoriosBase = (function () {
 
             Object.keys(totals).forEach(field => {
                 const value = totals[field] || 0;
-                if (field === 'PRD_QT_P' || field === 'PAP_QT_P') {
-                    totalContent += value.toLocaleString('pt-BR');
-                } else if (field === 'PRD_VL_P' || field === 'PAP_VALOR') {
-                    totalContent += 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                } else {
-                    totalContent += value.toLocaleString('pt-BR');
-                }
+                totalContent += formatMatrixFieldValue(field, value);
                 totalContent += '<br>';
             });
 
@@ -365,13 +425,7 @@ const RelatoriosBase = (function () {
         if (matrixData.grand_totals) {
             Object.keys(matrixData.grand_totals).forEach(field => {
                 const value = matrixData.grand_totals[field] || 0;
-                if (field === 'PRD_QT_P' || field === 'PAP_QT_P') {
-                    grandTotalContent += value.toLocaleString('pt-BR');
-                } else if (field === 'PRD_VL_P' || field === 'PAP_VALOR') {
-                    grandTotalContent += 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                } else {
-                    grandTotalContent += value.toLocaleString('pt-BR');
-                }
+                grandTotalContent += formatMatrixFieldValue(field, value);
                 grandTotalContent += '<br>';
             });
         }
