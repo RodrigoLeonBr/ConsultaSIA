@@ -531,6 +531,13 @@ class RelatorioAihController extends BaseRelatorioController
 
     // ── Matrix support ────────────────────────────────────────────────────────
 
+    protected function addReportJoins($query, array $selectedFields, array $filters, string $tableAlias, array $joins): void
+    {
+        if ($this->needsFormaJoins($selectedFields, $filters) && !in_array('forma', $joins)) {
+            $this->addFormaJoins($query);
+        }
+    }
+
     protected function getMatrixLookupFields($field, $tableAlias): array
     {
         return match (true) {
