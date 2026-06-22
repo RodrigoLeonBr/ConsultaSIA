@@ -15,23 +15,26 @@ use App\Http\Controllers\FaturamentoPrestadorController;
 use App\Http\Controllers\AihImportController;
 use App\Http\Controllers\RelatorioAihController;
 use App\Http\Controllers\RelatorioAihPaController;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
-    // Redirect to login if not authenticated, otherwise to dashboard
     if (Auth::check()) {
         return redirect()->route('dashboard');
     }
     return redirect()->route('login');
 });
 
-
-Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
+Route::get('/dashboard', [HomeController::class, 'index'])
     ->middleware(['auth', 'active', 'verified', 'password.changed'])
     ->name('dashboard');
 
-Route::get('/dashboard/activity', [App\Http\Controllers\DashboardController::class, 'getRecentActivity'])
+Route::get('/painel', [App\Http\Controllers\DashboardController::class, 'index'])
+    ->middleware(['auth', 'active', 'verified', 'password.changed'])
+    ->name('painel');
+
+Route::get('/painel/activity', [App\Http\Controllers\DashboardController::class, 'getRecentActivity'])
     ->middleware(['auth', 'active', 'verified', 'password.changed'])
     ->name('dashboard.activity');
 
@@ -70,6 +73,9 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
         Route::post('/procedimento-import', [ProcedimentoImportController::class, 'store'])->name('procedimento.import.store');
         Route::get('/procedimento-import/preview', [ProcedimentoImportController::class, 'preview'])->name('procedimento.import.preview');
         Route::post('/procedimento-import/apply', [ProcedimentoImportController::class, 'apply'])->name('procedimento.import.apply');
+        Route::post('/procedimento-import/tu', [ProcedimentoImportController::class, 'storeTu'])->name('procedimento.import.tu.store');
+        Route::get('/procedimento-import/tu/preview', [ProcedimentoImportController::class, 'previewTu'])->name('procedimento.import.tu.preview');
+        Route::post('/procedimento-import/tu/apply', [ProcedimentoImportController::class, 'applyTu'])->name('procedimento.import.tu.apply');
         Route::resource('srub', SRubController::class);
         Route::resource('cismetro', CismetroController::class);
         

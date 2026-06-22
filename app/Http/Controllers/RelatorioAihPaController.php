@@ -101,7 +101,7 @@ class RelatorioAihPaController extends BaseRelatorioController
             'AIH' => [
                 'label'     => 'Número AIH',
                 'type'      => 'text',
-                'operators' => ['='],
+                'operators' => ['=', 'between', 'pattern'],
             ],
             'PROC_DETALHADO' => [
                 'label'          => 'Procedimento',
@@ -481,6 +481,17 @@ class RelatorioAihPaController extends BaseRelatorioController
         $field    = $filter['field'];
         $operator = $filter['operator'];
         $value    = $filter['value'];
+
+        // AIH número — suporta padrão com ? e faixa (between)
+        if ($field === 'AIH') {
+            if ($operator === 'pattern') {
+                $pattern = str_replace('?', '_', (string) $value);
+                $query->whereRaw('sp.AIH LIKE ?', [$pattern]);
+                return;
+            }
+            parent::applyFilter($query, $filter);
+            return;
+        }
 
         // proc_detalhado_descricao → subquery
         if ($field === 'proc_detalhado_descricao') {

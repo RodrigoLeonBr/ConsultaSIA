@@ -149,8 +149,12 @@
                             </select>
                         </div>
                         <div id="filter-value-container">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Valor</label>
+                            <label id="filter-value-label" class="block text-sm font-medium text-gray-700 mb-1">Valor</label>
                             <input type="text" id="filter-value" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Digite o valor...">
+                            <div id="filter-value2-container" class="hidden mt-3">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Até (fim da faixa)</label>
+                                <input type="text" id="filter-value2" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Valor final...">
+                            </div>
                         </div>
                     </div>
                     <div class="mt-6 flex justify-end space-x-3">
@@ -225,11 +229,35 @@
             document.getElementById('cancel-filter')?.addEventListener('click', closeFilterModal);
             document.getElementById('save-filter')?.addEventListener('click', doSaveFilter);
             document.getElementById('filter-field')?.addEventListener('change', updateFilterOperators);
+            document.getElementById('filter-operator')?.addEventListener('change', function() {
+                updateValueContainer(this.value);
+            });
             document.getElementById('generate-report')?.addEventListener('click', () => generateReport('html'));
             document.getElementById('cancel-search')?.addEventListener('click', cancelSearch);
             document.getElementById('export-excel')?.addEventListener('click', () => generateReport('excel'));
             document.getElementById('export-pdf')?.addEventListener('click', () => generateReport('pdf'));
             document.getElementById('export-csv')?.addEventListener('click', () => generateReport('csv'));
+        }
+
+        function updateValueContainer(operator) {
+            const lbl  = document.getElementById('filter-value-label');
+            const v1   = document.getElementById('filter-value');
+            const v2c  = document.getElementById('filter-value2-container');
+            const v2   = document.getElementById('filter-value2');
+            if (operator === 'between') {
+                if (lbl) lbl.textContent = 'De (início da faixa)';
+                if (v1)  v1.placeholder  = 'Número AIH inicial...';
+                v2c?.classList.remove('hidden');
+                if (v2)  v2.placeholder  = 'Número AIH final...';
+            } else if (operator === 'pattern') {
+                if (lbl) lbl.textContent = 'Padrão (? = qualquer caractere)';
+                if (v1)  v1.placeholder  = 'Ex: ????50??????? (5º e 6º char = 50)';
+                v2c?.classList.add('hidden');
+            } else {
+                if (lbl) lbl.textContent = 'Valor';
+                if (v1)  v1.placeholder  = 'Digite o valor...';
+                v2c?.classList.add('hidden');
+            }
         }
 
         function renderFieldCheckboxes() {
@@ -268,12 +296,18 @@
         function openFilterModal()  { document.getElementById('filter-modal')?.classList.remove('hidden'); }
         function closeFilterModal() { document.getElementById('filter-modal')?.classList.add('hidden'); resetFilterModal(); }
         function resetFilterModal() {
-            const ff = document.getElementById('filter-field');
-            const fo = document.getElementById('filter-operator');
-            const fv = document.getElementById('filter-value');
-            if (ff) ff.value = '';
-            if (fo) { fo.value = ''; fo.replaceChildren(new Option('Selecione um operador...', '')); }
-            if (fv) fv.value = '';
+            const ff  = document.getElementById('filter-field');
+            const fo  = document.getElementById('filter-operator');
+            const fv  = document.getElementById('filter-value');
+            const fv2 = document.getElementById('filter-value2');
+            const lbl = document.getElementById('filter-value-label');
+            const v2c = document.getElementById('filter-value2-container');
+            if (ff)  ff.value  = '';
+            if (fo)  { fo.value = ''; fo.replaceChildren(new Option('Selecione um operador...', '')); }
+            if (fv)  { fv.value = ''; fv.placeholder = 'Digite o valor...'; }
+            if (fv2) fv2.value  = '';
+            if (lbl) lbl.textContent = 'Valor';
+            v2c?.classList.add('hidden');
         }
 
         function populateFilterFieldOptions() {
@@ -292,7 +326,8 @@
             const fieldKey = document.getElementById('filter-field')?.value;
             if (!opSelect) return;
             opSelect.replaceChildren(new Option('Selecione um operador...', ''));
-            const labels = { '=':'Igual a','>':'Maior que','<':'Menor que','>=':'Maior ou igual','<=':'Menor ou igual','like':'Contém','starts_with':'Inicia com','between':'Entre','in':'Em lista' };
+            updateValueContainer('');
+            const labels = { '=':'Igual a','>':'Maior que','<':'Menor que','>=':'Maior ou igual','<=':'Menor ou igual','like':'Contém','starts_with':'Inicia com','between':'Faixa (início → fim)','in':'Em lista','pattern':'Padrão (? = qualquer char)' };
             if (fieldKey && availableFields[fieldKey]) {
                 (availableFields[fieldKey].operators || []).forEach(op => opSelect.appendChild(new Option(labels[op] || op, op)));
             }
@@ -301,9 +336,28 @@
         function doSaveFilter() {
             const field    = document.getElementById('filter-field')?.value;
             const operator = document.getElementById('filter-operator')?.value;
-            const value    = document.getElementById('filter-value')?.value;
-            if (!field || !operator || !value) { alert('Preencha todos os campos do filtro.'); return; }
-            const label = (availableFields[field]?.label || field) + ' ' + operator + ' ' + value;
+            const v1       = (document.getElementById('filter-value')?.value || '').trim();
+            const v2       = (document.getElementById('filter-value2')?.value || '').trim();
+            const fieldLabel = availableFields[field]?.label || field;
+
+            if (!field || !operator) { alert('Selecione campo e operador.'); return; }
+
+            let value, label;
+            if (operator === 'between') {
+                if (!v1 || !v2) { alert('Preencha o valor inicial e final da faixa.'); return; }
+                value = [v1, v2];
+                label = fieldLabel + ': de ' + v1 + ' até ' + v2;
+            } else if (operator === 'pattern') {
+                if (!v1) { alert('Preencha o padrão do filtro.'); return; }
+                value = v1;
+                label = fieldLabel + ' padrão: ' + v1;
+            } else {
+                if (!v1) { alert('Preencha o valor do filtro.'); return; }
+                value = v1;
+                const opLabels = { '=':'=','>':'>','<':'<','>=':'>=','<=':'<=','like':'contém','starts_with':'inicia com','ends_with':'termina em' };
+                label = fieldLabel + ' ' + (opLabels[operator] || operator) + ' ' + v1;
+            }
+
             appliedFilters.push({ id: ++filterCounter, field, operator, value, label });
             renderFilters();
             closeFilterModal();

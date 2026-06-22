@@ -44,7 +44,7 @@
                                        id="procedimento" 
                                        name="procedimento" 
                                        value="{{ old('procedimento') }}"
-                                       maxlength="63"
+                                       maxlength="255"
                                        placeholder="Ex: Consulta médica em atenção básica"
                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('procedimento') border-red-500 @enderror">
                                 @error('procedimento')

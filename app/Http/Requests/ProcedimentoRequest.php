@@ -34,7 +34,19 @@ class ProcedimentoRequest extends FormRequest
             'procedimento' => [
                 'required',
                 'string',
-                'max:63',
+                'max:255',
+            ],
+            'vl_sp' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:999999999.99',
+            ],
+            'vl_sh' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:999999999.99',
             ],
             'pa_total' => [
                 'required',
@@ -97,7 +109,7 @@ class ProcedimentoRequest extends FormRequest
             'codigo.unique' => 'Este código de procedimento já está cadastrado.',
             'codigo.max' => 'O código não pode ter mais de 10 caracteres.',
             'procedimento.required' => 'O nome do procedimento é obrigatório.',
-            'procedimento.max' => 'O nome do procedimento não pode ter mais de 63 caracteres.',
+            'procedimento.max' => 'O nome do procedimento não pode ter mais de 255 caracteres.',
             'pa_total.required' => 'O valor total é obrigatório.',
             'pa_total.numeric' => 'O valor total deve ser um número.',
             'pa_total.min' => 'O valor total deve ser positivo.',

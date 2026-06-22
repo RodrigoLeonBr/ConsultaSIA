@@ -71,6 +71,10 @@ class Sidebar extends Component
             return 'relatorios';
         }
 
+        if (request()->routeIs('painel')) {
+            return 'painel';
+        }
+
         return 'dashboard';
     }
 
@@ -83,7 +87,8 @@ class Sidebar extends Component
             [
                 'label' => 'Principal',
                 'items' => [
-                    ['id' => 'dashboard', 'label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'dashboard'],
+                    ['id' => 'dashboard', 'label' => 'Início',  'route' => 'dashboard', 'icon' => 'dashboard'],
+                    ['id' => 'painel',    'label' => 'Painel',  'route' => 'painel',     'icon' => 'dashboard'],
                 ],
             ],
             [

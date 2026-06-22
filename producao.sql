@@ -175,8 +175,10 @@ CREATE TABLE `prestador` (
 
 CREATE TABLE `procedimento` (
   `codigo` varchar(10) NOT NULL DEFAULT '',
-  `procedimento` varchar(63) NOT NULL DEFAULT '',
+  `procedimento` varchar(255) NOT NULL DEFAULT '',
   `PA_TOTAL` decimal(12,2) DEFAULT 0.00,
+  `VL_SP` decimal(12,2) DEFAULT 0.00,
+  `VL_SH` decimal(12,2) DEFAULT 0.00,
   `RUB_TOTAL` varchar(4) DEFAULT '',
   `RUB_DC` varchar(40) DEFAULT '',
   `PA_RUB` varchar(4) DEFAULT '',

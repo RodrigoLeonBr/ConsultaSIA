@@ -85,6 +85,11 @@ class RelatorioAihController extends BaseRelatorioController
                 'type'      => 'date',
                 'operators' => ['=', '>=', '<=', 'between'],
             ],
+            'AIH' => [
+                'label'     => 'Número AIH',
+                'type'      => 'text',
+                'operators' => ['=', 'between', 'pattern'],
+            ],
             'CNES' => [
                 'label'          => 'Prestador (CNES)',
                 'type'           => 'lookup',
@@ -340,6 +345,11 @@ class RelatorioAihController extends BaseRelatorioController
             }
 
             switch ($field) {
+                case 'AIH':
+                    $selectFields[]  = 'sa.AIH';
+                    $groupByFields[] = 'sa.AIH';
+                    break;
+
                 case 'COMPETENCIA':
                     $selectFields[]  = DB::raw("CONCAT(SUBSTRING(sa.COMPETENCIA,1,4),'-',SUBSTRING(sa.COMPETENCIA,5,2)) as COMPETENCIA");
                     $groupByFields[] = 'sa.COMPETENCIA';
@@ -469,6 +479,17 @@ class RelatorioAihController extends BaseRelatorioController
         $field    = $filter['field'];
         $operator = $filter['operator'];
         $value    = $filter['value'];
+
+        // AIH número — suporta padrão com ? e faixa (between)
+        if ($field === 'AIH') {
+            if ($operator === 'pattern') {
+                $pattern = str_replace('?', '_', (string) $value);
+                $query->whereRaw('sa.AIH LIKE ?', [$pattern]);
+                return;
+            }
+            parent::applyFilter($query, $filter);
+            return;
+        }
 
         // proc_principal_descricao → subquery on procedimento
         if ($field === 'proc_principal_descricao') {
