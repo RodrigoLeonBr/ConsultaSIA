@@ -141,6 +141,8 @@ class ProcedimentoImportController extends Controller
         $storedPath   = $tuFile->storeAs('imports/procedimento', "TU_{$timestamp}.TXT");
         $absolutePath = Storage::disk('local')->path($storedPath);
 
+        set_time_limit(300);
+
         try {
             $result = $importService->import($absolutePath);
 

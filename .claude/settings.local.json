@@ -15,7 +15,16 @@
       "Bash(php artisan *)",
       "Bash(python -m json.tool)",
       "Read(//c/Users/rodri/.claude/**)",
-      "Bash(Get-Content *)"
+      "Bash(Get-Content *)",
+      "PowerShell($count = \\(Get-Content \"C:\\\\Temp\\\\tu_procedimento.txt\" | Measure-Object -Line\\).Lines; Write-Output \"Total linhas: $count\")",
+      "PowerShell(Get-Content \"C:\\\\Temp\\\\tu_procedimento.txt\" | Select-Object -First 3 | ForEach-Object { $fields = $_ -split \";\"; Write-Output \"CODIGO: $\\($fields[0].Trim\\(\\)\\) | DESC_LEN: $\\($fields[1].Trim\\(\\).Length\\) | SP: $\\($fields[9].Trim\\(\\)\\) | SH: $\\($fields[10].Trim\\(\\)\\) | FIM: $\\($fields[13].Trim\\(\\)\\)\" })",
+      "PowerShell($maxLen = 0; $maxLine = \"\"; Get-Content \"C:\\\\Temp\\\\tu_procedimento.txt\" | ForEach-Object { $fields = $_ -split \";\"; $len = $fields[1].Trim\\(\\).Length; if \\($len -gt $maxLen\\) { $maxLen = $len; $maxLine = $fields[1].Trim\\(\\) } }; Write-Output \"Max desc length: $maxLen | Exemplo: $maxLine\")",
+      "PowerShell($active = \\(Get-Content \"C:\\\\Temp\\\\tu_procedimento.txt\" | Where-Object { \\($_ -split \";\"\\)[13].Trim\\(\\) -eq \"999999\" } | Measure-Object\\).Count; $total = \\(Get-Content \"C:\\\\Temp\\\\tu_procedimento.txt\" | Measure-Object -Line\\).Lines; Write-Output \"Ativos \\(999999\\): $active / Total: $total\")",
+      "PowerShell($over63 = \\(Get-Content \"C:\\\\Temp\\\\tu_procedimento.txt\" | Where-Object { \\($_ -split \";\"\\)[1].Trim\\(\\).Length -gt 63 } | Measure-Object\\).Count; $under63 = \\(Get-Content \"C:\\\\Temp\\\\tu_procedimento.txt\" | Where-Object { \\($_ -split \";\"\\)[1].Trim\\(\\).Length -le 63 } | Measure-Object\\).Count; Write-Output \"Desc > 63 chars: $over63 | Desc <= 63 chars: $under63\")",
+      "PowerShell($sp = \\(Get-Content \"C:\\\\Temp\\\\tu_procedimento.txt\" | Where-Object { \\($_ -split \";\"\\)[9].Trim\\(\\) -ne \"0\" } | Measure-Object\\).Count; $sh = \\(Get-Content \"C:\\\\Temp\\\\tu_procedimento.txt\" | Where-Object { \\($_ -split \";\"\\)[10].Trim\\(\\) -ne \"0\" } | Measure-Object\\).Count; Write-Output \"Com VL_SP != 0: $sp | Com VL_SH != 0: $sh\")",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Temp\\\\tu_procedimento.txt\"\\); $sample = $bytes[0..3] | ForEach-Object { \"{0:X2}\" -f $_ }; Write-Output \"BOM/header bytes: $\\($sample -join ' '\\)\"; $enc = [System.Text.Encoding]::GetEncoding\\(1252\\); $line5 = \\($enc.GetString\\($bytes\\) -split \"`n\"\\)[4]; Write-Output \"Line5 CP1252: $line5\")",
+      "PowerShell($enc = [System.Text.Encoding]::GetEncoding\\(1252\\); $content = $enc.GetString\\([System.IO.File]::ReadAllBytes\\(\"C:\\\\Temp\\\\tu_procedimento.txt\"\\)\\); $lines = $content -split \"`n\"; \\($lines | Where-Object { $_ -match \"[ÃÁÉÍÓÚÂÊÔÇãáéíóúâêôç]\" } | Select-Object -First 3\\))",
+      "PowerShell(cd E:\\\\xampp\\\\htdocs\\\\consultasia && php artisan optimize:clear 2>&1 && php -r \"require 'vendor/autoload.php'; \\\\$app = require 'bootstrap/app.php'; echo 'OK';\" 2>&1 | Select-Object -First 5)"
     ]
   }
 }
