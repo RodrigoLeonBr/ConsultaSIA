@@ -1,458 +1,289 @@
-# Sistema ConsultaProd - Laravel 12
+# ConsultaProd
 
-Sistema de Gerenciamento e Relatórios Dinâmicos para Unidades de Saúde desenvolvido em Laravel 12 com dados reais de produção hospitalar.
+Sistema de gestão e relatórios para unidades de saúde (SUS/DATASUS), desenvolvido em **Laravel 12** com dados reais de produção hospitalar.
 
-## 🆕 **Nova Funcionalidade: Relatório de Faturamento por Prestador**
+**Stack em produção:** Laravel 12 · PHP 8.2+ · MariaDB 10.4 · Blade · Tailwind CSS (CDN) · Alpine.js (CDN)
 
-### 📊 **Relatório Analítico Hierárquico**
-- **Filtros**: Competência (mês/ano) e Prestador (opcional)
-- **Estrutura Hierárquica**: Prestador → Tipo de Financiamento → Grupo → Sub-grupo → Forma → Detalhe
-- **Campos**: Quantidade Apresentada, Valor Apresentado, Quantidade Aprovada, Valor Aprovado
-- **Exportações**: PDF, Excel, CSV com formatação profissional
-- **Acesso**: Dashboard → "Faturamento por Prestador"
+---
 
-## 📋 Requisitos do Sistema
+## Funcionalidades
 
-- PHP 8.2+
-- MySQL 5.7+ ou MariaDB 10.3+
-- Composer 2.0+
-- XAMPP (recomendado para desenvolvimento local)
-- **Extensões PHP necessárias**: GD, mbstring, openssl, curl, zip, xml, simplexml, dom
-- **Node.js é OPCIONAL** - Sistema funciona com CDN
+### Relatórios dinâmicos
 
-## 🚀 Instalação e Configuração
+| Módulo | Tabela(s) | URI | Descrição |
+|--------|-----------|-----|-----------|
+| SIA Produção | `s_prd` | `/relatorios` | Gerador dinâmico com lista e matriz por competência |
+| APAC | `s_pap` + `s_apa` | `/relatorios/apac` | Relatórios de APAC com matriz |
+| BPI | `s_bpi` | `/relatorios/bpi` | Relatórios BPI com matriz |
+| AIH Internações | `s_aih` | `/relatorios/aih` | Relatórios SIH — cabeçalho de internações |
+| AIH Procedimentos | `s_aih_pa` | `/relatorios/aih-pa` | Relatórios SIH — itens por internação |
+| Faturamento por Prestador | `s_prd` | `/relatorios/faturamento-prestador` | Relatório hierárquico analítico |
 
-### 1. Configuração do Banco de Dados (XAMPP)
+Todos os relatórios suportam exportação **Excel (.xlsx)**, **PDF** e **CSV**, com formatação numérica brasileira centralizada em `BrazilianNumberFormatter` e `FormatsBrazilianExcelColumns`.
 
-1. Inicie o XAMPP e ative MySQL
-2. Acesse o phpMyAdmin (http://localhost/phpmyadmin)
-3. Crie um banco de dados chamado `consultaprod`
-4. **O sistema já possui migrations** - não precisa executar scripts SQL externos
+### Cadastros e CRUDs
 
-### 2. Configuração do Laravel
+| Módulo | URI |
+|--------|-----|
+| Prestadores | `/prestador` |
+| Procedimentos | `/procedimento` |
+| CBO | `/cbo` |
+| Cismetro | `/cismetro` |
+| SAPA (`s_apa`) | `/sapa` |
+| SPAP (`s_pap`) | `/spap` |
+| SRUB (`s_rub`) | `/srub` |
 
-1. Clone/copie o projeto Laravel:
+### Importações
+
+| Tipo | URI | Formato |
+|------|-----|---------|
+| Prestadores | `/prestador-import` | DBF (DATASUS) |
+| Procedimentos | `/procedimento-import` | DBF (DATASUS) |
+| AIH | `/aih-import` | Arquivo texto SIH |
+
+### Administração
+
+- **Dashboard** com estatísticas reais (`/dashboard`)
+- **Gestão de usuários** — apenas role `admin` (`/admin`)
+- **Autenticação** via Laravel Breeze (login, troca de senha obrigatória, roles)
+
+---
+
+## Requisitos
+
+- PHP **8.2+** com extensões: `gd`, `mbstring`, `openssl`, `curl`, `zip`, `xml`, `simplexml`, `dom`
+- **MariaDB 10.4+** ou MySQL 5.7+
+- **Composer 2.x**
+- XAMPP (recomendado para ambiente local Windows)
+- **Node.js é opcional** — o frontend usa Tailwind e Alpine via CDN
+
+---
+
+## Instalação
+
+### 1. Banco de dados
+
+1. Inicie o MySQL/MariaDB (XAMPP).
+2. Crie o banco `producao`.
+3. Importe o schema e dados via `producao.sql` (fonte da verdade do contrato de dados).
+
+> Em produção, as **tabelas core** (`s_prd`, `s_apa`, `s_bpi`, `s_pap`, `s_rub`, `prestador`, `procedimento`, `cbo`, `forma`, `cismetro`) **não devem ser alteradas** via migrations. Migrations servem apenas para tabelas auxiliares (`users`, `cache`, `jobs`, `s_aih`, etc.).
+
+### 2. Aplicação Laravel
+
 ```bash
 cd consultasia
-```
-
-2. Instale as dependências PHP:
-```bash
 composer install
+cp .env.example .env   # ajustar credenciais
+php artisan key:generate
+php artisan migrate    # tabelas auxiliares e s_aih
 ```
 
-3. Configure o arquivo `.env` (já configurado para MySQL):
-```bash
+Configure o `.env`:
+
+```env
+APP_NAME=ConsultaProd
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost:8000
+
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=consultaprod
-DB_USERNAME=hospital
-DB_PASSWORD=tebaldi
+DB_DATABASE=producao
+DB_USERNAME=seu_usuario
+DB_PASSWORD=sua_senha
 ```
 
-4. Execute as migrations:
-```bash
-php artisan migrate
+### 3. Permissões
+
+Garanta escrita em:
+
+```
+storage/
+bootstrap/cache/
 ```
 
-### 3. Configuração das Extensões PHP
+### 4. Iniciar
 
-**Para habilitar exportações PDF, XLS e CSV:**
-
-1. Abra o arquivo: `C:\xampp\php\php.ini` (como Administrador)
-2. Remova o ponto e vírgula (;) das seguintes linhas:
-```ini
-extension=gd
-extension=mbstring
-extension=openssl
-extension=curl
-extension=zip
-extension=xml
-extension=simplexml
-extension=dom
-```
-3. Salve o arquivo e reinicie o Apache no XAMPP
-
-### 4. Iniciar o Sistema
-
-#### Opção 1: Via Artisan (Desenvolvimento)
+**Desenvolvimento (Artisan):**
 ```bash
 php artisan serve
+# http://localhost:8000
 ```
-Acesse: http://localhost:8000
 
-#### Opção 2: Via XAMPP (Produção Local)
-- Coloque o projeto em `C:\xampp\htdocs\consultasia`
-- Acesse: http://192.168.5.130/consultasia
+**XAMPP (Apache):**
+- Document root: `consultasia/public`
+- Exemplo: `http://localhost/consultasia/public`
 
-### 5. Credenciais de Acesso
+---
 
-**Usuário Administrador:**
-- Username: `admin`
-- Password: `admin123`
+## Credenciais de desenvolvimento
 
-**Usuário de Teste:**
-- Username: `test`
-- Password: `123456`
+| Usuário | Senha | Role |
+|---------|-------|------|
+| `admin` | `admin123` | admin |
+| `test` | `123456` | admin |
 
-## 📦 Pacotes Instalados
+> Altere essas credenciais em ambientes reais.
 
-### Principais
-- **Laravel 12.x** - Framework principal
-- **Laravel Breeze** - Autenticação completa com Blade views
-- **Laravel Sanctum** - API authentication
-- **Livewire 3.x** - Componentes dinâmicos
-- **Tailwind CSS** - Framework CSS (via CDN)
+---
 
-### Utilitários
-- **Maatwebsite/Excel** - Exportação de relatórios Excel (.xlsx)
-- **Barryvdh/Laravel-DomPDF** - Geração de relatórios PDF
-- **Alpine.js** - JavaScript reativo (via CDN)
-
-## 🏗️ Estrutura do Projeto
-
-### Principais Diretórios
+## Estrutura do projeto
 
 ```
 consultasia/
 ├── app/
-│   ├── Http/Controllers/     # Controllers da aplicação
-│   │   ├── Auth/            # Controllers de autenticação
-│   │   ├── DashboardController.php    # Dashboard dinâmico
-│   │   ├── RelatorioController.php    # Sistema de relatórios
-│   │   └── FaturamentoPrestadorController.php  # Relatório hierárquico
-│   ├── Models/               # Models Eloquent
-│   │   ├── SPrd.php         # Model principal de produção
-│   │   ├── Forma.php        # Model para hierarquia de procedimentos
-│   │   └── ...
-│   ├── Exports/             # Classes de exportação Excel/CSV
-│   └── Http/Middleware/     # Middlewares customizados
-├── resources/
-│   ├── views/               # Templates Blade
-│   │   ├── auth/           # Sistema de autenticação
-│   │   ├── relatorios/     # Sistema de relatórios
-│   │   │   ├── faturamento-prestador.blade.php
-│   │   │   ├── faturamento-prestador-resultado.blade.php
-│   │   │   └── faturamento-prestador-pdf.blade.php
-│   │   ├── dashboard.blade.php  # Dashboard principal
-│   │   └── layouts/        # Layouts responsivos
+│   ├── Http/Controllers/    # Controllers (relatórios, CRUDs, auth, imports)
+│   ├── Http/Middleware/     # CheckRole, CheckActive, EnsurePasswordChanged
+│   ├── Models/              # SPrd, SApa, SPap, Prestador, User, etc.
+│   ├── Exports/             # Excel/PDF (Maatwebsite, DomPDF)
+│   ├── Services/            # Importação DBF e AIH
+│   ├── Support/             # BrazilianNumberFormatter
+│   └── Charts/              # Gráficos do dashboard
+├── bootstrap/               # Bootstrap Laravel 12
+├── config/                  # Configurações da aplicação
 ├── database/
-│   ├── migrations/         # Estrutura completa do banco
-│   │   └── create_forma_table.php  # Nova tabela para hierarquia
-│   └── seeders/           # Dados de teste
-└── routes/
-    └── web.php            # Todas as rotas do sistema
+│   ├── migrations/          # Tabelas auxiliares (não core DATASUS)
+│   └── seeders/
+├── public/                  # Entry point web (index.php)
+│   └── js/relatorios-base.js
+├── resources/views/         # Templates Blade
+├── routes/
+│   ├── web.php              # ~123 rotas
+│   └── auth.php
+├── storage/                 # Logs, cache, sessões (gravável)
+├── tests/                   # PHPUnit
+├── producao.sql             # Schema de referência do banco
+├── .context/docs/           # Documentação técnica para desenvolvimento
+└── vendor/                  # Dependências PHP (composer install)
 ```
 
-### Módulos Implementados
+---
 
-1. **Dashboard Dinâmico** - Estatísticas reais com 5.9M+ registros
-2. **Sistema de Autenticação** - Login seguro com roles
-3. **CBO (Ocupações)** - 2.812 códigos cadastrados
-4. **Prestadores** - 76 unidades ativas
-5. **Procedimentos** - 3.036 procedimentos SUS
-6. **Relatórios Avançados** - Gerador dinâmico com filtros
-7. **🆕 Faturamento por Prestador** - Relatório hierárquico analítico
-8. **Exportações** - Excel, PDF, CSV com formatação
+## Autenticação e permissões
 
-## 🔐 Sistema de Autenticação
+| Role | Acesso |
+|------|--------|
+| `admin` | Tudo, inclusive `/admin/*` |
+| `operator` | Tudo exceto gestão de usuários |
 
-### Funcionalidades Implementadas
-- ✅ **Login seguro** com username/password
-- ✅ **Controle de roles** (Admin/Operator)
-- ✅ **Middleware de segurança** para rotas protegidas
-- ✅ **Sessões persistentes** com driver file
-- ✅ **Logout seguro** com invalidação de sessão
-
-### Rotas de Autenticação
-- **Login**: `/login`
-- **Dashboard**: `/dashboard`
-- **Logout**: Botão no menu superior
-
-### Usuários Disponíveis
-
-**Administrador:**
-- Username: `admin`
-- Password: `admin123`
-- Role: `admin`
-- Acesso: Completo ao sistema
-
-**Operador de Teste:**
-- Username: `test`
-- Password: `123456`
-- Role: `admin`
-- Acesso: Completo ao sistema
-
-## 🎨 Interface e UX
-
-### Design System
-- ✅ **Tailwind CSS** via CDN (sem necessidade de compilação)
-- ✅ **Alpine.js** para interatividade
-- ✅ **Layout responsivo** (mobile-first)
-- ✅ **Componentes reutilizáveis** Blade
-- ✅ **Ícones SVG** integrados
-
-### Dashboard Dinâmico
-- ✅ **Estatísticas reais** do banco de dados
-- ✅ **Cards informativos** com links diretos
-- ✅ **🆕 Link para Faturamento por Prestador**
-- ✅ **Atividade recente** carregada via AJAX
-- ✅ **Indicadores visuais** de performance
-
-### Sistema de Navegação
-- ✅ **Menu principal** com todos os módulos
-- ✅ **Breadcrumbs** contextuais
-- ✅ **Links rápidos** nos cards do dashboard
-- ✅ **Dropdown de usuário** com logout
-
-## 📊 Sistema de Relatórios Avançados
-
-### 🆕 Relatórios em Matriz por Competência (Pivot Table)
-
-#### Funcionalidades Principais
-- ✅ **Detecção Automática**: Ativa quando "Data Competência" é selecionada
-- ✅ **Toggle Lista/Matriz**: Alternância entre visualizações
-- ✅ **Competências como Colunas**: Períodos ordenados cronologicamente (01/2024, 02/2024...)
-- ✅ **Categorias como Linhas**: Prestadores, Procedimentos, CBO, etc.
-- ✅ **Totalizações Automáticas**: Por linha, coluna e total geral
-- ✅ **Exportações Específicas**: Excel, PDF, CSV mantendo formato matriz
-- ✅ **Interface Responsiva**: Adaptável para mobile com scroll horizontal
-- ✅ **Performance Otimizada**: Validações e timeouts para grandes volumes
-
-#### Como Usar
-1. Selecione o campo **"Data Competência"** 
-2. Escolha campos adicionais (Prestador, Procedimento, etc.)
-3. Selecione **"Matriz por Competência"** no tipo de visualização
-4. Configure filtros (recomendado para performance)
-5. Gere o relatório e visualize a estrutura pivot
-
-### 🆕 Relatório de Faturamento por Prestador
-
-#### Funcionalidades
-- ✅ **Filtro de Competência**: Dropdown com último período disponível
-- ✅ **Filtro de Prestador**: Opcional, com opção "Todos os Prestadores"
-- ✅ **Estrutura Hierárquica**: 6 níveis de agrupamento
-- ✅ **Totalizações**: Em todos os níveis hierárquicos
-- ✅ **Exportações**: PDF, Excel, CSV
-- ✅ **Layout Limpo**: Sem prefixos desnecessários, colunas alinhadas
-
-#### Estrutura Hierárquica
+**Middleware chain** nas rotas protegidas:
 ```
-1. Prestador (Nome da Unidade)
-   ├─ Total Geral do Prestador
-   └─ 2. Tipo de Financiamento (ex: MAC, Atenção Básica)
-       ├─ Total por Tipo de Financiamento
-       └─ 3. Grupo (2 primeiros dígitos do procedimento)
-           ├─ Total por Grupo
-           └─ 4. Sub-grupo (4 primeiros dígitos)
-               ├─ Total por Sub-grupo
-               └─ 5. Forma de Organização (6 primeiros dígitos)
-                   ├─ Total por Forma de Organização
-                   └─ 6. Detalhe (Procedimentos individuais)
-                       ├─ Código do Procedimento
-                       ├─ Nome do Procedimento
-                       ├─ Valor Unitário
-                       ├─ Quantidade Apresentada
-                       ├─ Valor Apresentado
-                       ├─ Quantidade Aprovada
-                       └─ Valor Aprovado
+web → Authenticate → CheckActive → EnsurePasswordChanged → CheckRole
 ```
 
-#### Campos de Dados
-- **Quantidade Apresentada**: `sp.PRD_QT_P`
-- **Valor Apresentado**: `sp.PRD_QT_P * proc.PA_TOTAL`
-- **Quantidade Aprovada**: `sp.PRD_QT_A`
-- **Valor Aprovado**: `sp.PRD_VL_A`
+---
 
-### Gerador Dinâmico de Relatórios
-- ✅ **Seleção de campos** via checkboxes
-- ✅ **Filtros avançados** com múltiplos operadores
-- ✅ **Agrupamento automático** para evitar duplicatas
-- ✅ **Totalizadores** para campos numéricos
-- ✅ **SQL visível** para debug e auditoria
+## Regras importantes de queries
 
-### Campos Disponíveis
-- **Data Competência** - Formato YYYY-MM
-- **Prestador** - CNES + Nome da unidade
-- **CBO** - Código + Descrição da ocupação
-- **Procedimento** - Código SUS + Nome do procedimento
-- **Quantidade** - Soma automática por agrupamento
-- **Valor** - Soma automática em R$ formatado
-- **Rubrica** - Tipo de financiamento
-- **CID Principal** - Diagnóstico principal
+- Sempre filtrar por **competência** em relatórios sobre `s_prd` (5,9M+ registros sem filtro = timeout).
+- Usar `CAST` em campos numéricos armazenados como `VARCHAR`:
 
-### Filtros Avançados
-- **Operadores**: =, >, <, >=, <=, contém, inicia com, entre
-- **Tipos de dados**: Texto, número, data, moeda, lookup
-- **Múltiplos filtros** com lógica AND
-- **Interface modal** para configuração
+```sql
+SUM(CAST(sp.PRD_QT_P AS UNSIGNED))
+SUM(CAST(sp.PRD_VL_A AS DECIMAL(15,2)))
+SUM(CAST(pap.PAP_QT_P AS DECIMAL(15,2)))  -- APAC
+```
 
-### Exportações Profissionais
-- ✅ **Excel (.xlsx)** - Formatação automática + totais
-- ✅ **PDF** - Layout profissional com cabeçalho
-- ✅ **CSV** - Separador ponto-vírgula + UTF-8 BOM
-- ✅ **HTML** - Visualização em tabela responsiva
+Detalhes completos em `.context/docs/data-contract.md` e `.context/docs/legacy-relatorios-spec.md`.
 
-### Indicadores de UX
-- ✅ **Loading spinners** durante processamento
-- ✅ **Mensagens de erro** claras e informativas
-- ✅ **Botões desabilitados** durante execução
-- ✅ **Contadores** de registros encontrados
+---
 
-## 📈 Dados do Sistema (Produção)
+## Pacotes principais
 
-### Volume de Dados Reais
-- ✅ **5.988.427 registros** na tabela principal (s_prd)
-- ✅ **76 prestadores** ativos cadastrados
-- ✅ **3.036 procedimentos** SUS disponíveis
-- ✅ **2.812 códigos CBO** de ocupações
-- ✅ **70 rubricas** de financiamento
-- ✅ **🆕 Tabela forma** para hierarquia de procedimentos
+| Pacote | Uso |
+|--------|-----|
+| Laravel Breeze | Autenticação |
+| Laravel Sanctum | API auth |
+| Livewire 3 | Componentes dinâmicos |
+| Maatwebsite/Excel | Exportação .xlsx |
+| Barryvdh/DomPDF | Exportação PDF |
+| Larapex Charts | Gráficos do dashboard |
+| hisamu/php-xbase | Leitura de arquivos DBF |
 
-### Performance Otimizada
-- ✅ **Queries indexadas** para consultas rápidas
-- ✅ **Agrupamento eficiente** com GROUP BY
-- ✅ **Paginação** automática em listagens
-- ✅ **Cache de sessão** para melhor UX
-- ✅ **Lazy loading** de dados pesados
+---
 
-## 🔧 Funcionalidades Implementadas
+## Comandos úteis
 
-### ✅ Sistema Completo
-1. **Autenticação e Autorização**
-   - Login seguro com roles
-   - Middleware de proteção
-   - Controle de acesso por função
-
-2. **Dashboard Dinâmico**
-   - Estatísticas reais do banco
-   - Atividade recente via AJAX
-   - Links de navegação rápida
-   - 🆕 Link para Faturamento por Prestador
-
-3. **Sistema de Relatórios**
-   - Gerador dinâmico completo
-   - Múltiplas exportações
-   - Filtros avançados
-   - 🆕 Relatório hierárquico de faturamento
-
-4. **Interface Responsiva**
-   - Design moderno com Tailwind
-   - Componentes reutilizáveis
-   - UX otimizada
-
-### 🚀 Próximas Melhorias Sugeridas
-1. **CRUD Modules** - Interfaces para edição de dados
-2. **API REST** - Endpoints para integração
-3. **Relatórios Salvos** - Templates de relatórios
-4. **Notificações** - Sistema de alertas
-5. **Auditoria** - Log de ações dos usuários
-
-## 🔧 Comandos Úteis
-
-### Comandos de Desenvolvimento
 ```bash
-# Iniciar servidor de desenvolvimento
+# Desenvolvimento
 php artisan serve
+php artisan route:list
+php artisan about
 
-# Limpar todos os caches
+# Cache
 php artisan optimize:clear
-
-# Limpar cache específico
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear
 
-# Executar migrations
-php artisan migrate
-
-# Ver status das migrations
-php artisan migrate:status
-
-# Gerar nova migration
-php artisan make:migration create_nova_tabela
-
-# Gerar novo controller
-php artisan make:controller NovoController --resource
-```
-
-### Comandos de Produção
-```bash
-# Otimizar para produção
+# Produção (após deploy)
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Verificar configuração
-php artisan about
-
-# Executar queue (se necessário)
-php artisan queue:work
+# Testes
+php artisan test
 ```
-
-### Comandos de Debug
-```bash
-# Ver logs em tempo real
-php artisan tail
-
-# Limpar logs
-php artisan log:clear
-
-# Testar conexão com banco
-php artisan migrate:status
-```
-
-## 🤝 Desenvolvimento
-
-### Padrões de Código
-- Seguir PSR-12
-- Usar type hints quando possível
-- Documentar métodos complexos
-- Manter consistência nos nomes
-
-### Git Workflow
-- Feature branches para novas funcionalidades
-- Commits semânticos
-- Pull requests para review
-
-## 🎯 URLs de Acesso
-
-### Desenvolvimento (Artisan)
-- **Dashboard**: http://localhost:8000/dashboard
-- **Login**: http://localhost:8000/login
-- **Relatórios**: http://localhost:8000/relatorios
-- **🆕 Faturamento por Prestador**: http://localhost:8000/relatorios/faturamento-prestador
-
-### Produção Local (XAMPP)
-- **Acesso Principal**: http://192.168.5.130/consultasia/ (redireciona automaticamente para login)
-- **Dashboard**: http://192.168.5.130/consultasia/public/dashboard
-- **Login**: http://192.168.5.130/consultasia/public/login
-- **Relatórios**: http://192.168.5.130/consultasia/public/relatorios
-- **🆕 Faturamento por Prestador**: http://192.168.5.130/consultasia/public/relatorios/faturamento-prestador
-
-## 📞 Suporte e Manutenção
-
-### Logs do Sistema
-- **Localização**: `storage/logs/laravel.log`
-- **Rotação**: Automática por data
-- **Níveis**: DEBUG, INFO, WARNING, ERROR
-
-### Troubleshooting Comum
-1. **Erro 500**: Verificar logs e permissões
-2. **Sessão perdida**: Limpar cache de sessão
-3. **Relatórios lentos**: Verificar índices do banco
-4. **Exportação falha**: Verificar memória PHP
-5. **🆕 Erro GD**: Verificar extensões PHP habilitadas
-
-### Contato Técnico
-- **Documentação**: Este arquivo README
-- **Logs**: `storage/logs/laravel.log`
-- **Debug**: Ativar `APP_DEBUG=true` no `.env`
 
 ---
 
-**Sistema ConsultaProd v2.1**  
-Desenvolvido para Gestão de Dados em Saúde  
-Laravel 12.x + PHP 8.2+ + MySQL + 5.9M registros  
-**Status**: ✅ Totalmente Funcional + 🆕 Relatório Hierárquico
+## URLs principais
+
+| Página | URL (Artisan) |
+|--------|---------------|
+| Login | http://localhost:8000/login |
+| Dashboard | http://localhost:8000/dashboard |
+| Relatório SIA | http://localhost:8000/relatorios |
+| Relatório APAC | http://localhost:8000/relatorios/apac |
+| Relatório BPI | http://localhost:8000/relatorios/bpi |
+| Relatório AIH | http://localhost:8000/relatorios/aih |
+| Faturamento | http://localhost:8000/relatorios/faturamento-prestador |
+
+---
+
+## Documentação para desenvolvedores
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `CLAUDE.md` | Hub de navegação do projeto |
+| `.context/docs/routes-map.md` | Mapa completo das rotas |
+| `.context/docs/data-contract.md` | Contrato de dados e tabelas |
+| `.context/docs/legacy-relatorios-spec.md` | Spec dos relatórios |
+| `.context/docs/exports-pattern.md` | Padrão de exportações |
+| `.context/docs/glossary.md` | Vocabulário SUS/DATASUS |
+
+---
+
+## Pastas experimentais (não são a stack em produção)
+
+| Pasta | Descrição |
+|-------|-----------|
+| `v3-backend/` | Protótipo NestJS (migração futura) |
+| `v3-frontend/` | Protótipo React |
+| `consultasia-express/` | Experimento Node/Express |
+| `tools/` | Cópias auxiliares para ferramentas de desenvolvimento |
+
+A aplicação ativa é o **Laravel na raiz** do repositório.
+
+---
+
+## Troubleshooting
+
+| Problema | Solução |
+|----------|---------|
+| Erro 500 | Verificar `storage/logs/laravel.log` e permissões de `storage/` |
+| Exportação PDF falha | Habilitar extensão `gd` no `php.ini` |
+| Relatório lento | Confirmar filtro de competência; ver `.context/docs/performance-playbook.md` |
+| Sessão perdida | `php artisan optimize:clear` |
+
+---
+
+## Licença
+
+MIT
+
+---
+
+**ConsultaProd** — Laravel 12 · PHP 8.2+ · MariaDB · 5,9M+ registros em produção
