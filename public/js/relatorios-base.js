@@ -17,7 +17,8 @@ const RelatoriosBase = (function () {
     };
 
     const CURRENCY_FIELDS = new Set([
-        'PRD_VL_P', 'PAP_VALOR', 'BPI_VL_P', 'cismetro_total', 'cismetro_valor'
+        'PRD_VL_P', 'PAP_VALOR', 'BPI_VL_P', 'cismetro_total', 'cismetro_valor',
+        'sus_paulista_tab', 'sus_paulista_tab_total', 'sus_paulista_tsp', 'sus_paulista_tsp_total'
     ]);
 
     const INTEGER_FIELDS = new Set([

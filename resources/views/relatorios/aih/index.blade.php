@@ -72,6 +72,15 @@
                             </button>
                         </div>
                         <div class="min-h-32 border rounded-lg p-4">
+                            <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="sus-paulista-filter" class="mr-2 rounded border-gray-300">
+                                    <span class="text-sm font-medium text-emerald-800">
+                                        Somente procedimentos com Tabela SUS Paulista (SIH)
+                                    </span>
+                                </label>
+                                <p class="text-xs text-emerald-600 mt-1">Oculta linhas sem cadastro vigente na tabela SUS Paulista (modalidade hospitalar) para a competência.</p>
+                            </div>
                             <p class="text-gray-500 text-sm" id="no-filters-message">Nenhum filtro adicionado.</p>
                             <div id="filters-list" class="space-y-3 mt-3"></div>
                         </div>
@@ -393,7 +402,17 @@
             if (isMatrix && !matrixDate) { alert('Para matriz selecione o campo Competência.'); return; }
             isMatrix ? showMatrixLoading() : showLoading();
 
-            const payload   = { fields: selectedFields, filters: appliedFilters.map(f => ({ field: f.field, operator: f.operator, value: f.value })), format };
+            const payload   = {
+                fields: selectedFields,
+                filters: (() => {
+                    let allFilters = appliedFilters.map(f => ({ field: f.field, operator: f.operator, value: f.value }));
+                    if (document.getElementById('sus-paulista-filter')?.checked) {
+                        allFilters.push({ field: 'filter_sus_paulista', operator: '=', value: true });
+                    }
+                    return allFilters;
+                })(),
+                format
+            };
             const routeUrl  = isMatrix ? '{{ route("relatorios.aih.generate-matrix") }}' : '{{ route("relatorios.aih.generate") }}';
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 

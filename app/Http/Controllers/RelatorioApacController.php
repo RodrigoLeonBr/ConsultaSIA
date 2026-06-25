@@ -7,10 +7,12 @@ use Illuminate\Support\Facades\DB;
 use App\Exports\RelatorioApacExport;
 use App\Exports\MatrixReportExport;
 use App\Http\Controllers\Concerns\HasMatrixReport;
+use App\Http\Controllers\Concerns\HasSusPaulistaReport;
 
 class RelatorioApacController extends BaseRelatorioController
 {
     use HasMatrixReport;
+    use HasSusPaulistaReport;
 
     public function index()
     {
@@ -230,6 +232,11 @@ class RelatorioApacController extends BaseRelatorioController
             });
             $joins[] = 'procedimento';
         }
+
+        if ($this->needsSusPaulista($selectedFields, $filters) && ! in_array('sus_paulista', $joins, true)) {
+            $this->addSusPaulistaJoin($query, $filters, $tableAlias);
+            $joins[] = 'sus_paulista';
+        }
     }
 
     protected function buildQuery($selectedFields, $filters, $groupBy = true)
@@ -279,7 +286,7 @@ class RelatorioApacController extends BaseRelatorioController
         $groupByFields = [];
 
         foreach ($selectedFields as $field) {
-            if ($field === 'filter_oci') {
+            if (in_array($field, ['filter_oci', 'filter_sus_paulista'], true)) {
                 continue;
             }
 
@@ -325,6 +332,11 @@ class RelatorioApacController extends BaseRelatorioController
                 $groupByFields[] = 'cs.valor';
             } elseif ($field === 'cismetro_total') {
                 $selectFields[] = DB::raw('SUM(CAST(pap.PAP_QT_P as DECIMAL(15,2)) * COALESCE(cs.valor, 0)) as cismetro_total');
+            } elseif (($susPaulista = $this->buildSusPaulistaListSelect($field, 'pap'))['handled']) {
+                $selectFields = array_merge($selectFields, $susPaulista['select']);
+                if (! empty($susPaulista['groupBy'])) {
+                    $groupByFields = array_merge($groupByFields, $susPaulista['groupBy']);
+                }
             } elseif ($field === 'PAP_CMP') {
                 $selectFields[] = DB::raw("CONCAT(SUBSTRING(pap.PAP_CMP, 1, 4), '-', SUBSTRING(pap.PAP_CMP, 5, 2)) as competencia");
                 $groupByFields[] = 'pap.PAP_CMP';
@@ -390,7 +402,7 @@ class RelatorioApacController extends BaseRelatorioController
         }
 
         $firstOrderField = collect($selectedFields)->first(
-            fn ($field) => !in_array($field, ['PAP_QT_P', 'PAP_VALOR', 'cismetro_total', 'procedimento_descricao', 'filter_oci'], true)
+            fn ($field) => ! in_array($field, ['PAP_QT_P', 'PAP_VALOR', 'cismetro_total', 'procedimento_descricao', 'filter_oci', 'filter_sus_paulista', ...$this->getSusPaulistaAggregateFieldIds()], true)
         );
 
         if ($firstOrderField === 'faixa_etaria_1') {
@@ -439,7 +451,7 @@ class RelatorioApacController extends BaseRelatorioController
         $operator = $filter['operator'];
         $value = $filter['value'];
 
-        if ($field === 'filter_oci') {
+        if (in_array($field, ['filter_oci', 'filter_sus_paulista'], true)) {
             return;
         }
 
@@ -493,15 +505,23 @@ class RelatorioApacController extends BaseRelatorioController
             return;
         }
 
-        if ($field === 'cismetro_valor') {
-            $fullField = 'cs.valor';
-        } elseif ($field === 'cismetro_total') {
+        $susPaulistaField = $this->resolveSusPaulistaFilterField($field);
+        if ($susPaulistaField === null) {
             return;
-        } elseif (str_starts_with($field, 'cismetro_')) {
-            $fullField = 'cs.' . substr($field, 9);
-        } else {
-            $tablePrefix = str_starts_with($field, 'APA_') ? 'apa' : $this->getTableAlias();
-            $fullField = "{$tablePrefix}.{$field}";
+        }
+        if (is_string($susPaulistaField)) {
+            $fullField = $susPaulistaField;
+        } elseif ($susPaulistaField === false) {
+            if ($field === 'cismetro_valor') {
+                $fullField = 'cs.valor';
+            } elseif ($field === 'cismetro_total') {
+                return;
+            } elseif (str_starts_with($field, 'cismetro_')) {
+                $fullField = 'cs.' . substr($field, 9);
+            } else {
+                $tablePrefix = str_starts_with($field, 'APA_') ? 'apa' : $this->getTableAlias();
+                $fullField = "{$tablePrefix}.{$field}";
+            }
         }
 
         switch ($operator) {
@@ -569,7 +589,7 @@ class RelatorioApacController extends BaseRelatorioController
             $formatted = [];
 
             foreach ($selectedFields as $field) {
-                if ($field === 'filter_oci') {
+                if (in_array($field, ['filter_oci', 'filter_sus_paulista'], true)) {
                     continue;
                 }
 
@@ -594,6 +614,8 @@ class RelatorioApacController extends BaseRelatorioController
                     $formatted['Cismetro - Valor Total'] = $row->cismetro_total
                         ? 'R$ ' . number_format((float) $row->cismetro_total, 2, ',', '.')
                         : 'R$ 0,00';
+                } elseif (($susPaulista = $this->formatSusPaulistaField($field, $row)) !== null) {
+                    $formatted = array_merge($formatted, $susPaulista);
                 } elseif ($field === 'PAP_QT_P') {
                     $formatted['Quantidade Total'] = number_format((float) ($row->total_quantidade ?? 0), 0, ',', '.');
                 } elseif ($field === 'PAP_VALOR') {
@@ -666,6 +688,8 @@ class RelatorioApacController extends BaseRelatorioController
             $totalCismetro = $data->sum(fn ($item) => $item->cismetro_total ?? 0);
             $totals['Cismetro - Valor Total Geral'] = 'R$ ' . number_format($totalCismetro, 2, ',', '.');
         }
+
+        $this->appendSusPaulistaTotals($selectedFields, $data, $totals);
 
         return $totals;
     }
@@ -947,6 +971,7 @@ class RelatorioApacController extends BaseRelatorioController
                 'lookup_display' => 'descricao',
                 'operators' => ['=', 'like'],
             ],
+            ...$this->getSusPaulistaFieldConfigs(),
             'grupo' => [
                 'label' => 'Grupo',
                 'type' => 'text',
@@ -999,6 +1024,16 @@ class RelatorioApacController extends BaseRelatorioController
     protected function getCboField(): string
     {
         return 'PAP_CBO';
+    }
+
+    protected function getSusPaulistaQuantityField(): string
+    {
+        return 'PAP_QT_P';
+    }
+
+    protected function getSusPaulistaQuantityCastType(): string
+    {
+        return 'DECIMAL(15,2)';
     }
 
     protected function getProcedimentoFieldForCismetro(): string
@@ -1082,6 +1117,8 @@ class RelatorioApacController extends BaseRelatorioController
             $fields[] = DB::raw("SUM(CAST({$tableAlias}.PAP_QT_P as DECIMAL(15,2)) * CAST(pc.pa_total as DECIMAL(15,2))) as valor_total");
         } elseif ($field === 'cismetro_total') {
             $fields[] = DB::raw("SUM(CAST({$tableAlias}.PAP_QT_P as DECIMAL(15,2)) * COALESCE(cs.valor, 0)) as cismetro_total");
+        } else {
+            $fields = array_merge($fields, $this->getSusPaulistaMatrixNumericFields($field, $tableAlias));
         }
 
         return $fields;
@@ -1124,7 +1161,8 @@ class RelatorioApacController extends BaseRelatorioController
             case 'cismetro_valor':
                 return (float) ($item->cismetro_valor ?? 0);
             default:
-                return (float) ($item->{$field} ?? 0);
+                $susValue = $this->getSusPaulistaNumericValue($item, $field);
+                return $susValue ?? (float) ($item->{$field} ?? 0);
         }
     }
 

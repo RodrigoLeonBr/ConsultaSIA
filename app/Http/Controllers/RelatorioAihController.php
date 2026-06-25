@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Exports\RelatorioAihExport;
 use App\Exports\MatrixReportExport;
 use App\Http\Controllers\Concerns\HasMatrixReport;
+use App\Http\Controllers\Concerns\HasSusPaulistaReport;
 use Illuminate\Support\Facades\DB;
 
 class RelatorioAihController extends BaseRelatorioController
 {
     use HasMatrixReport;
+    use HasSusPaulistaReport;
 
     // ── Field IDs helpers ────────────────────────────────────────────────────
 
@@ -224,6 +226,7 @@ class RelatorioAihController extends BaseRelatorioController
                 'type'      => 'number',
                 'operators' => [],
             ],
+            ...$this->getSusPaulistaFieldConfigs(),
         ];
     }
 
@@ -257,6 +260,9 @@ class RelatorioAihController extends BaseRelatorioController
     protected function getCboField(): string { return ''; }
     protected function getRubField(): ?string { return 'FINANCIAMENTO'; }
     protected function getProcedimentoFieldForCismetro(): string { return 'PROC_PRINCIPAL'; }
+    protected function getSusPaulistaModalidade(): string { return 'sih'; }
+    protected function getSusPaulistaQuantityField(): string { return 'AIH'; }
+    protected function getSusPaulistaQuantityCastSql(string $tableAlias): string { return '1'; }
     protected function getDefaultNumericField(): ?string { return 'qtd_aih'; }
 
     // ── Join helpers ─────────────────────────────────────────────────────────
@@ -333,6 +339,11 @@ class RelatorioAihController extends BaseRelatorioController
         if ($this->needsFormaJoins($selectedFields, $filters) && !in_array('forma', $joins, true)) {
             $this->addFormaJoins($query);
             $joins[] = 'forma';
+        }
+
+        if ($this->needsSusPaulista($selectedFields, $filters) && ! in_array('sus_paulista', $joins, true)) {
+            $this->addSusPaulistaJoin($query, $filters, 'sa');
+            $joins[] = 'sus_paulista';
         }
 
         $selectFields  = [];
@@ -441,6 +452,17 @@ class RelatorioAihController extends BaseRelatorioController
                     $selectFields[] = DB::raw('COUNT(DISTINCT sa.AIH) as qtd_aih');
                     break;
 
+                case 'sus_paulista_tab':
+                case 'sus_paulista_tsp':
+                case 'sus_paulista_tab_total':
+                case 'sus_paulista_tsp_total':
+                    $susPaulista = $this->buildSusPaulistaListSelect($field, 'sa');
+                    $selectFields = array_merge($selectFields, $susPaulista['select']);
+                    if (! empty($susPaulista['groupBy'])) {
+                        $groupByFields = array_merge($groupByFields, $susPaulista['groupBy']);
+                    }
+                    break;
+
                 default:
                     $selectFields[]  = "sa.{$field}";
                     $groupByFields[] = "sa.{$field}";
@@ -460,7 +482,7 @@ class RelatorioAihController extends BaseRelatorioController
         // Ordering
         $firstOrder = collect($selectedFields)->first(fn ($f) => !in_array($f, [
             'DIARIAS', 'DIARIAS_UTI', 'VALOR_TOTAL_AIH', 'IDADE', 'qtd_aih',
-            'proc_principal_descricao',
+            'proc_principal_descricao', 'filter_sus_paulista', ...$this->getSusPaulistaAggregateFieldIds(),
         ], true));
 
         if ($firstOrder === 'faixa_etaria_1') {
@@ -534,6 +556,20 @@ class RelatorioAihController extends BaseRelatorioController
             return;
         }
 
+        if ($field === 'filter_sus_paulista') {
+            return;
+        }
+
+        $susPaulistaField = $this->resolveSusPaulistaFilterField($field);
+        if ($susPaulistaField === null) {
+            if (str_starts_with($field, 'sus_paulista_')) {
+                return;
+            }
+        } elseif (is_string($susPaulistaField)) {
+            $this->applySubstringFilter($query, $susPaulistaField, $operator, $value);
+            return;
+        }
+
         parent::applyFilter($query, $filter);
     }
 
@@ -552,10 +588,26 @@ class RelatorioAihController extends BaseRelatorioController
 
     // ── Matrix support ────────────────────────────────────────────────────────
 
-    protected function addReportJoins($query, array $selectedFields, array $filters, string $tableAlias, array $joins): void
+    protected function addReportJoins($query, array $selectedFields, array $filters, string $tableAlias, array &$joins): void
     {
-        if ($this->needsFormaJoins($selectedFields, $filters) && !in_array('forma', $joins)) {
+        if ($this->needsFormaJoins($selectedFields, $filters) && !in_array('forma', $joins, true)) {
             $this->addFormaJoins($query);
+            $joins[] = 'forma';
+        }
+
+        foreach (['CNES', 'PROC_PRINCIPAL', 'FINANCIAMENTO'] as $lookupField) {
+            $cfg = $this->getFieldConfig($lookupField);
+            $needsLookup = collect($selectedFields)->contains($lookupField)
+                || collect($filters)->contains(fn ($f) => ($f['field'] ?? '') === $lookupField);
+            if ($needsLookup && $cfg && ! in_array($cfg['lookup_table'], $joins, true)) {
+                $this->addLookupJoin($query, $lookupField);
+                $joins[] = $cfg['lookup_table'];
+            }
+        }
+
+        if ($this->needsSusPaulista($selectedFields, $filters) && ! in_array('sus_paulista', $joins, true)) {
+            $this->addSusPaulistaJoin($query, $filters, $tableAlias);
+            $joins[] = 'sus_paulista';
         }
     }
 
@@ -612,7 +664,7 @@ class RelatorioAihController extends BaseRelatorioController
 
     protected function getMatrixNumericFields($field, $tableAlias): array
     {
-        return match ($field) {
+        $fields = match ($field) {
             'DIARIAS'         => [DB::raw('SUM(CAST(sa.DIARIAS AS UNSIGNED)) as DIARIAS')],
             'DIARIAS_UTI'     => [DB::raw('SUM(CAST(sa.DIARIAS_UTI AS UNSIGNED)) as DIARIAS_UTI')],
             'VALOR_TOTAL_AIH' => [DB::raw('SUM(CAST(sa.VALOR_TOTAL_AIH AS DECIMAL(12,2))) as VALOR_TOTAL_AIH')],
@@ -620,11 +672,15 @@ class RelatorioAihController extends BaseRelatorioController
             'qtd_aih'         => [DB::raw('COUNT(DISTINCT sa.AIH) as qtd_aih')],
             default           => [],
         };
+
+        return array_merge($fields, $this->getSusPaulistaMatrixNumericFields($field, $tableAlias));
     }
 
     protected function getNumericValue($item, $field)
     {
-        return (float) ($item->{$field} ?? 0);
+        $susValue = $this->getSusPaulistaNumericValue($item, $field);
+
+        return $susValue ?? (float) ($item->{$field} ?? 0);
     }
 
     protected function getGroupKeyPart($item, $field)
@@ -664,6 +720,8 @@ class RelatorioAihController extends BaseRelatorioController
             $totals['Valor Total AIH'] = 'R$ ' . number_format($data->sum(fn ($r) => $r->VALOR_TOTAL_AIH ?? 0), 2, ',', '.');
         }
 
+        $this->appendSusPaulistaTotals($selectedFields, $data, $totals);
+
         return $totals;
     }
 
@@ -689,6 +747,9 @@ class RelatorioAihController extends BaseRelatorioController
         }
         if ($field === 'proc_principal_descricao') {
             return []; // filter-only
+        }
+        if (($susPaulista = $this->formatSusPaulistaField($field, $row)) !== null) {
+            return $susPaulista;
         }
 
         return parent::formatFieldValue($row, $field, $fieldConfig);

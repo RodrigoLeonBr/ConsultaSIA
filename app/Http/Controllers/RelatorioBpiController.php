@@ -7,10 +7,12 @@ use Illuminate\Support\Facades\DB;
 use App\Exports\RelatorioExport;
 use App\Exports\MatrixReportExport;
 use App\Http\Controllers\Concerns\HasMatrixReport;
+use App\Http\Controllers\Concerns\HasSusPaulistaReport;
 
 class RelatorioBpiController extends BaseRelatorioController
 {
     use HasMatrixReport;
+    use HasSusPaulistaReport;
     /**
      * Display the report builder interface
      */
@@ -177,6 +179,7 @@ class RelatorioBpiController extends BaseRelatorioController
                     'lookup_display' => 'descricao',
                     'operators' => ['=', 'like']
                 ],
+                ...$this->getSusPaulistaFieldConfigs(),
                 'grupo' => [
                     'label' => 'Grupo',
                     'type' => 'text',
@@ -402,6 +405,11 @@ class RelatorioBpiController extends BaseRelatorioController
             $this->addFormaJoins($query);
             $joins[] = 'forma';
         }
+
+        if ($this->needsSusPaulista($selectedFields, $filters) && ! in_array('sus_paulista', $joins, true)) {
+            $this->addSusPaulistaJoin($query, $filters, $tableAlias);
+            $joins[] = 'sus_paulista';
+        }
     }
 
     /**
@@ -484,6 +492,11 @@ class RelatorioBpiController extends BaseRelatorioController
                 } elseif ($field === 'cismetro_total') {
                     // Cismetro total value (quantity * unit value)
                     $selectFields[] = DB::raw("SUM(CAST(sb.BPI_QT_P as UNSIGNED) * COALESCE(cs.valor, 0)) as cismetro_total");
+                } elseif (($susPaulista = $this->buildSusPaulistaListSelect($field, 'sb'))['handled']) {
+                    $selectFields = array_merge($selectFields, $susPaulista['select']);
+                    if (! empty($susPaulista['groupBy'])) {
+                        $groupByFields = array_merge($groupByFields, $susPaulista['groupBy']);
+                    }
                 } elseif ($field === 'BPI_CMP') {
                     // Format competencia as YYYY-MM
                     $selectFields[] = DB::raw("CONCAT(SUBSTRING(sb.BPI_CMP, 1, 4), '-', SUBSTRING(sb.BPI_CMP, 5, 2)) as competencia");
@@ -545,7 +558,7 @@ class RelatorioBpiController extends BaseRelatorioController
         
         // Order by first dimensional field
         $firstOrderField = collect($selectedFields)->first(
-            fn ($field) => !in_array($field, ['BPI_QT_P', 'cismetro_total', 'procedimento_descricao'], true)
+            fn ($field) => ! in_array($field, ['BPI_QT_P', 'cismetro_total', 'procedimento_descricao', ...$this->getSusPaulistaAggregateFieldIds()], true)
         );
 
         if ($firstOrderField === 'faixa_etaria_1') {
@@ -646,19 +659,28 @@ class RelatorioBpiController extends BaseRelatorioController
             $this->applyTextFilter($query, 'pr.relatorio', $operator, $value);
             return;
         }
-        
-        // Handle cismetro fields in filters
-        if ($field === 'cismetro_valor') {
-            $field = 'cs.valor';
-        } elseif ($field === 'cismetro_total') {
-            // For cismetro_total, we need to filter on the calculated field
-            // This is more complex and might need HAVING clause
-            return; // Skip for now, can be implemented later if needed
-        } elseif (str_starts_with($field, 'cismetro_')) {
-            $field = 'cs.' . substr($field, 9); // Remove 'cismetro_' prefix
-        } else {
-            $tableAlias = $this->getTableAlias();
-            $field = "{$tableAlias}.{$field}";
+
+        if ($field === 'filter_sus_paulista') {
+            return;
+        }
+
+        $susPaulistaField = $this->resolveSusPaulistaFilterField($field);
+        if ($susPaulistaField === null) {
+            return;
+        }
+        if (is_string($susPaulistaField)) {
+            $field = $susPaulistaField;
+        } elseif ($susPaulistaField === false) {
+            if ($field === 'cismetro_valor') {
+                $field = 'cs.valor';
+            } elseif ($field === 'cismetro_total') {
+                return;
+            } elseif (str_starts_with($field, 'cismetro_')) {
+                $field = 'cs.' . substr($field, 9);
+            } else {
+                $tableAlias = $this->getTableAlias();
+                $field = "{$tableAlias}.{$field}";
+            }
         }
         
         switch ($operator) {
@@ -756,6 +778,8 @@ class RelatorioBpiController extends BaseRelatorioController
                 } elseif ($field === 'cismetro_total') {
                     $formatted['Cismetro - Valor Total'] = $row->cismetro_total ? 
                         'R$ ' . number_format((float)$row->cismetro_total, 2, ',', '.') : 'R$ 0,00';
+                } elseif (($susPaulista = $this->formatSusPaulistaField($field, $row)) !== null) {
+                    $formatted = array_merge($formatted, $susPaulista);
                 } elseif ($field === 'BPI_QT_P') {
                     $formatted['Quantidade Total'] = number_format((float)($row->total_quantidade ?? 0), 0, ',', '.');
                 } elseif ($field === 'BPI_CMP') {
@@ -820,6 +844,8 @@ class RelatorioBpiController extends BaseRelatorioController
             });
             $totals['Cismetro - Valor Total'] = 'R$ ' . number_format($totalCismetro, 2, ',', '.');
         }
+
+        $this->appendSusPaulistaTotals($selectedFields, $data, $totals);
         
         return $totals;
     }
@@ -982,6 +1008,7 @@ class RelatorioBpiController extends BaseRelatorioController
                 'lookup_display' => 'descricao',
                 'operators' => ['=', 'like']
             ],
+            ...$this->getSusPaulistaFieldConfigs(),
             'grupo' => [
                 'label' => 'Grupo',
                 'type' => 'text',
@@ -1096,6 +1123,11 @@ class RelatorioBpiController extends BaseRelatorioController
         return null;
     }
 
+    protected function getSusPaulistaQuantityField(): string
+    {
+        return 'BPI_QT_P';
+    }
+
     protected function getProcedimentoFieldForCismetro(): string
     {
         return 'BPI_PA';
@@ -1172,6 +1204,8 @@ class RelatorioBpiController extends BaseRelatorioController
             $fields[] = DB::raw("SUM(CAST({$tableAlias}.BPI_QT_P as UNSIGNED)) as total_quantidade");
         } elseif ($field === 'cismetro_total') {
             $fields[] = DB::raw("SUM(CAST({$tableAlias}.BPI_QT_P as UNSIGNED) * COALESCE(cs.valor, 0)) as cismetro_total");
+        } else {
+            $fields = array_merge($fields, $this->getSusPaulistaMatrixNumericFields($field, $tableAlias));
         }
         
         return $fields;
@@ -1210,7 +1244,8 @@ class RelatorioBpiController extends BaseRelatorioController
             case 'cismetro_valor':
                 return (float)($item->cismetro_valor ?? 0);
             default:
-                return (float)($item->{$field} ?? 0);
+                $susValue = $this->getSusPaulistaNumericValue($item, $field);
+                return $susValue ?? (float)($item->{$field} ?? 0);
         }
     }
     

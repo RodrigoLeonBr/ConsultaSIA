@@ -11,6 +11,8 @@ use App\Http\Controllers\SRubController;
 use App\Http\Controllers\SPapController;
 use App\Http\Controllers\SApaController;
 use App\Http\Controllers\CismetroController;
+use App\Http\Controllers\SusPaulistaController;
+use App\Http\Controllers\SusPaulistaImportController;
 use App\Http\Controllers\FaturamentoPrestadorController;
 use App\Http\Controllers\AihImportController;
 use App\Http\Controllers\RelatorioAihController;
@@ -78,6 +80,13 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
         Route::post('/procedimento-import/tu/apply', [ProcedimentoImportController::class, 'applyTu'])->name('procedimento.import.tu.apply');
         Route::resource('srub', SRubController::class);
         Route::resource('cismetro', CismetroController::class);
+        Route::get('/sus-paulista', [SusPaulistaController::class, 'index'])->name('sus-paulista.index');
+        Route::get('/sus-paulista-import', [SusPaulistaImportController::class, 'create'])->name('sus-paulista.import');
+        Route::post('/sus-paulista-import', [SusPaulistaImportController::class, 'store'])->name('sus-paulista.import.store');
+        Route::get('/sus-paulista-import/process', [SusPaulistaImportController::class, 'process'])->name('sus-paulista.import.process');
+        Route::post('/sus-paulista-import/process', [SusPaulistaImportController::class, 'processChunk'])->name('sus-paulista.import.process.chunk');
+        Route::get('/sus-paulista-import/preview', [SusPaulistaImportController::class, 'preview'])->name('sus-paulista.import.preview');
+        Route::post('/sus-paulista-import/apply', [SusPaulistaImportController::class, 'apply'])->name('sus-paulista.import.apply');
         
         // APAC Management
         Route::resource('spap', SPapController::class);

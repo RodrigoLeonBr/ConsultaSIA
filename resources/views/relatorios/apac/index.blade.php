@@ -99,6 +99,16 @@
                                 </label>
                                 <p class="text-xs text-orange-600 mt-1">1.531 registros OCI disponíveis</p>
                             </div>
+
+                            <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="sus-paulista-filter" class="mr-2 rounded border-gray-300">
+                                    <span class="text-sm font-medium text-emerald-800">
+                                        Somente procedimentos com Tabela SUS Paulista (SIA)
+                                    </span>
+                                </label>
+                                <p class="text-xs text-emerald-600 mt-1">Oculta linhas sem cadastro vigente na tabela SUS Paulista para a competência.</p>
+                            </div>
                             
                             <div class="min-h-32 border rounded-lg p-4">
                                 <p class="text-gray-500 text-sm" id="no-filters-message">Nenhum filtro adicionado. Clique em "Adicionar Filtro" para começar.</p>
@@ -800,6 +810,7 @@
             
             // Check if OCI filter is enabled
             const ociFilterEnabled = document.getElementById('oci-filter').checked;
+            const susPaulistaFilterEnabled = document.getElementById('sus-paulista-filter')?.checked;
             
             // Build filters array
             let allFilters = appliedFilters.map(f => ({
@@ -812,6 +823,14 @@
             if (ociFilterEnabled) {
                 allFilters.push({
                     field: 'filter_oci',
+                    operator: '=',
+                    value: true
+                });
+            }
+
+            if (susPaulistaFilterEnabled) {
+                allFilters.push({
+                    field: 'filter_sus_paulista',
                     operator: '=',
                     value: true
                 });

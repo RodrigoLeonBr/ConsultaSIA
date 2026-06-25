@@ -8,13 +8,16 @@ class Sidebar extends Component
 {
     public string $active;
 
-    /** @var array<int, array{label: ?string, items: array<int, array{id: string, label: string, route: string, icon: string}>}> */
+    /** @var array<int, array{id: string, label: ?string, has_active: bool, items: array<int, array{id: string, label: string, route: string, icon: string}>}> */
     public array $sections;
+
+    public string $activeSectionId;
 
     public function __construct(?string $active = null)
     {
         $this->active = $active ?? self::resolveActiveRoute();
-        $this->sections = self::menuSections();
+        $this->sections = self::enrichedMenuSections($this->active);
+        $this->activeSectionId = collect($this->sections)->firstWhere('has_active', true)['id'] ?? 'principal';
     }
 
     public static function resolveActiveRoute(): string
@@ -37,6 +40,10 @@ class Sidebar extends Component
 
         if (request()->routeIs('cismetro.*')) {
             return 'cismetro';
+        }
+
+        if (request()->routeIs('sus-paulista.*')) {
+            return 'sus-paulista';
         }
 
         if (request()->routeIs('srub.*')) {
@@ -79,12 +86,13 @@ class Sidebar extends Component
     }
 
     /**
-     * @return array<int, array{label: ?string, items: array<int, array{id: string, label: string, route: string, icon: string}>}>
+     * @return array<int, array{id: string, label: ?string, items: array<int, array{id: string, label: string, route: string, icon: string}>}>
      */
     public static function menuSections(): array
     {
         return [
             [
+                'id' => 'principal',
                 'label' => 'Principal',
                 'items' => [
                     ['id' => 'dashboard', 'label' => 'Início',  'route' => 'dashboard', 'icon' => 'dashboard'],
@@ -92,16 +100,19 @@ class Sidebar extends Component
                 ],
             ],
             [
+                'id' => 'cadastros',
                 'label' => 'Cadastros',
                 'items' => [
                     ['id' => 'cbo', 'label' => 'CBO', 'route' => 'cbo.index', 'icon' => 'cbo'],
                     ['id' => 'prestador', 'label' => 'Prestadores', 'route' => 'prestador.index', 'icon' => 'prestador'],
                     ['id' => 'procedimento', 'label' => 'Procedimentos', 'route' => 'procedimento.index', 'icon' => 'procedimento'],
                     ['id' => 'cismetro', 'label' => 'Cismetro', 'route' => 'cismetro.index', 'icon' => 'cismetro'],
+                    ['id' => 'sus-paulista', 'label' => 'SUS Paulista', 'route' => 'sus-paulista.index', 'icon' => 'sus-paulista'],
                     ['id' => 'financiamento', 'label' => 'Financiamentos', 'route' => 'srub.index', 'icon' => 'financiamento'],
                 ],
             ],
             [
+                'id' => 'relatorios',
                 'label' => 'Relatórios',
                 'items' => [
                     ['id' => 'relatorios', 'label' => 'Relatórios Produção', 'route' => 'relatorios.index', 'icon' => 'relatorios'],
@@ -111,6 +122,7 @@ class Sidebar extends Component
                 ],
             ],
             [
+                'id' => 'sih',
                 'label' => 'Internações (SIH)',
                 'items' => [
                     ['id' => 'aih-import', 'label' => 'Importar AIH',         'route' => 'aih.import',              'icon' => 'aih-import'],
@@ -119,12 +131,25 @@ class Sidebar extends Component
                 ],
             ],
             [
+                'id' => 'sistema',
                 'label' => 'Sistema',
                 'items' => [
                     ['id' => 'admin', 'label' => 'Admin', 'route' => 'admin.dashboard', 'icon' => 'admin'],
                 ],
             ],
         ];
+    }
+
+    /**
+     * @return array<int, array{id: string, label: ?string, has_active: bool, items: array<int, array{id: string, label: string, route: string, icon: string}>}>
+     */
+    public static function enrichedMenuSections(string $active): array
+    {
+        return collect(self::menuSections())->map(function (array $section) use ($active) {
+            $section['has_active'] = collect($section['items'])->contains(fn (array $item) => $item['id'] === $active);
+
+            return $section;
+        })->all();
     }
 
     public function render()

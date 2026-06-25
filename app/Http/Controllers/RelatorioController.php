@@ -7,10 +7,12 @@ use Illuminate\Support\Facades\DB;
 use App\Exports\RelatorioExport;
 use App\Exports\MatrixReportExport;
 use App\Http\Controllers\Concerns\HasMatrixReport;
+use App\Http\Controllers\Concerns\HasSusPaulistaReport;
 
 class RelatorioController extends BaseRelatorioController
 {
     use HasMatrixReport;
+    use HasSusPaulistaReport;
     /**
      * Display the report builder interface
      */
@@ -146,6 +148,7 @@ class RelatorioController extends BaseRelatorioController
                     'lookup_display' => 'descricao',
                     'operators' => ['=', 'like']
                 ],
+                ...$this->getSusPaulistaFieldConfigs(),
                 'grupo' => [
                     'label' => 'Grupo',
                     'type' => 'text',
@@ -367,10 +370,20 @@ class RelatorioController extends BaseRelatorioController
             $this->addPrestadorJoinIfNeeded($query, $joins);
         }
 
-        if ($this->needsFormaJoins($selectedFields, $filters) && !in_array('forma', $joins, true)) {
+        if ($this->needsFormaJoins($selectedFields, $filters) && ! in_array('forma', $joins, true)) {
             $this->addFormaJoins($query);
             $joins[] = 'forma';
         }
+
+        if ($this->needsSusPaulista($selectedFields, $filters) && ! in_array('sus_paulista', $joins, true)) {
+            $this->addSusPaulistaJoin($query, $filters, $tableAlias);
+            $joins[] = 'sus_paulista';
+        }
+    }
+
+    protected function getSusPaulistaQuantityField(): string
+    {
+        return 'PRD_QT_P';
     }
 
     /**
@@ -456,6 +469,11 @@ class RelatorioController extends BaseRelatorioController
                 } elseif ($field === 'cismetro_total') {
                     // Cismetro total value (quantity * unit value)
                     $selectFields[] = DB::raw("SUM(CAST(sp.PRD_QT_P as UNSIGNED) * COALESCE(cs.valor, 0)) as cismetro_total");
+                } elseif (($susPaulista = $this->buildSusPaulistaListSelect($field, 'sp'))['handled']) {
+                    $selectFields = array_merge($selectFields, $susPaulista['select']);
+                    if (! empty($susPaulista['groupBy'])) {
+                        $groupByFields = array_merge($groupByFields, $susPaulista['groupBy']);
+                    }
                 } elseif ($field === 'prd_cmp') {
                     // Format competencia as YYYY-MM
                     $selectFields[] = DB::raw("CONCAT(SUBSTRING(sp.prd_cmp, 1, 4), '-', SUBSTRING(sp.prd_cmp, 5, 2)) as competencia");
@@ -517,7 +535,9 @@ class RelatorioController extends BaseRelatorioController
         
         // Order by first dimensional field
         $firstOrderField = collect($selectedFields)->first(
-            fn ($field) => !in_array($field, ['PRD_QT_P', 'PRD_VL_P', 'cismetro_total', 'procedimento_descricao'], true)
+            fn ($field) => ! in_array($field, [
+                'PRD_QT_P', 'PRD_VL_P', 'cismetro_total', 'sus_paulista_tab_total', 'sus_paulista_tsp_total', 'procedimento_descricao',
+            ], true)
         );
 
         if ($firstOrderField === 'faixa_etaria_1') {
@@ -622,18 +642,27 @@ class RelatorioController extends BaseRelatorioController
             return;
         }
         
-        // Handle cismetro fields in filters
-        if ($field === 'cismetro_valor') {
-            $field = 'cs.valor';
-        } elseif ($field === 'cismetro_total') {
-            // For cismetro_total, we need to filter on the calculated field
-            // This is more complex and might need HAVING clause
-            return; // Skip for now, can be implemented later if needed
-        } elseif (str_starts_with($field, 'cismetro_')) {
-            $field = 'cs.' . substr($field, 9); // Remove 'cismetro_' prefix
-        } else {
-            $tableAlias = $this->getTableAlias();
-            $field = "{$tableAlias}.{$field}";
+        if ($field === 'filter_sus_paulista') {
+            return;
+        }
+
+        $susPaulistaField = $this->resolveSusPaulistaFilterField($field);
+        if ($susPaulistaField === null) {
+            return;
+        }
+        if (is_string($susPaulistaField)) {
+            $field = $susPaulistaField;
+        } elseif ($susPaulistaField === false) {
+            if ($field === 'cismetro_valor') {
+                $field = 'cs.valor';
+            } elseif ($field === 'cismetro_total') {
+                return;
+            } elseif (str_starts_with($field, 'cismetro_')) {
+                $field = 'cs.' . substr($field, 9);
+            } else {
+                $tableAlias = $this->getTableAlias();
+                $field = "{$tableAlias}.{$field}";
+            }
         }
         
         switch ($operator) {
@@ -729,8 +758,24 @@ class RelatorioController extends BaseRelatorioController
                     $formatted['Cismetro - Valor Unitário'] = $row->cismetro_valor ? 
                         'R$ ' . number_format((float)$row->cismetro_valor, 2, ',', '.') : 'R$ 0,00';
                 } elseif ($field === 'cismetro_total') {
-                    $formatted['Cismetro - Valor Total'] = $row->cismetro_total ? 
+                    $formatted['Cismetro - Valor Total'] = $row->cismetro_total ?
                         'R$ ' . number_format((float)$row->cismetro_total, 2, ',', '.') : 'R$ 0,00';
+                } elseif ($field === 'sus_paulista_tab') {
+                    $formatted['Tab Paulista - Valor Unitário'] = $row->sus_paulista_tab
+                        ? 'R$ ' . number_format((float) $row->sus_paulista_tab, 2, ',', '.')
+                        : 'R$ 0,00';
+                } elseif ($field === 'sus_paulista_tab_total') {
+                    $formatted['Tab Paulista - Valor Total'] = $row->sus_paulista_tab_total
+                        ? 'R$ ' . number_format((float) $row->sus_paulista_tab_total, 2, ',', '.')
+                        : 'R$ 0,00';
+                } elseif ($field === 'sus_paulista_tsp') {
+                    $formatted['Compl. TSP - Valor Unitário'] = $row->sus_paulista_tsp
+                        ? 'R$ ' . number_format((float) $row->sus_paulista_tsp, 2, ',', '.')
+                        : 'R$ 0,00';
+                } elseif ($field === 'sus_paulista_tsp_total') {
+                    $formatted['Compl. TSP - Valor Total'] = $row->sus_paulista_tsp_total
+                        ? 'R$ ' . number_format((float) $row->sus_paulista_tsp_total, 2, ',', '.')
+                        : 'R$ 0,00';
                 } elseif ($field === 'PRD_QT_P') {
                     $formatted['Quantidade Total'] = number_format((float)($row->total_quantidade ?? 0), 0, ',', '.');
                 } elseif ($field === 'PRD_VL_P') {
@@ -799,6 +844,16 @@ class RelatorioController extends BaseRelatorioController
                 return $item->cismetro_total ?? 0;
             });
             $totals['Cismetro - Valor Total'] = 'R$ ' . number_format($totalCismetro, 2, ',', '.');
+        }
+
+        if (in_array('sus_paulista_tab_total', $selectedFields)) {
+            $total = $data->sum(fn ($item) => $item->sus_paulista_tab_total ?? 0);
+            $totals['Tab Paulista - Valor Total'] = 'R$ ' . number_format($total, 2, ',', '.');
+        }
+
+        if (in_array('sus_paulista_tsp_total', $selectedFields)) {
+            $total = $data->sum(fn ($item) => $item->sus_paulista_tsp_total ?? 0);
+            $totals['Compl. TSP - Valor Total'] = 'R$ ' . number_format($total, 2, ',', '.');
         }
         
         return $totals;
@@ -930,6 +985,30 @@ class RelatorioController extends BaseRelatorioController
                 'lookup_key' => 'codigo',
                 'lookup_display' => 'descricao',
                 'operators' => ['=', 'like']
+            ],
+            'sus_paulista_tab' => [
+                'label' => 'Tab Paulista - Valor Unitário',
+                'type' => 'currency',
+                'table' => 'sus_paulista',
+                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+            ],
+            'sus_paulista_tab_total' => [
+                'label' => 'Tab Paulista - Valor Total',
+                'type' => 'currency',
+                'table' => 'calculated',
+                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+            ],
+            'sus_paulista_tsp' => [
+                'label' => 'Compl. TSP - Valor Unitário',
+                'type' => 'currency',
+                'table' => 'sus_paulista',
+                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+            ],
+            'sus_paulista_tsp_total' => [
+                'label' => 'Compl. TSP - Valor Total',
+                'type' => 'currency',
+                'table' => 'calculated',
+                'operators' => ['=', '>', '<', '>=', '<=', 'between']
             ],
             'grupo' => [
                 'label' => 'Grupo',
@@ -1128,6 +1207,10 @@ class RelatorioController extends BaseRelatorioController
             $fields[] = DB::raw("SUM(CAST({$tableAlias}.PRD_VL_P as DECIMAL(15,2))) as total_valor");
         } elseif ($field === 'cismetro_total') {
             $fields[] = DB::raw("SUM(CAST({$tableAlias}.PRD_QT_P as UNSIGNED) * COALESCE(cs.valor, 0)) as cismetro_total");
+        } elseif ($field === 'sus_paulista_tab_total') {
+            $fields[] = DB::raw("SUM(CAST({$tableAlias}.PRD_QT_P AS UNSIGNED) * COALESCE(spaul.tab_paulista, 0)) as sus_paulista_tab_total");
+        } elseif ($field === 'sus_paulista_tsp_total') {
+            $fields[] = DB::raw("SUM(CAST({$tableAlias}.PRD_QT_P AS UNSIGNED) * COALESCE(spaul.complementacao_tsp, 0)) as sus_paulista_tsp_total");
         }
         
         return $fields;
@@ -1169,6 +1252,14 @@ class RelatorioController extends BaseRelatorioController
                 return (float)($item->cismetro_total ?? 0);
             case 'cismetro_valor':
                 return (float)($item->cismetro_valor ?? 0);
+            case 'sus_paulista_tab_total':
+                return (float) ($item->sus_paulista_tab_total ?? 0);
+            case 'sus_paulista_tsp_total':
+                return (float) ($item->sus_paulista_tsp_total ?? 0);
+            case 'sus_paulista_tab':
+                return (float) ($item->sus_paulista_tab ?? 0);
+            case 'sus_paulista_tsp':
+                return (float) ($item->sus_paulista_tsp ?? 0);
             default:
                 return (float)($item->{$field} ?? 0);
         }

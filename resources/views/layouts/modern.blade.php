@@ -111,7 +111,7 @@
         <x-sidebar />
         
         <!-- Main content -->
-        <div class="flex-1 flex flex-col lg:ml-64">
+        <div class="flex-1 flex flex-col lg:ml-56">
             
             <!-- Navbar -->
             <x-navbar :breadcrumbs="$breadcrumbs ?? []" :showSearch="$showSearch ?? true" />

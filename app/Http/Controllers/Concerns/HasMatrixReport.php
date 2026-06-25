@@ -199,6 +199,13 @@ trait HasMatrixReport
                 // Valor unitário do cismetro
                 $selectFields[] = 'cs.valor as cismetro_valor';
                 $groupByFields[] = 'cs.valor';
+            } elseif (method_exists($this, 'getMatrixCustomFieldSelect')) {
+                $custom = $this->getMatrixCustomFieldSelect($field, $tableAlias);
+                if (! empty($custom['select'])) {
+                    $selectFields = array_merge($selectFields, $custom['select']);
+                    $groupByFields = array_merge($groupByFields, $custom['groupBy']);
+                    continue;
+                }
             } elseif ($field === 'procedimento_descricao') {
                 // Campo apenas para filtro, ignorar na seleção/agrupamento
                 continue;
