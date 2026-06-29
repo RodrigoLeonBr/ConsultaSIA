@@ -143,7 +143,10 @@ trait HasSusPaulistaReport
         };
     }
 
-    protected function resolveSusPaulistaFilterField(string $field): ?string
+    /**
+     * @return string|false|null string = coluna SQL; false = campo padrão da tabela; null = ignorar filtro
+     */
+    protected function resolveSusPaulistaFilterField(string $field): string|false|null
     {
         return match ($field) {
             'filter_sus_paulista' => null,

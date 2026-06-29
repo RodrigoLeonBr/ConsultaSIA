@@ -258,6 +258,7 @@
         const renderMatrixResults = RelatoriosBase.renderMatrixResults;
         const cancelSearch = RelatoriosBase.cancelSearch;
         const showError = RelatoriosBase.showError;
+        const handleReportHttpError = RelatoriosBase.handleReportHttpError;
         const showCancellation = RelatoriosBase.showCancellation;
         const handleFileDownload = RelatoriosBase.handleFileDownload;
 
@@ -647,15 +648,16 @@
                 
                 if (format === 'html') {
                     if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error('Server error:', errorText);
-                        throw new Error(`Erro do servidor: ${response.status}`);
+                        const { message, sql, bindings } = await handleReportHttpError(response);
+                        showError(message, 'results-container', sql, bindings);
+                        return;
                     }
                     
                     const data = await response.json();
                     
                     if (data.error) {
-                        throw new Error(data.error);
+                        showError(data.error, 'results-container', data.sql, data.bindings);
+                        return;
                     }
                     
                     // Show SQL if available

@@ -191,6 +191,7 @@
         const renderResults      = RelatoriosBase.renderResults;
         const cancelSearch       = RelatoriosBase.cancelSearch;
         const showError          = RelatoriosBase.showError;
+        const handleReportHttpError = RelatoriosBase.handleReportHttpError;
         const showCancellation   = RelatoriosBase.showCancellation;
         const handleFileDownload = RelatoriosBase.handleFileDownload;
         const loadLookupData     = (field, search) =>
@@ -422,9 +423,16 @@
                     signal: controller.signal
                 });
                 if (format === 'html') {
-                    if (!response.ok) throw new Error('Erro do servidor: ' + response.status);
+                    if (!response.ok) {
+                        const { message, sql, bindings } = await handleReportHttpError(response);
+                        showError(message, 'results-container', sql, bindings);
+                        return;
+                    }
                     const data = await response.json();
-                    if (data.error) throw new Error(data.error);
+                    if (data.error) {
+                        showError(data.error, data.sql, data.bindings);
+                        return;
+                    }
                     if (data.sql) showSQL(data.sql, data.bindings);
                     renderResults(data);
                     if (data.type === 'matrix') hideLoading();

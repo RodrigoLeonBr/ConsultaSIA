@@ -46,6 +46,9 @@ trait HasMatrixReport
      */
     public function generateMatrix(Request $request)
     {
+        $sql = null;
+        $bindings = [];
+
         try {
             $selectedFields = $request->get('fields', []);
             $filters = $request->get('filters', []);
@@ -119,12 +122,21 @@ trait HasMatrixReport
         } catch (\Exception $e) {
             \Log::error('Error generating matrix report: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
+                'request' => $request->all(),
+                'sql' => $sql ?? null,
+                'bindings' => $bindings ?? null,
             ]);
-            
-            return response()->json([
-                'error' => 'Erro ao gerar relatório matriz: ' . $e->getMessage()
-            ], 500);
+
+            $payload = [
+                'error' => 'Erro ao gerar relatório matriz: ' . $e->getMessage(),
+            ];
+
+            if (isset($sql)) {
+                $payload['sql'] = $sql;
+                $payload['bindings'] = $bindings ?? [];
+            }
+
+            return response()->json($payload, 500);
         }
     }
 
@@ -185,39 +197,36 @@ trait HasMatrixReport
         // Processar outros campos
         foreach ($groupFields as $field) {
             $fieldConfig = $this->getFieldConfig($field);
-            
+
             if ($fieldConfig && $fieldConfig['type'] === 'lookup') {
-                // Campos de lookup - usar método específico da classe
                 $lookupFields = $this->getMatrixLookupFields($field, $tableAlias);
                 $selectFields = array_merge($selectFields, $lookupFields['select']);
                 $groupByFields = array_merge($groupByFields, $lookupFields['groupBy']);
             } elseif ($fieldConfig && ($fieldConfig['type'] === 'number' || $fieldConfig['type'] === 'currency')) {
-                // Campos numéricos - agregação
                 $numericFields = $this->getMatrixNumericFields($field, $tableAlias);
                 $selectFields = array_merge($selectFields, $numericFields);
             } elseif ($field === 'cismetro_valor') {
-                // Valor unitário do cismetro
                 $selectFields[] = 'cs.valor as cismetro_valor';
                 $groupByFields[] = 'cs.valor';
-            } elseif (method_exists($this, 'getMatrixCustomFieldSelect')) {
-                $custom = $this->getMatrixCustomFieldSelect($field, $tableAlias);
-                if (! empty($custom['select'])) {
-                    $selectFields = array_merge($selectFields, $custom['select']);
-                    $groupByFields = array_merge($groupByFields, $custom['groupBy']);
-                    continue;
-                }
             } elseif ($field === 'procedimento_descricao') {
-                // Campo apenas para filtro, ignorar na seleção/agrupamento
                 continue;
             } else {
+                if (method_exists($this, 'getMatrixCustomFieldSelect')) {
+                    $custom = $this->getMatrixCustomFieldSelect($field, $tableAlias);
+                    if (! empty($custom['select'])) {
+                        $selectFields = array_merge($selectFields, $custom['select']);
+                        $groupByFields = array_merge($groupByFields, $custom['groupBy']);
+                        continue;
+                    }
+                }
+
                 $customFields = $this->getMatrixLookupFields($field, $tableAlias);
-                if (!empty($customFields['select'])) {
+                if (! empty($customFields['select'])) {
                     $selectFields = array_merge($selectFields, $customFields['select']);
                     $groupByFields = array_merge($groupByFields, $customFields['groupBy']);
                     continue;
                 }
 
-                // Campos de texto simples
                 $selectFields[] = "{$tableAlias}.{$field}";
                 $groupByFields[] = "{$tableAlias}.{$field}";
             }
@@ -365,10 +374,8 @@ trait HasMatrixReport
         // Identificar períodos únicos (competência ou movimento)
         $competencias = $data->pluck('competencia')->unique()->sort()->values();
         
-        // Identificar campos de agrupamento (excluindo eixo temporal e campo de quebra)
-        $groupFields = array_filter($selectedFields, function ($field) use ($pivotField, $splitField) {
-            return $field !== $pivotField && $field !== $splitField;
-        });
+        // Identificar campos de agrupamento (excluindo eixo temporal, quebra e agregados numéricos)
+        $groupFields = $this->getMatrixRowDimensionFields($selectedFields, $pivotField, $splitField);
         $numericFields = $this->getNumericFields($selectedFields);
         
         if ($splitField) {
@@ -589,6 +596,34 @@ trait HasMatrixReport
     {
         // Default implementation - can be overridden
         return $item->{$field} ?? '';
+    }
+
+    /**
+     * Campos que formam as linhas da matriz (exclui eixo temporal, quebra e métricas agregadas).
+     */
+    protected function getMatrixRowDimensionFields(array $selectedFields, string $pivotField, ?string $splitField = null): array
+    {
+        return array_values(array_filter($selectedFields, function ($field) use ($pivotField, $splitField) {
+            if ($field === $pivotField || $field === $splitField) {
+                return false;
+            }
+
+            if ($field === 'procedimento_descricao') {
+                return false;
+            }
+
+            $fieldConfig = $this->getFieldConfig($field);
+
+            if ($fieldConfig && in_array($fieldConfig['type'], ['number', 'currency'], true)) {
+                return false;
+            }
+
+            if ($fieldConfig && ($fieldConfig['table'] ?? null) === 'calculated') {
+                return false;
+            }
+
+            return true;
+        }));
     }
 
     /**

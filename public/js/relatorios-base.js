@@ -515,9 +515,9 @@ const RelatoriosBase = (function () {
     }
 
     /**
-     * Show error message
+     * Show error message (optionally with SQL debug info)
      */
-    function showError(message, containerId = 'results-container') {
+    function showError(message, containerId = 'results-container', sql = null, bindings = null) {
         const container = document.getElementById(containerId);
         if (!container) return;
 
@@ -538,6 +538,35 @@ const RelatoriosBase = (function () {
                 </div>
             </div>
         `;
+
+        if (sql) {
+            showSQL(sql, bindings);
+        }
+    }
+
+    /**
+     * Parse error HTTP response and surface SQL when available
+     */
+    async function handleReportHttpError(response) {
+        let message = `Erro do servidor: ${response.status}`;
+        let sql = null;
+        let bindings = null;
+
+        const errorText = await response.text();
+        console.error('Server error:', errorText);
+
+        try {
+            const errorData = JSON.parse(errorText);
+            if (errorData.error) {
+                message = errorData.error;
+            }
+            sql = errorData.sql ?? null;
+            bindings = errorData.bindings ?? null;
+        } catch (e) {
+            // resposta não-JSON
+        }
+
+        return { message, sql, bindings };
     }
 
     /**
@@ -618,6 +647,7 @@ const RelatoriosBase = (function () {
         cancelSearch,
         showError,
         showCancellation,
+        handleReportHttpError,
         handleFileDownload,
         defaultConfig
     };

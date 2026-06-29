@@ -83,13 +83,33 @@ abstract class BaseRelatorioController extends Controller
             
             // Build the query
             $query = $this->buildQuery($selectedFields, $filters, $groupBy);
-            
-            // Get SQL for debugging
+
+            // SQL disponível antes da execução (debug e diagnóstico de erro)
             $sql = $query->toSql();
             $bindings = $query->getBindings();
-            
+
+            \Log::info('Relatório SQL gerado', [
+                'sql' => $sql,
+                'bindings' => $bindings,
+                'fields' => $selectedFields,
+                'filters' => $filters,
+            ]);
+
             // Execute query
-            $data = $query->get();
+            try {
+                $data = $query->get();
+            } catch (\Exception $queryException) {
+                \Log::error('Erro ao executar SQL do relatório: ' . $queryException->getMessage(), [
+                    'sql' => $sql,
+                    'bindings' => $bindings,
+                ]);
+
+                return response()->json([
+                    'error' => 'Erro ao gerar relatório: ' . $queryException->getMessage(),
+                    'sql' => $sql,
+                    'bindings' => $bindings,
+                ], 500);
+            }
             
             // Format data for display
             $formattedData = $this->formatData($data, $selectedFields);
