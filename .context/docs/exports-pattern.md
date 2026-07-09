@@ -15,40 +15,34 @@
 
 ---
 
-## Concerns — Traits reutilizáveis (`app/Exports/Concerns/`)
-
-### `FormatsBrazilianExcelColumns`
-**Arquivo**: `app/Exports/Concerns/FormatsBrazilianExcelColumns.php`
-
-Trait para formatação de colunas Excel no padrão BR:
-- Decimais com vírgula (1.234,56)
-- Prefixo R$ em colunas monetárias
-- Larguras de coluna e estilos
-
-**Como usar em nova classe Export:**
-```php
-use App\Exports\Concerns\FormatsBrazilianExcelColumns;
-
-class NovoExport implements FromCollection, WithHeadings, WithStyles
-{
-    use FormatsBrazilianExcelColumns;
-    // ...
-}
-```
-
----
-
 ## Support — Helpers (`app/Support/`)
 
 ### `BrazilianNumberFormatter`
 **Arquivo**: `app/Support/BrazilianNumberFormatter.php`
 
-Classe para formatação numérica no padrão brasileiro:
+Classe central para formatação numérica no padrão brasileiro:
+
 - `BrazilianNumberFormatter::currency($value)` → `"R$ 1.234,56"`
 - `BrazilianNumberFormatter::number($value, $decimals)` → `"1.234,56"`
+- `BrazilianNumberFormatter::parseForExcel($value)` → valor numérico puro para células Excel
+- `BrazilianNumberFormatter::columnFormatsForHeaders($headings)` → mapa de formatos por coluna (inteiro, decimal, moeda)
 
-**Quando usar**: Formatar valores em PHP antes de passar para view ou CSV.
+**Quando usar**: Formatar valores em PHP (CSV, views) e definir formatos de coluna em exports Excel.
 **Não usar**: Em queries SQL — formatar apenas na camada de apresentação.
+
+**Exemplo em classe Export:**
+```php
+use App\Support\BrazilianNumberFormatter;
+use Maatwebsite\Excel\Concerns\WithColumnFormats;
+
+class NovoExport implements FromCollection, WithHeadings, WithColumnFormats
+{
+    public function columnFormats(): array
+    {
+        return BrazilianNumberFormatter::columnFormatsForHeaders($this->headings());
+    }
+}
+```
 
 ---
 
@@ -82,8 +76,8 @@ implements FromArray, WithHeadings, WithStyles
 ## Como Adicionar Nova Exportação
 
 1. Criar `app/Exports/NovoExport.php`
-2. Usar trait `FormatsBrazilianExcelColumns` para formatação automática
-3. Usar `BrazilianNumberFormatter` para valores formatados em PHP
+2. Usar `BrazilianNumberFormatter::parseForExcel()` nos valores e `columnFormatsForHeaders()` em `columnFormats()`
+3. Usar `BrazilianNumberFormatter::currency()` / `number()` para valores formatados em PHP (PDF, CSV)
 4. Registrar no controller correspondente:
 
 ```php

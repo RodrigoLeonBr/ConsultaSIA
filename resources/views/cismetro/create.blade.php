@@ -25,8 +25,7 @@
                 <form method="POST" action="{{ route('cismetro.store') }}" class="space-y-6">
                     @csrf
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Código -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label for="codigo" class="block text-sm font-medium text-gray-700 mb-2">
                                 Código <span class="text-red-500">*</span>
@@ -60,6 +59,25 @@
                                    placeholder="0.00"
                                    required>
                             @error('valor')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <!-- Tipo de Valor -->
+                        <div>
+                            <label for="tipo_valor" class="block text-sm font-medium text-gray-700 mb-2">
+                                Tipo de Valor <span class="text-red-500">*</span>
+                            </label>
+                            <select id="tipo_valor"
+                                    name="tipo_valor"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tipo_valor') border-red-500 @enderror"
+                                    required>
+                                @foreach(\App\Models\Cismetro::tipoValorOptions() as $value => $label)
+                                    <option value="{{ $value }}" @selected((int) old('tipo_valor', \App\Models\Cismetro::TIPO_MUNICIPIO) === $value)>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('tipo_valor')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>

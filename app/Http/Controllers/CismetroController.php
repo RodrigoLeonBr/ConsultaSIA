@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cismetro;
 use App\Http\Requests\CismetroRequest;
+use App\Models\Cismetro;
 use Illuminate\Http\Request;
 
 class CismetroController extends Controller
@@ -20,9 +20,9 @@ class CismetroController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('codigo', 'like', "%{$search}%")
-                  ->orWhere('descricao', 'like', "%{$search}%")
-                  ->orWhere('grupo', 'like', "%{$search}%")
-                  ->orWhere('credenciamento', 'like', "%{$search}%");
+                    ->orWhere('descricao', 'like', "%{$search}%")
+                    ->orWhere('grupo', 'like', "%{$search}%")
+                    ->orWhere('credenciamento', 'like', "%{$search}%");
             });
         }
 
@@ -36,14 +36,18 @@ class CismetroController extends Controller
             $query->where('credenciamento', 'like', "%{$request->credenciamento}%");
         }
 
+        if ($request->filled('tipo_valor') && in_array((int) $request->tipo_valor, [0, 1, 2], true)) {
+            $query->where('tipo_valor', (int) $request->tipo_valor);
+        }
+
         // Order by
         $orderBy = $request->get('order_by', 'codigo');
         $orderDirection = $request->get('order_direction', 'asc');
-        
+
         // Sanitize order direction to prevent SQL injection
         $orderDirection = in_array(strtolower($orderDirection), ['asc', 'desc']) ? $orderDirection : 'asc';
-        
-        if (in_array($orderBy, ['codigo', 'descricao', 'valor', 'grupo', 'credenciamento'])) {
+
+        if (in_array($orderBy, ['codigo', 'descricao', 'valor', 'grupo', 'credenciamento', 'tipo_valor'])) {
             $query->orderBy($orderBy, $orderDirection);
         }
 
@@ -67,12 +71,12 @@ class CismetroController extends Controller
     {
         try {
             Cismetro::create($request->validated());
-            
+
             return redirect()->route('cismetro.index')
-                           ->with('success', 'Cismetro criado com sucesso!');
+                ->with('success', 'Cismetro criado com sucesso!');
         } catch (\Exception $e) {
             return back()->withInput()
-                        ->with('error', 'Erro ao criar cismetro: ' . $e->getMessage());
+                ->with('error', 'Erro ao criar cismetro: '.$e->getMessage());
         }
     }
 
@@ -99,12 +103,12 @@ class CismetroController extends Controller
     {
         try {
             $cismetro->update($request->validated());
-            
+
             return redirect()->route('cismetro.index')
-                           ->with('success', 'Cismetro atualizado com sucesso!');
+                ->with('success', 'Cismetro atualizado com sucesso!');
         } catch (\Exception $e) {
             return back()->withInput()
-                        ->with('error', 'Erro ao atualizar cismetro: ' . $e->getMessage());
+                ->with('error', 'Erro ao atualizar cismetro: '.$e->getMessage());
         }
     }
 
@@ -124,11 +128,11 @@ class CismetroController extends Controller
             }
 
             $cismetro->delete();
-            
+
             return redirect()->route('cismetro.index')
-                           ->with('success', 'Cismetro excluído com sucesso!');
+                ->with('success', 'Cismetro excluído com sucesso!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Erro ao excluir cismetro: ' . $e->getMessage());
+            return back()->with('error', 'Erro ao excluir cismetro: '.$e->getMessage());
         }
     }
 }

@@ -19,7 +19,7 @@ Sistema de Gerenciamento e Relatórios Dinâmicos para Unidades de Saúde desenv
 ## Quick Facts
 
 - Root: `e:\xampp\htdocs\consultasia`
-- Languages: PHP (Laravel 12), JavaScript (Livewire 3, Alpine.js), CSS (Tailwind via CDN)
+- Languages: PHP (Laravel 12), JavaScript (Alpine.js), CSS (Tailwind via CDN)
 - Entry: `public/index.php`, `routes/web.php`
 - Full analysis: [`codebase-map.json`](./codebase-map.json)
 
@@ -40,9 +40,9 @@ Sistema de Gerenciamento e Relatórios Dinâmicos para Unidades de Saúde desenv
 ## Technology Stack Summary
 
 - **Backend**: PHP 8.2+, Laravel 12.x
-- **Frontend**: Blade, Livewire 3.x, Tailwind CSS (CDN), Alpine.js
+- **Frontend**: Blade, Tailwind CSS (CDN), Alpine.js
 - **Database**: MySQL/MariaDB
-- **Reporting**: DomPDF (PDF), Maatwebsite/Excel (XLSX/CSV), Larapex Charts (Dashboard)
+- **Reporting**: DomPDF (PDF), Maatwebsite/Excel (XLSX/CSV)
 
 ## Getting Started Checklist
 

@@ -63,6 +63,21 @@
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Classificação</h3>
                         <dl class="space-y-3">
                             <div>
+                                <dt class="text-sm font-medium text-gray-500">Tipo de Valor</dt>
+                                <dd class="mt-1 text-lg text-gray-900">
+                                    @php
+                                        $tipoBadge = match($cismetro->tipo_valor) {
+                                            \App\Models\Cismetro::TIPO_MUNICIPIO => 'bg-blue-100 text-blue-800',
+                                            \App\Models\Cismetro::TIPO_PRESTADOR => 'bg-green-100 text-green-800',
+                                            default => 'bg-amber-100 text-amber-800',
+                                        };
+                                    @endphp
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $tipoBadge }}">
+                                        {{ $cismetro->tipo_valor_label }}
+                                    </span>
+                                </dd>
+                            </div>
+                            <div>
                                 <dt class="text-sm font-medium text-gray-500">Grupo</dt>
                                 <dd class="mt-1 text-lg text-gray-900">
                                     @if($cismetro->grupo)

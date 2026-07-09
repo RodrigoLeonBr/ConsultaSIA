@@ -7,6 +7,8 @@
 
 ## Auth (Breeze)
 
+> Sem registro público (`/register`) nem verificação de e-mail (`/verify-email`).
+
 | Method | URI | Name | Controller |
 |---|---|---|---|
 | GET | /login | login | Auth\AuthenticatedSessionController@create |
@@ -33,7 +35,7 @@
 |---|---|---|---|
 | GET | / | — | Closure (redirect para dashboard) |
 | GET | /dashboard | dashboard | HomeController@index |
-| ANY | /painel | — | Redirect 301 → /dashboard |
+| ANY | /painel | — | Redirect 301 → /dashboard (não é rota ativa) |
 
 ---
 
@@ -130,7 +132,7 @@ Controller: `RelatorioController`
 | Method | URI | Name | Action |
 |---|---|---|---|
 | GET | /relatorios | relatorios.index | index (página principal) |
-| GET | /relatorios/fields | relatorios.fields | getFields (lista campos disponíveis) |
+| GET | /relatorios/fields | relatorios.fields | getFields → getAllFieldConfigs() |
 | GET | /relatorios/lookup | relatorios.lookup | getLookupData (dados para dropdowns) |
 | POST | /relatorios/generate | relatorios.generate | generate (gera relatório lista) |
 | POST | /relatorios/generate-matrix | relatorios.generate-matrix | generateMatrix (gera relatório matriz) |
@@ -144,7 +146,7 @@ Controller: `RelatorioApacController`
 | Method | URI | Name | Action |
 |---|---|---|---|
 | GET | /relatorios/apac | relatorios.apac.index | index |
-| GET | /relatorios/apac/fields | relatorios.apac.fields | getFields |
+| GET | /relatorios/apac/fields | relatorios.apac.fields | getFields → getAllFieldConfigs() |
 | GET | /relatorios/apac/lookup | relatorios.apac.lookup | getLookupData |
 | POST | /relatorios/apac/generate | relatorios.apac.generate | generate |
 | POST | /relatorios/apac/generate-matrix | relatorios.apac.generate-matrix | generateMatrix |
@@ -155,7 +157,7 @@ Controller: `RelatorioBpiController`
 | Method | URI | Name | Action |
 |---|---|---|---|
 | GET | /relatorios/bpi | relatorios.bpi.index | index |
-| GET | /relatorios/bpi/fields | relatorios.bpi.fields | getFields |
+| GET | /relatorios/bpi/fields | relatorios.bpi.fields | getFields → getAllFieldConfigs() |
 | GET | /relatorios/bpi/lookup | relatorios.bpi.lookup | getLookupData |
 | POST | /relatorios/bpi/generate | relatorios.bpi.generate | generate |
 | POST | /relatorios/bpi/generate-matrix | relatorios.bpi.generate-matrix | generateMatrix |
@@ -218,17 +220,10 @@ Controller: `SRubController`
 
 ---
 
-## Sistema / Livewire / Outros
+## Sistema
 
 | Method | URI | Name | Descrição |
 |---|---|---|---|
-| GET | / | — | redirect para /dashboard |
 | POST | /_boost/browser-logs | boost.browser-logs | Laravel Boost (dev) |
-| GET | /livewire/livewire.js | — | asset Livewire |
-| GET | /livewire/livewire.min.js.map | — | sourcemap Livewire |
-| GET | /livewire/preview-file/{filename} | livewire.preview-file | preview upload |
-| POST | /livewire/update | livewire.update | requests Livewire |
-| POST | /livewire/upload-file | livewire.upload-file | upload Livewire |
-| GET | /sanctum/csrf-cookie | sanctum.csrf-cookie | CSRF para SPA |
 | GET | /storage/{path} | storage.local | arquivos storage |
 | GET | /up | — | health check |

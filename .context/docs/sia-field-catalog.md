@@ -1,6 +1,6 @@
 # SIA Field Catalog
 
-**Implementação:** `app/Http/Controllers/RelatorioController.php` (`getFieldConfig()` / `getFields()`)
+**Implementação:** `app/Http/Controllers/RelatorioController.php` (`getAllFieldConfigs()`; `getFields()` e `getFieldConfig()` delegam para ela)
 **Data:** 2026-02-22
 
 ---

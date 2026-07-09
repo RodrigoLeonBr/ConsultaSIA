@@ -2,6 +2,8 @@
 
 Sistema de Gerenciamento e Relatórios Dinâmicos para Unidades de Saúde desenvolvido em Laravel 12 com dados reais de produção hospitalar.
 
+> **Atualizando um sistema já implantado?** Consulte a seção [Atualização (banco já existente)](README.md#atualizacao) no `README.md` — migrations incrementais, `cismetro:classificar` e o que **não** rodar em banco importado do `producao.sql`.
+
 ## 📋 Requisitos do Sistema
 
 - PHP 8.2+
@@ -73,8 +75,6 @@ Acesse: http://localhost:8000
 ### Principais
 - **Laravel 12.x** - Framework principal
 - **Laravel Breeze** - Autenticação completa com Blade views
-- **Laravel Sanctum** - API authentication
-- **Livewire 3.x** - Componentes dinâmicos
 - **Tailwind CSS** - Framework CSS (via CDN)
 
 ### Utilitários
@@ -91,7 +91,7 @@ consultaprod-php/
 ├── app/
 │   ├── Http/Controllers/     # Controllers da aplicação
 │   │   ├── Auth/            # Controllers de autenticação
-│   │   ├── DashboardController.php    # Dashboard dinâmico
+│   │   ├── HomeController.php         # Dashboard (início)
 │   │   └── RelatorioController.php    # Sistema de relatórios
 │   ├── Models/               # Models Eloquent
 │   ├── Exports/             # Classes de exportação Excel/CSV

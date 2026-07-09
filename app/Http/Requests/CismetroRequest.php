@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Cismetro;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -52,6 +53,15 @@ class CismetroRequest extends FormRequest
                 'string',
                 'max:40',
             ],
+            'tipo_valor' => [
+                'required',
+                'integer',
+                Rule::in([
+                    Cismetro::TIPO_INDEFINIDO,
+                    Cismetro::TIPO_MUNICIPIO,
+                    Cismetro::TIPO_PRESTADOR,
+                ]),
+            ],
         ];
     }
 
@@ -67,21 +77,25 @@ class CismetroRequest extends FormRequest
             'codigo.string' => 'O código deve ser uma string.',
             'codigo.max' => 'O código não pode ter mais de 11 caracteres.',
             'codigo.unique' => 'Este código já está sendo usado.',
-            
+
             'descricao.required' => 'A descrição é obrigatória.',
             'descricao.string' => 'A descrição deve ser uma string.',
             'descricao.max' => 'A descrição não pode ter mais de 180 caracteres.',
-            
+
             'valor.required' => 'O valor é obrigatório.',
             'valor.numeric' => 'O valor deve ser um número.',
             'valor.min' => 'O valor deve ser maior ou igual a zero.',
             'valor.max' => 'O valor não pode ser maior que 999.999.999,99.',
-            
+
             'grupo.string' => 'O grupo deve ser uma string.',
             'grupo.max' => 'O grupo não pode ter mais de 40 caracteres.',
-            
+
             'credenciamento.string' => 'O credenciamento deve ser uma string.',
             'credenciamento.max' => 'O credenciamento não pode ter mais de 40 caracteres.',
+
+            'tipo_valor.required' => 'O tipo de valor é obrigatório.',
+            'tipo_valor.integer' => 'O tipo de valor deve ser um número inteiro.',
+            'tipo_valor.in' => 'O tipo de valor selecionado é inválido.',
         ];
     }
 
@@ -98,6 +112,7 @@ class CismetroRequest extends FormRequest
             'valor' => 'valor',
             'grupo' => 'grupo',
             'credenciamento' => 'credenciamento',
+            'tipo_valor' => 'tipo de valor',
         ];
     }
 }

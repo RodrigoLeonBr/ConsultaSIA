@@ -1,49 +1,34 @@
 # Trabalho Atual — Sprint Ativa
 
 > Atualizar esta seção ao iniciar/completar trabalho significativo.
-> Última atualização: 2026-06-21
+> Última atualização: 2026-07-09
 
 ---
 
-## Status Git (não commitado)
+## Concluído recentemente
 
-### Arquivos modificados
-| Arquivo | Mudança |
-|---|---|
-| `app/Exports/MatrixReportByPrestadorExport.php` | Refactor export matriz APAC por prestador |
-| `app/Exports/MatrixReportExport.php` | Refactor export matriz SIA/BPI |
-| `app/Exports/RelatorioApacExport.php` | Export APAC usando novos helpers |
-| `app/Exports/RelatorioExport.php` | Export SIA usando novos helpers |
-| `app/Http/Controllers/RelatorioController.php` | Ajustes no controller SIA |
-| `composer.json` / `composer.lock` | Dependências atualizadas |
-| `public/js/relatorios-base.js` | JS frontend dos relatórios |
+### Refactor de exportações
+- Formatação numérica centralizada em `app/Support/BrazilianNumberFormatter.php`
+- Classes Export (`RelatorioExport`, `RelatorioApacExport`, `MatrixReportExport`, `MatrixReportByPrestadorExport`) usam `parseForExcel()` e `columnFormatsForHeaders()`
+- Trait `FormatsBrazilianExcelColumns` removida (lógica absorvida pelo helper)
 
-### Arquivos novos (não commitados)
-| Arquivo | Propósito |
-|---|---|
-| `app/Exports/Concerns/FormatsBrazilianExcelColumns.php` | Trait: formatação BR em xlsx (extraída dos exports) |
-| `app/Support/BrazilianNumberFormatter.php` | Helper: formatação R$ / números BR |
+### Consolidação de dashboard e dependências
+- `HomeController` + `home.blade.php` substituem `DashboardController`
+- `/painel` → redirect 301 para `/dashboard`
+- Removidos: Livewire, Sanctum (dependência direta), Larapex Charts
+- Registro público e verificação de e-mail removidos do auth
 
----
-
-## Objetivo do Sprint
-
-**Refactor do sistema de exportações:**
-1. Centralizar formatação numérica em `BrazilianNumberFormatter`
-2. Extrair lógica de formatação de colunas Excel em trait `FormatsBrazilianExcelColumns`
-3. Atualizar as 4 classes Export para usar os novos helpers
-4. Evitar duplicação de código de formatação entre relatórios
+### Field configs unificados
+- Padrão `getAllFieldConfigs()` nos controllers de relatório
+- `getFields()` e `getFieldConfig()` delegam para `getAllFieldConfigs()`
 
 ---
 
 ## Próximos Passos
 
-- [ ] Testar export Excel de cada relatório (SIA, APAC, BPI, Faturamento)
-- [ ] Testar export PDF de cada relatório
-- [ ] Testar export CSV de cada relatório
-- [ ] Verificar regressão no `relatorios-base.js` (comportamento do frontend)
-- [ ] Commit do refactor de exportações
-- [ ] Atualizar `legacy-relatorios-spec.md` se comportamento mudou
+- [ ] Atualizar documentação restante (glossary, exporta.md) se necessário
+- [ ] Limpar `welcome.blade.php` (bloco register morto)
+- [ ] Regenerar ou remover `_ide_helper.php` obsoleto (refs Livewire)
 
 ---
 

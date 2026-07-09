@@ -19,7 +19,7 @@ Sistema de gestão e relatórios para unidades de saúde (SUS/DATASUS), desenvol
 | AIH Procedimentos | `s_aih_pa` | `/relatorios/aih-pa` | Relatórios SIH — itens por internação |
 | Faturamento por Prestador | `s_prd` | `/relatorios/faturamento-prestador` | Relatório hierárquico analítico |
 
-Todos os relatórios suportam exportação **Excel (.xlsx)**, **PDF** e **CSV**, com formatação numérica brasileira centralizada em `BrazilianNumberFormatter` e `FormatsBrazilianExcelColumns`.
+Todos os relatórios suportam exportação **Excel (.xlsx)**, **PDF** e **CSV**, com formatação numérica brasileira centralizada em `BrazilianNumberFormatter`.
 
 ### Cadastros e CRUDs
 
@@ -118,6 +118,121 @@ php artisan serve
 
 ---
 
+<a id="atualizacao"></a>
+
+## Atualização (banco já existente)
+
+Use esta seção quando o sistema **já está em produção** com `producao.sql` importado e você precisa aplicar apenas o que mudou no código, **sem recriar tabelas nem perder dados**.
+
+### Antes de qualquer coisa
+
+```bash
+php artisan migrate:status
+```
+
+> **Atenção:** `php artisan migrate` sem filtro **falha** se o banco já veio do `producao.sql` (tabelas `users`, `s_prd`, `cismetro`, etc. já existem). Rode **somente** as migrations pendentes que ainda não foram aplicadas no seu ambiente, uma a uma com `--path`.
+
+### Migrations incrementais (após import do `producao.sql`)
+
+| Migration | O que altera | Verificar se já existe |
+|-----------|--------------|------------------------|
+| `2026_06_21_000000_create_s_aih_tables` | Cria `s_aih` e `s_aih_pa` (módulo AIH/SIH) | `SHOW TABLES LIKE 's_aih';` |
+| `2026_06_21_100000_add_fields_to_s_aih` | Campos extras em `s_aih` (datas, idade, valor total) | `SHOW COLUMNS FROM s_aih LIKE 'VALOR_TOTAL_AIH';` |
+| `2026_06_22_152310_add_aih_values_to_procedimento_table` | `VL_SP`, `VL_SH` em `procedimento` + descrição até 255 chars | `SHOW COLUMNS FROM procedimento LIKE 'VL_SP';` |
+| `2026_06_24_000001_create_sus_paulista_table` | Cria tabela `sus_paulista` (tabela paulista) | `SHOW TABLES LIKE 'sus_paulista';` |
+| `2025_09_17_184500_add_must_change_password_to_users_table` | `must_change_password` e `password_changed_at` em `users` | `SHOW COLUMNS FROM users LIKE 'must_change_password';` |
+| `2025_10_23_130415_update_prestador_relatorio_field_size` | Campo `prestador.relatorio` de 12 → 40 chars | `SHOW COLUMNS FROM prestador LIKE 'relatorio';` |
+| `2025_12_17_152908_add_matrix_performance_indexes` | Índices de performance em `s_prd` (matriz) | `SHOW INDEX FROM s_prd WHERE Key_name LIKE 'idx_s_prd_%';` |
+| **`2026_07_09_192229_add_tipo_valor_to_cismetro_table`** | Coluna `tipo_valor` em `cismetro` | `SHOW COLUMNS FROM cismetro LIKE 'tipo_valor';` |
+
+### Comandos — copiar e rodar o que faltar
+
+Substitua `CAMINHO` pelo arquivo da migration. Rode apenas as que `migrate:status` mostrar como **Pending** e que a verificação SQL confirmar como ausentes.
+
+```bash
+# Exemplo: aplicar uma migration específica
+php artisan migrate --path=database/migrations/CAMINHO.php --no-interaction
+```
+
+**Ordem sugerida** (respeite dependências — AIH antes dos campos extras):
+
+```bash
+php artisan migrate --path=database/migrations/2026_06_21_000000_create_s_aih_tables.php --no-interaction
+php artisan migrate --path=database/migrations/2026_06_21_100000_add_fields_to_s_aih.php --no-interaction
+php artisan migrate --path=database/migrations/2026_06_22_152310_add_aih_values_to_procedimento_table.php --no-interaction
+php artisan migrate --path=database/migrations/2026_06_24_000001_create_sus_paulista_table.php --no-interaction
+php artisan migrate --path=database/migrations/2025_09_17_184500_add_must_change_password_to_users_table.php --no-interaction
+php artisan migrate --path=database/migrations/2025_10_23_130415_update_prestador_relatorio_field_size.php --no-interaction
+php artisan migrate --path=database/migrations/2025_12_17_152908_add_matrix_performance_indexes.php --no-interaction
+php artisan migrate --path=database/migrations/2026_07_09_192229_add_tipo_valor_to_cismetro_table.php --no-interaction
+```
+
+Confirme ao final:
+
+```bash
+php artisan migrate:status
+```
+
+### Atualização 2026-07-09 — `cismetro.tipo_valor`
+
+Nova coluna de classificação na tabela `cismetro`:
+
+| `tipo_valor` | Significado |
+|---|---|
+| `1` | Município / Geral (padrão) |
+| `2` | Prestador (descrição contém "PRESTADOR") |
+| `0` | Código duplicado (2º registro em diante com mesmo `codigo`) |
+
+**1. Migration** (se ainda não aplicada):
+
+```bash
+php artisan migrate --path=database/migrations/2026_07_09_192229_add_tipo_valor_to_cismetro_table.php --no-interaction
+```
+
+**2. Popular/classificar registros existentes:**
+
+```bash
+php artisan cismetro:classificar
+```
+
+Saída esperada (valores variam conforme a base):
+
+```
+Classificando registros da cismetro...
+Total de registros: 1654
+Classificados como Municipio (tipo_valor=1): ...
+Classificados como Prestador (tipo_valor=2): ...
+Marcados como duplicado (tipo_valor=0): ...
+Classificacao concluida!
+```
+
+**3. Revisar duplicados** (opcional):
+
+```sql
+SELECT id, codigo, descricao, valor, tipo_valor
+FROM cismetro
+WHERE tipo_valor = 0
+ORDER BY codigo;
+```
+
+> O command é **idempotente** — pode rodar de novo após importar novos dados de cismetro. Não altera tabelas core além da coluna `tipo_valor`.
+
+### Migrations que NÃO rodar em banco importado
+
+As migrations que **criam** tabelas core (`s_prd`, `s_apa`, `cbo`, `prestador`, `procedimento`, `cismetro`, etc.) servem para ambiente zerado. Se você importou `producao.sql`, marque-as como já executadas ou ignore — os dados e o schema já estão lá.
+
+### Após atualizar o código
+
+```bash
+composer install --no-dev   # produção
+php artisan optimize:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+```
+
+---
+
 ## Credenciais de desenvolvimento
 
 | Usuário | Senha | Role |
@@ -134,13 +249,13 @@ php artisan serve
 ```
 consultasia/
 ├── app/
+│   ├── Console/Commands/    # Comandos Artisan (ex.: cismetro:classificar)
 │   ├── Http/Controllers/    # Controllers (relatórios, CRUDs, auth, imports)
 │   ├── Http/Middleware/     # CheckRole, CheckActive, EnsurePasswordChanged
 │   ├── Models/              # SPrd, SApa, SPap, Prestador, User, etc.
 │   ├── Exports/             # Excel/PDF (Maatwebsite, DomPDF)
 │   ├── Services/            # Importação DBF e AIH
-│   ├── Support/             # BrazilianNumberFormatter
-│   └── Charts/              # Gráficos do dashboard
+│   └── Support/             # BrazilianNumberFormatter
 ├── bootstrap/               # Bootstrap Laravel 12
 ├── config/                  # Configurações da aplicação
 ├── database/
@@ -195,11 +310,8 @@ Detalhes completos em `.context/docs/data-contract.md` e `.context/docs/legacy-r
 | Pacote | Uso |
 |--------|-----|
 | Laravel Breeze | Autenticação |
-| Laravel Sanctum | API auth |
-| Livewire 3 | Componentes dinâmicos |
 | Maatwebsite/Excel | Exportação .xlsx |
 | Barryvdh/DomPDF | Exportação PDF |
-| Larapex Charts | Gráficos do dashboard |
 | hisamu/php-xbase | Leitura de arquivos DBF |
 
 ---
@@ -225,6 +337,9 @@ php artisan view:cache
 
 # Testes
 php artisan test
+
+# Cismetro — classificar tipo_valor após migration ou import
+php artisan cismetro:classificar
 ```
 
 ---

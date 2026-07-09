@@ -27,197 +27,207 @@ class RelatorioBpiController extends BaseRelatorioController
     public function getFields()
     {
         return response()->json([
-            'fields' => [
-                'BPI_CMP' => [
-                    'label' => 'Data Competência',
-                    'type' => 'date',
-                    'table' => 's_bpi',
-                    'operators' => ['=', '>=', '<=', 'between'],
-                ],
-                'BPI_MVM' => [
-                    'label' => 'Data Movimento',
-                    'type' => 'date',
-                    'table' => 's_bpi',
-                    'operators' => ['=', '>=', '<=', 'between'],
-                ],
-                'BPI_UID' => [
-                    'label' => 'Prestador',
-                    'type' => 'lookup',
-                    'table' => 's_bpi',
-                    'lookup_table' => 'prestador',
-                    'lookup_key' => 're_cunid',
-                    'lookup_display' => 're_cnome',
-                    'operators' => ['=', 'in'],
-                ],
-                'tipo_relatorio' => [
-                    'label' => 'Tipo de Relatório',
-                    'type' => 'text',
-                    'table' => 'prestador',
-                    'field' => 'relatorio',
-                    'operators' => ['=', 'like', 'starts_with'],
-                ],
-                'BPI_CBO' => [
-                    'label' => 'CBO',
-                    'type' => 'lookup',
-                    'table' => 's_bpi',
-                    'lookup_table' => 'cbo',
-                    'lookup_key' => 'cbo',
-                    'lookup_display' => 'ds_cbo',
-                    'operators' => ['=', 'in'],
-                ],
-                'BPI_PA' => [
-                    'label' => 'Procedimento',
-                    'type' => 'lookup',
-                    'table' => 's_bpi',
-                    'lookup_table' => 'procedimento',
-                    'lookup_key' => 'codigo',
-                    'lookup_display' => 'procedimento',
-                    'operators' => ['=', 'in', 'like'],
-                ],
-                'procedimento_descricao' => [
-                    'label' => 'Descrição do Procedimento',
-                    'type' => 'text',
-                    'table' => 'procedimento',
-                    'field' => 'procedimento',
-                    'operators' => ['=', 'like', 'starts_with', 'ends_with'],
-                ],
-                'BPI_QT_P' => [
-                    'label' => 'Quantidade',
-                    'type' => 'number',
-                    'table' => 's_bpi',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between'],
-                ],
-                'BPI_CID' => [
-                    'label' => 'CID',
-                    'type' => 'text',
-                    'table' => 's_bpi',
-                    'operators' => ['=', 'like', 'starts_with'],
-                ],
-                'BPI_CNSMED' => [
-                    'label' => 'CNS Profissional',
-                    'type' => 'text',
-                    'table' => 's_bpi',
-                    'operators' => ['=', 'like', 'starts_with'],
-                ],
-                'BPI_CNSPAC' => [
-                    'label' => 'CNS Paciente',
-                    'type' => 'text',
-                    'table' => 's_bpi',
-                    'operators' => ['=', 'like', 'starts_with'],
-                ],
-                'BPI_NMPAC' => [
-                    'label' => 'Nome do Paciente',
-                    'type' => 'text',
-                    'table' => 's_bpi',
-                    'operators' => ['=', 'like', 'starts_with'],
-                ],
-                'BPI_DTNASC' => [
-                    'label' => 'Data de Nascimento',
-                    'type' => 'text',
-                    'table' => 's_bpi',
-                    'operators' => ['=', 'like', 'starts_with'],
-                ],
-                'BPI_SEXO' => [
-                    'label' => 'Sexo',
-                    'type' => 'choice',
-                    'table' => 's_bpi',
-                    'options' => [
-                        'M' => 'Masculino',
-                        'F' => 'Feminino',
-                    ],
-                    'operators' => ['='],
-                ],
-                'BPI_DTATEN' => [
-                    'label' => 'Data de Atendimento',
-                    'type' => 'text',
-                    'table' => 's_bpi',
-                    'operators' => ['=', '>=', '<=', 'between'],
-                ],
-                'BPI_IDADE' => [
-                    'label' => 'Idade',
-                    'type' => 'number',
-                    'table' => 's_bpi',
-                    'operators' => ['=', '>=', '<='],
-                ],
-                'faixa_etaria_1' => [
-                    'label' => 'Faixa Etária (detalhada)',
-                    'type' => 'calculated',
-                    'table' => 's_bpi',
-                    'operators' => [],
-                ],
-                'faixa_etaria_2' => [
-                    'label' => 'Faixa Etária (resumida)',
-                    'type' => 'calculated',
-                    'table' => 's_bpi',
-                    'operators' => [],
-                ],
-                'BPI_CATEN' => [
-                    'label' => 'Caráter de Atendimento',
-                    'type' => 'text',
-                    'table' => 's_bpi',
-                    'operators' => ['=', 'in'],
-                ],
-                // NOVOS CAMPOS CISMETRO
-                'cismetro_valor' => [
-                    'label' => 'Cismetro - Valor Unitário',
-                    'type' => 'currency',
-                    'table' => 'cismetro',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between'],
-                ],
-                'cismetro_total' => [
-                    'label' => 'Cismetro - Valor Total',
-                    'type' => 'currency',
-                    'table' => 'calculated',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between'],
-                ],
-                'cismetro_descricao' => [
-                    'label' => 'Cismetro - Descrição',
-                    'type' => 'lookup',
-                    'table' => 'cismetro',
-                    'lookup_table' => 'cismetro',
-                    'lookup_key' => 'codigo',
-                    'lookup_display' => 'descricao',
-                    'operators' => ['=', 'like'],
-                ],
-                ...$this->getSusPaulistaFieldConfigs(),
-                'grupo' => [
-                    'label' => 'Grupo',
-                    'type' => 'text',
-                    'table' => 'forma',
-                    'operators' => ['=', 'like', 'starts_with'],
-                ],
-                'descgrupo' => [
-                    'label' => 'Descrição do Grupo',
-                    'type' => 'text',
-                    'table' => 'forma',
-                    'operators' => [],
-                ],
-                'subgrupo' => [
-                    'label' => 'Subgrupo',
-                    'type' => 'text',
-                    'table' => 'forma',
-                    'operators' => ['=', 'like', 'starts_with'],
-                ],
-                'descsubgrupo' => [
-                    'label' => 'Descrição do Subgrupo',
-                    'type' => 'text',
-                    'table' => 'forma',
-                    'operators' => [],
-                ],
-                'forma' => [
-                    'label' => 'Forma de Organização',
-                    'type' => 'text',
-                    'table' => 'forma',
-                    'operators' => ['=', 'like', 'starts_with'],
-                ],
-                'descforma' => [
-                    'label' => 'Descrição da Forma',
-                    'type' => 'text',
-                    'table' => 'forma',
-                    'operators' => ['=', 'like', 'starts_with'],
-                ],
-            ],
+            'fields' => $this->getAllFieldConfigs(),
         ]);
+    }
+
+    protected function getFieldConfig($field)
+    {
+        return $this->getAllFieldConfigs()[$field] ?? null;
+    }
+
+    protected function getAllFieldConfigs(): array
+    {
+        return [
+            'BPI_CMP' => [
+                'label' => 'Data Competência',
+                'type' => 'date',
+                'table' => 's_bpi',
+                'operators' => ['=', '>=', '<=', 'between'],
+            ],
+            'BPI_MVM' => [
+                'label' => 'Data Movimento',
+                'type' => 'date',
+                'table' => 's_bpi',
+                'operators' => ['=', '>=', '<=', 'between'],
+            ],
+            'BPI_UID' => [
+                'label' => 'Prestador',
+                'type' => 'lookup',
+                'table' => 's_bpi',
+                'lookup_table' => 'prestador',
+                'lookup_key' => 're_cunid',
+                'lookup_display' => 're_cnome',
+                'operators' => ['=', 'in'],
+            ],
+            'tipo_relatorio' => [
+                'label' => 'Tipo de Relatório',
+                'type' => 'text',
+                'table' => 'prestador',
+                'field' => 'relatorio',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'BPI_CBO' => [
+                'label' => 'CBO',
+                'type' => 'lookup',
+                'table' => 's_bpi',
+                'lookup_table' => 'cbo',
+                'lookup_key' => 'cbo',
+                'lookup_display' => 'ds_cbo',
+                'operators' => ['=', 'in'],
+            ],
+            'BPI_PA' => [
+                'label' => 'Procedimento',
+                'type' => 'lookup',
+                'table' => 's_bpi',
+                'lookup_table' => 'procedimento',
+                'lookup_key' => 'codigo',
+                'lookup_display' => 'procedimento',
+                'operators' => ['=', 'in', 'like'],
+            ],
+            'procedimento_descricao' => [
+                'label' => 'Descrição do Procedimento',
+                'type' => 'text',
+                'table' => 'procedimento',
+                'field' => 'procedimento',
+                'operators' => ['=', 'like', 'starts_with', 'ends_with'],
+            ],
+            'BPI_QT_P' => [
+                'label' => 'Quantidade',
+                'type' => 'number',
+                'table' => 's_bpi',
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
+            ],
+            'BPI_CID' => [
+                'label' => 'CID',
+                'type' => 'text',
+                'table' => 's_bpi',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'BPI_CNSMED' => [
+                'label' => 'CNS Profissional',
+                'type' => 'text',
+                'table' => 's_bpi',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'BPI_CNSPAC' => [
+                'label' => 'CNS Paciente',
+                'type' => 'text',
+                'table' => 's_bpi',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'BPI_NMPAC' => [
+                'label' => 'Nome do Paciente',
+                'type' => 'text',
+                'table' => 's_bpi',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'BPI_DTNASC' => [
+                'label' => 'Data de Nascimento',
+                'type' => 'text',
+                'table' => 's_bpi',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'BPI_SEXO' => [
+                'label' => 'Sexo',
+                'type' => 'choice',
+                'table' => 's_bpi',
+                'options' => [
+                    'M' => 'Masculino',
+                    'F' => 'Feminino',
+                ],
+                'operators' => ['='],
+            ],
+            'BPI_DTATEN' => [
+                'label' => 'Data de Atendimento',
+                'type' => 'text',
+                'table' => 's_bpi',
+                'operators' => ['=', '>=', '<=', 'between'],
+            ],
+            'BPI_IDADE' => [
+                'label' => 'Idade',
+                'type' => 'number',
+                'table' => 's_bpi',
+                'operators' => ['=', '>=', '<='],
+            ],
+            'faixa_etaria_1' => [
+                'label' => 'Faixa Etária (detalhada)',
+                'type' => 'calculated',
+                'table' => 's_bpi',
+                'operators' => [],
+            ],
+            'faixa_etaria_2' => [
+                'label' => 'Faixa Etária (resumida)',
+                'type' => 'calculated',
+                'table' => 's_bpi',
+                'operators' => [],
+            ],
+            'BPI_CATEN' => [
+                'label' => 'Caráter de Atendimento',
+                'type' => 'text',
+                'table' => 's_bpi',
+                'operators' => ['=', 'in'],
+            ],
+            // NOVOS CAMPOS CISMETRO
+            'cismetro_valor' => [
+                'label' => 'Cismetro - Valor Unitário',
+                'type' => 'currency',
+                'table' => 'cismetro',
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
+            ],
+            'cismetro_total' => [
+                'label' => 'Cismetro - Valor Total',
+                'type' => 'currency',
+                'table' => 'calculated',
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
+            ],
+            'cismetro_descricao' => [
+                'label' => 'Cismetro - Descrição',
+                'type' => 'lookup',
+                'table' => 'cismetro',
+                'lookup_table' => 'cismetro',
+                'lookup_key' => 'codigo',
+                'lookup_display' => 'descricao',
+                'operators' => ['=', 'like'],
+            ],
+            ...$this->getSusPaulistaFieldConfigs(),
+            'grupo' => [
+                'label' => 'Grupo',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'descgrupo' => [
+                'label' => 'Descrição do Grupo',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => [],
+            ],
+            'subgrupo' => [
+                'label' => 'Subgrupo',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'descsubgrupo' => [
+                'label' => 'Descrição do Subgrupo',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => [],
+            ],
+            'forma' => [
+                'label' => 'Forma de Organização',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+            'descforma' => [
+                'label' => 'Descrição da Forma',
+                'type' => 'text',
+                'table' => 'forma',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
+        ];
     }
 
     /**
@@ -853,205 +863,6 @@ class RelatorioBpiController extends BaseRelatorioController
         $this->appendSusPaulistaTotals($selectedFields, $data, $totals);
 
         return $totals;
-    }
-
-    /**
-     * Get field configuration
-     */
-    protected function getFieldConfig($field)
-    {
-        $fields = [
-            'BPI_CMP' => [
-                'label' => 'Data Competência',
-                'type' => 'date',
-                'table' => 's_bpi',
-                'operators' => ['=', '>=', '<=', 'between'],
-            ],
-            'BPI_MVM' => [
-                'label' => 'Data Movimento',
-                'type' => 'date',
-                'table' => 's_bpi',
-                'operators' => ['=', '>=', '<=', 'between'],
-            ],
-            'BPI_UID' => [
-                'label' => 'Prestador',
-                'type' => 'lookup',
-                'table' => 's_bpi',
-                'lookup_table' => 'prestador',
-                'lookup_key' => 're_cunid',
-                'lookup_display' => 're_cnome',
-                'operators' => ['=', 'in'],
-            ],
-            'tipo_relatorio' => [
-                'label' => 'Tipo de Relatório',
-                'type' => 'text',
-                'table' => 'prestador',
-                'field' => 'relatorio',
-                'operators' => ['=', 'like', 'starts_with'],
-            ],
-            'BPI_CBO' => [
-                'label' => 'CBO',
-                'type' => 'lookup',
-                'table' => 's_bpi',
-                'lookup_table' => 'cbo',
-                'lookup_key' => 'cbo',
-                'lookup_display' => 'ds_cbo',
-                'operators' => ['=', 'in'],
-            ],
-            'BPI_PA' => [
-                'label' => 'Procedimento',
-                'type' => 'lookup',
-                'table' => 's_bpi',
-                'lookup_table' => 'procedimento',
-                'lookup_key' => 'codigo',
-                'lookup_display' => 'procedimento',
-                'operators' => ['=', 'in', 'like'],
-            ],
-            'procedimento_descricao' => [
-                'label' => 'Descrição do Procedimento',
-                'type' => 'text',
-                'table' => 'procedimento',
-                'field' => 'procedimento',
-                'operators' => ['=', 'like', 'starts_with', 'ends_with'],
-            ],
-            'BPI_QT_P' => [
-                'label' => 'Quantidade',
-                'type' => 'number',
-                'table' => 's_bpi',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
-            ],
-            'BPI_CID' => [
-                'label' => 'CID',
-                'type' => 'text',
-                'table' => 's_bpi',
-                'operators' => ['=', 'like', 'starts_with'],
-            ],
-            'BPI_CNSMED' => [
-                'label' => 'CNS Profissional',
-                'type' => 'text',
-                'table' => 's_bpi',
-                'operators' => ['=', 'like', 'starts_with'],
-            ],
-            'BPI_CNSPAC' => [
-                'label' => 'CNS Paciente',
-                'type' => 'text',
-                'table' => 's_bpi',
-                'operators' => ['=', 'like', 'starts_with'],
-            ],
-            'BPI_NMPAC' => [
-                'label' => 'Nome do Paciente',
-                'type' => 'text',
-                'table' => 's_bpi',
-                'operators' => ['=', 'like', 'starts_with'],
-            ],
-            'BPI_DTNASC' => [
-                'label' => 'Data de Nascimento',
-                'type' => 'text',
-                'table' => 's_bpi',
-                'operators' => ['=', 'like', 'starts_with'],
-            ],
-            'BPI_SEXO' => [
-                'label' => 'Sexo',
-                'type' => 'choice',
-                'table' => 's_bpi',
-                'options' => [
-                    'M' => 'Masculino',
-                    'F' => 'Feminino',
-                ],
-                'operators' => ['='],
-            ],
-            'BPI_DTATEN' => [
-                'label' => 'Data de Atendimento',
-                'type' => 'text',
-                'table' => 's_bpi',
-                'operators' => ['=', '>=', '<=', 'between'],
-            ],
-            'BPI_IDADE' => [
-                'label' => 'Idade',
-                'type' => 'number',
-                'table' => 's_bpi',
-                'operators' => ['=', '>=', '<='],
-            ],
-            'faixa_etaria_1' => [
-                'label' => 'Faixa Etária (detalhada)',
-                'type' => 'calculated',
-                'table' => 's_bpi',
-                'operators' => [],
-            ],
-            'faixa_etaria_2' => [
-                'label' => 'Faixa Etária (resumida)',
-                'type' => 'calculated',
-                'table' => 's_bpi',
-                'operators' => [],
-            ],
-            'BPI_CATEN' => [
-                'label' => 'Caráter de Atendimento',
-                'type' => 'text',
-                'table' => 's_bpi',
-                'operators' => ['=', 'in'],
-            ],
-            // CAMPOS CISMETRO
-            'cismetro_valor' => [
-                'label' => 'Cismetro - Valor Unitário',
-                'type' => 'currency',
-                'table' => 'cismetro',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
-            ],
-            'cismetro_total' => [
-                'label' => 'Cismetro - Valor Total',
-                'type' => 'currency',
-                'table' => 'calculated',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
-            ],
-            'cismetro_descricao' => [
-                'label' => 'Cismetro - Descrição',
-                'type' => 'lookup',
-                'table' => 'cismetro',
-                'lookup_table' => 'cismetro',
-                'lookup_key' => 'codigo',
-                'lookup_display' => 'descricao',
-                'operators' => ['=', 'like'],
-            ],
-            ...$this->getSusPaulistaFieldConfigs(),
-            'grupo' => [
-                'label' => 'Grupo',
-                'type' => 'text',
-                'table' => 'forma',
-                'operators' => ['=', 'like', 'starts_with'],
-            ],
-            'descgrupo' => [
-                'label' => 'Descrição do Grupo',
-                'type' => 'text',
-                'table' => 'forma',
-                'operators' => [],
-            ],
-            'subgrupo' => [
-                'label' => 'Subgrupo',
-                'type' => 'text',
-                'table' => 'forma',
-                'operators' => ['=', 'like', 'starts_with'],
-            ],
-            'descsubgrupo' => [
-                'label' => 'Descrição do Subgrupo',
-                'type' => 'text',
-                'table' => 'forma',
-                'operators' => [],
-            ],
-            'forma' => [
-                'label' => 'Forma de Organização',
-                'type' => 'text',
-                'table' => 'forma',
-                'operators' => ['=', 'like', 'starts_with'],
-            ],
-            'descforma' => [
-                'label' => 'Descrição da Forma',
-                'type' => 'text',
-                'table' => 'forma',
-                'operators' => ['=', 'like', 'starts_with'],
-            ],
-        ];
-
-        return $fields[$field] ?? null;
     }
 
     /**

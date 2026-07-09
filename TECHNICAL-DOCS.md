@@ -50,18 +50,18 @@ s_prd.PRD_RUB → s_rub.RUB_ID
 
 ### Controllers Principais
 
-#### DashboardController
+#### HomeController
 ```php
-- index(): Dashboard com estatísticas dinâmicas
-- getSystemStatistics(): Contadores de tabelas
-- getFinanciamentosInfo(): Último período + total do ano
-- getRecentActivity(): Top 10 atividades recentes
+- index(): Dashboard com competências SIA/SIH (view home.blade.php)
+- lastCompetencia(): Última competência disponível por tabela
 ```
 
 #### RelatorioController
 ```php
 - index(): Interface do gerador de relatórios
-- getFields(): Campos disponíveis para relatórios
+- getFields(): Endpoint HTTP; delega para getAllFieldConfigs()
+- getAllFieldConfigs(): Whitelist de campos (fonte única da verdade)
+- getFieldConfig(): Retorna um campo por ID a partir de getAllFieldConfigs()
 - getLookupData(): Dados para campos de lookup
 - generate(): Geração de relatórios com filtros
 - exportExcel/PDF/CSV(): Exportações em múltiplos formatos

@@ -1,4 +1,5 @@
 <?php
+
 // app/Models/Cismetro.php
 
 namespace App\Models;
@@ -8,6 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cismetro extends Model
 {
+    public const TIPO_INDEFINIDO = 0;
+
+    public const TIPO_MUNICIPIO = 1;
+
+    public const TIPO_PRESTADOR = 2;
+
     /**
      * The table associated with the model.
      */
@@ -42,6 +49,7 @@ class Cismetro extends Model
         'grupo',
         'descricao',
         'valor',
+        'tipo_valor',
     ];
 
     /**
@@ -51,7 +59,25 @@ class Cismetro extends Model
     {
         return [
             'valor' => 'decimal:2',
+            'tipo_valor' => 'integer',
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function tipoValorOptions(): array
+    {
+        return [
+            self::TIPO_MUNICIPIO => 'Município / Geral',
+            self::TIPO_PRESTADOR => 'Prestador',
+            self::TIPO_INDEFINIDO => 'Duplicado / Revisar',
+        ];
+    }
+
+    public function getTipoValorLabelAttribute(): string
+    {
+        return self::tipoValorOptions()[$this->tipo_valor] ?? 'Desconhecido';
     }
 
     /**
@@ -75,7 +101,7 @@ class Cismetro extends Model
      */
     public function getFormattedValorAttribute()
     {
-        return 'R$ ' . number_format($this->valor, 2, ',', '.');
+        return 'R$ '.number_format($this->valor, 2, ',', '.');
     }
 
     /**
@@ -92,6 +118,7 @@ class Cismetro extends Model
     public function getFormattedTotal($quantidade)
     {
         $total = $this->calculateTotal($quantidade);
-        return 'R$ ' . number_format($total, 2, ',', '.');
+
+        return 'R$ '.number_format($total, 2, ',', '.');
     }
 }

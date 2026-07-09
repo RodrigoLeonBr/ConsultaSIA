@@ -2,6 +2,25 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [2.3.0] - 2026-07-09
+
+### Cismetro — classificação `tipo_valor`
+
+- **Adicionado**: Migration `add_tipo_valor_to_cismetro_table` (coluna `tipo_valor` em `cismetro`)
+- **Adicionado**: Command `php artisan cismetro:classificar` para popular/classificar registros existentes
+- **Adicionado**: CRUD cismetro exibe e edita `tipo_valor` (1=Município, 2=Prestador, 0=Duplicado)
+- **Atualizado**: `README.md` com seção **Atualização (banco já existente)** — migrations incrementais e ordem de execução
+
+### Deploy em banco existente
+
+```bash
+php artisan migrate:status
+php artisan migrate --path=database/migrations/2026_07_09_192229_add_tipo_valor_to_cismetro_table.php --no-interaction
+php artisan cismetro:classificar
+```
+
+Ver lista completa de migrations incrementais em `README.md` → **Atualização (banco já existente)**.
+
 ## [2.2.0] - 2025-12-17
 
 ### 🎉 Nova Funcionalidade Principal
@@ -95,7 +114,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 - **Melhorado**: UX de login com mensagens claras
 
 #### 🏠 Dashboard Dinâmico
-- **Adicionado**: DashboardController com dados reais
+- **Adicionado**: HomeController com dados reais (competências SIA/SIH)
 - **Adicionado**: Estatísticas dinâmicas do banco de dados
   - 76 prestadores ativos
   - 3.036 procedimentos cadastrados

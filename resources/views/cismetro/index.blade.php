@@ -37,7 +37,7 @@
             <!-- Filters -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
-                    <form method="GET" action="{{ route('cismetro.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <form method="GET" action="{{ route('cismetro.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <div>
                             <input type="text" 
                                    name="search" 
@@ -59,11 +59,22 @@
                                    placeholder="Filtrar por credenciamento..."
                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
+                        <div>
+                            <select name="tipo_valor"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Todos os tipos</option>
+                                @foreach(\App\Models\Cismetro::tipoValorOptions() as $value => $label)
+                                    <option value="{{ $value }}" @selected((string) request('tipo_valor') === (string) $value)>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div class="flex space-x-2">
                             <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 flex-1">
                                 Buscar
                             </button>
-                            @if(request()->hasAny(['search', 'grupo', 'credenciamento']))
+                            @if(request()->hasAny(['search', 'grupo', 'credenciamento', 'tipo_valor']))
                                 <a href="{{ route('cismetro.index') }}" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">
                                     Limpar
                                 </a>
@@ -137,6 +148,20 @@
                                         </a>
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <a href="{{ route('cismetro.index', ['order_by' => 'tipo_valor', 'order_direction' => request('order_direction') == 'asc' ? 'desc' : 'asc'] + request()->except(['order_by', 'order_direction'])) }}" class="flex items-center space-x-1 hover:text-gray-700">
+                                            <span>Tipo</span>
+                                            @if(request('order_by') == 'tipo_valor')
+                                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                    @if(request('order_direction') == 'asc')
+                                                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                                    @else
+                                                        <path d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"/>
+                                                    @endif
+                                                </svg>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Credenciamento
                                     </th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -164,6 +189,18 @@
                                             @else
                                                 <span class="text-gray-400">-</span>
                                             @endif
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">
+                                            @php
+                                                $tipoBadge = match($cismetro->tipo_valor) {
+                                                    \App\Models\Cismetro::TIPO_MUNICIPIO => 'bg-blue-100 text-blue-800',
+                                                    \App\Models\Cismetro::TIPO_PRESTADOR => 'bg-green-100 text-green-800',
+                                                    default => 'bg-amber-100 text-amber-800',
+                                                };
+                                            @endphp
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $tipoBadge }}">
+                                                {{ $cismetro->tipo_valor_label }}
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-900">
                                             @if($cismetro->credenciamento)
@@ -195,7 +232,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">
                                             Nenhum cismetro encontrado.
                                         </td>
                                     </tr>
