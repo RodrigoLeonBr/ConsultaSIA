@@ -29,16 +29,10 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [HomeController::class, 'index'])
-    ->middleware(['auth', 'active', 'verified', 'password.changed'])
+    ->middleware(['auth', 'active', 'password.changed'])
     ->name('dashboard');
 
-Route::get('/painel', [App\Http\Controllers\DashboardController::class, 'index'])
-    ->middleware(['auth', 'active', 'verified', 'password.changed'])
-    ->name('painel');
-
-Route::get('/painel/activity', [App\Http\Controllers\DashboardController::class, 'getRecentActivity'])
-    ->middleware(['auth', 'active', 'verified', 'password.changed'])
-    ->name('dashboard.activity');
+Route::redirect('/painel', '/dashboard', 301);
 
 Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

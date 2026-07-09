@@ -176,18 +176,6 @@
             <span class="text-sm font-medium text-gray-700 group-hover:text-indigo-700">Prestadores</span>
         </a>
 
-        {{-- Painel (dashboard analítico) --}}
-        <a href="{{ route('painel') }}"
-           class="group flex flex-col items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-5 text-center transition hover:border-rose-200 hover:bg-rose-50 hover:shadow-sm">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-100 text-rose-600 transition group-hover:bg-rose-600 group-hover:text-white">
-                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
-                </svg>
-            </div>
-            <span class="text-sm font-medium text-gray-700 group-hover:text-rose-700">Painel Analítico</span>
-        </a>
-
     </div>
 </div>
 
