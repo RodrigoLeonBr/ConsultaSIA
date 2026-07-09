@@ -15,7 +15,6 @@
 | Adicionar/alterar exportação (Excel/PDF/CSV) | [`.context/docs/exports-pattern.md`](.context/docs/exports-pattern.md) |
 | Ver o que está em andamento agora | [`.context/docs/current-work.md`](.context/docs/current-work.md) |
 | Vocabulário do domínio (SIA, APAC, BPI, SUS) | [`.context/docs/glossary.md`](.context/docs/glossary.md) |
-| Visão arquitetural v3 futura (NestJS/React) | [`.context/docs/architecture.md`](.context/docs/architecture.md) |
 | Performance + índices | [`.context/docs/performance-playbook.md`](.context/docs/performance-playbook.md) |
 | Segurança | [`.context/docs/security.md`](.context/docs/security.md) |
 
@@ -28,7 +27,7 @@
 - **Banco**: `producao` (127.0.0.1:3306) — credenciais em `.env`
 - **Volume**: 5.9M+ registros em `s_prd`
 - **Dev URL**: `http://localhost:8000` (`php artisan serve`) ou `http://192.168.5.130/consultasia/public`
-- **Estratégia**: Strangler Fig — Laravel em produção; migração futura Node.js/React (v3) é aspiracional
+- **Estratégia**: Laravel em produção (Strangler Fig concluído — protótipos v3 removidos)
 
 ---
 
@@ -239,13 +238,12 @@ Ver [`.context/docs/current-work.md`](.context/docs/current-work.md) para status
 | `exports-pattern.md` | Classes Export, Concerns, Support — padrão e como adicionar novo |
 | `current-work.md` | Sprint atual: arquivos modificados, objetivo, próximos passos |
 | `glossary.md` | Vocabulário SIA/APAC/BPI/SUS/DATASUS |
-| `architecture.md` | Visão v3 futura (NestJS + React — aspiracional) |
 | `performance-playbook.md` | Índices, queries pesadas, estratégias de performance |
 | `security.md` | Práticas de segurança do projeto |
-| `prd.md` | Product Requirements Document completo |
 | `data-flow.md` | Fluxo de dados entre módulos |
-| `development-workflow.md` | Workflow de desenvolvimento |
 | `sia-field-catalog.md` | Catálogo completo de campos SIA |
+| `ops-runbook.md` | Operação em produção |
+| `testing-strategy.md` | PHPUnit e validação SQL |
 
 ===
 

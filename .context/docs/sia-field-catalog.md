@@ -1,6 +1,6 @@
 # SIA Field Catalog
 
-**Implementação:** `v3-backend/src/sia/field-catalog.ts`
+**Implementação:** `app/Http/Controllers/RelatorioController.php` (`getFieldConfig()` / `getFields()`)
 **Data:** 2026-02-22
 
 ---

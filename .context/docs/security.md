@@ -46,7 +46,7 @@ Não há processamento de dados pessoais sensíveis no MVP.
 
 1. **JWT** com access token (15 min) + refresh token (7 dias)
 2. Endpoint `POST /auth/login` com credencial interna (usuário/senha ou SSO)
-3. Guard NestJS em todas as rotas (exceto `/health`)
+3. Middleware de autenticação Laravel em todas as rotas protegidas
 4. **RBAC**: roles `viewer` (só leitura), `analyst` (cria jobs), `admin` (todas as ações)
 5. Audit log de queries: `requested_by` já existe em `report_job` (não mapeado no ORM — mapear ao implementar auth)
 

@@ -4,12 +4,12 @@
 Aceito
 
 ## Contexto
-O projeto ConsultaProd v3 rodará em paralelo ao sistema legado em PHP/Laravel. Ambos compartilharão o banco MySQL/MariaDB (XAMPP). O schema atual está homologado e estável. 
+O ConsultaProd opera sobre o banco MySQL/MariaDB `producao` (XAMPP). O schema está homologado e alinhado ao contrato DATASUS.
 
 ## Decisão
-O core da modelagem do banco de dados (conforme `producao.sql`) é imutável. Migrations automáticas do ORM estão estritamente proibidas no ambiente de produção para tabelas core. O aplicativo Node.js deve agir primariamente como leitor destas tabelas. É permitida a criação de tabelas auxiliares (ex: jobs, cache, reports) desde que não alterem a integridade ou schema original mantido pelo projeto anterior.
+O core da modelagem (`producao.sql`) é **imutável**. Migrations automáticas estão proibidas para tabelas core em produção. Apenas tabelas auxiliares (`report_job`, `users`, `sessions`, etc.) podem ser alteradas via migration.
 
 ## Consequências
-- Diminui drasticamente o risco de corrupção ou quebra do sistema legado.
-- Obriga a equipe a manter tabelas complementares separadas.
-- O Node.js deve ter credenciais e configurações de ORM (ex: `synchronize: false` no TypeORM ou `db pull` no Prisma) que impossibilitem modificações não intencionais na DDL.
+- Reduz risco de corrupção ou quebra de dados históricos.
+- Tabelas complementares ficam separadas do schema DATASUS.
+- Queries devem usar CAST em campos numéricos VARCHAR e filtro de competência obrigatório em `s_prd`.

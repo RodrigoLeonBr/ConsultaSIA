@@ -60,7 +60,7 @@ scaffoldVersion: "2.0.0"
 
 | Termo | Significado |
 |-------|-------------|
-| **Field Catalog** | Whitelist de campos disponíveis para query dinâmica, em `v3-backend/src/sia/field-catalog.ts` |
+| **Field Catalog** | Whitelist de campos disponíveis para query dinâmica, em `RelatorioController::getFieldConfig()` |
 | **`_display` alias** | Convenção: campos de lookup retornam uma coluna extra `<fieldId>_display` com o nome legível (ex: `prd_uid_display: "HOSPITAL REGIONAL XYZ"`) |
 | **filterOnly** | Campo disponível apenas em filtros WHERE, não como coluna selecionável no SELECT |
 | **displayOnly** | Campo sempre incluído no retorno sem precisar ser declarado no `select[]` |

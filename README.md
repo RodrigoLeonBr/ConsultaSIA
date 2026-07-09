@@ -256,19 +256,6 @@ php artisan test
 
 ---
 
-## Pastas experimentais (não são a stack em produção)
-
-| Pasta | Descrição |
-|-------|-----------|
-| `v3-backend/` | Protótipo NestJS (migração futura) |
-| `v3-frontend/` | Protótipo React |
-| `consultasia-express/` | Experimento Node/Express |
-| `tools/` | Cópias auxiliares para ferramentas de desenvolvimento |
-
-A aplicação ativa é o **Laravel na raiz** do repositório.
-
----
-
 ## Troubleshooting
 
 | Problema | Solução |

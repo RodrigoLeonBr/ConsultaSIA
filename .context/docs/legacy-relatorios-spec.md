@@ -216,8 +216,7 @@ Todos os campos numéricos em `s_prd` e `s_pap` são VARCHAR no schema DATASUS:
 | `proc.PA_TOTAL` | `CAST(... AS DECIMAL(15,2))` | valor unitário da tabela `procedimento` |
 | `cs.valor` (cismetro) | `COALESCE(cs.valor, 0)` sem CAST | float nativo MySQL |
 
-> **Nota divergência:** NestJS v3 usa `CAST(PRD_QT_P AS UNSIGNED)` e `CAST(PRD_QT_A AS UNSIGNED)` — alinhado com o legado.
-> O legado usa `CAST(PAP_QT_P AS DECIMAL(15,2))` para APAC — divergência que deve ser mantida ao implementar o módulo APAC no v3.
+> **Nota:** APAC usa `CAST(PAP_QT_P AS DECIMAL(15,2))` — divergência intencional em relação aos campos UNSIGNED de `s_prd`.
 
 ---
 
@@ -257,29 +256,12 @@ competencia=202301&prestador_id=2058790
 
 ## 8. Observações de Performance
 
-1. **Filtro de competência obrigatório em todos os relatórios** — sem ele o legado recusa (validação Laravel `required`). O v3 segue o mesmo padrão.
+1. **Filtro de competência obrigatório** — validação Laravel `required`; sem ele o sistema recusa.
 
-2. **Faturamento por Prestador é o mais pesado**: GROUP BY em 12 campos + 4 JOINs + 4 SUM/CAST. O legado carrega **tudo em memória PHP** de uma vez (sem paginação). O v3 implementa paginação server-side para mitigar.
+2. **Faturamento por Prestador é o mais pesado**: GROUP BY em 12 campos + 4 JOINs + 4 SUM/CAST. Carrega hierarquia em memória PHP (`processarDadosHierarquicos`).
 
-3. **Hierarquia no legado é processada em PHP** (`processarDadosHierarquicos`), não no banco. O v3 retorna flat e delega ao frontend o agrupamento visual — abordagem mais escalável.
+3. **Cismetro**: LEFT JOIN dinâmico apenas quando algum campo `cismetro_*` é selecionado.
 
-4. **Subquery para `procedimento_descricao`**: o legado resolve em duas queries separadas. No v3 pode-se usar JOIN direto com `proc.procedimento LIKE ?` no WHERE.
+4. **`forma` table JOIN triplo** no Faturamento: 3 instâncias (`f_grupo`, `f_subgrupo`, `f_forma`) com condições diferentes.
 
-5. **Cismetro requer LEFT JOIN dinâmico**: apenas adicionado quando algum campo `cismetro_*` é selecionado — otimização correta, preservar no v3.
-
-6. **`forma` table JOIN triplo** no Faturamento por Prestador: 3 instâncias (`f_grupo`, `f_subgrupo`, `f_forma`) com condições diferentes. O v3 evita isso usando STORED GENERATED columns (`sp.grupo`, `sp.subgrupo`, `sp.forma`) + tabela `procedimento` diretamente — sem necessidade de JOIN com `forma`.
-
-7. **Sem índice por `prd_cmp`** no schema original DATASUS: verificar se índice foi criado manualmente antes de rodar queries em produção.
-
----
-
-## 9. Diferenças-chave entre Legado e v3 NestJS
-
-| Aspecto | Laravel legado | NestJS v3 |
-|---------|---------------|-----------|
-| Grupo/Subgrupo/Forma | `SUBSTRING(prd_pa, 1, 2/4/6)` em runtime | STORED GENERATED columns (sem SUBSTRING) |
-| Hierarquia | Processada em PHP (6 níveis aninhados) | Retorno flat, agrupamento visual no frontend |
-| Paginação | Sem paginação — carrega tudo | Server-side paginação obrigatória |
-| Campos selecionáveis | Dinâmico (checkbox multiplo) | Colunas fixas por relatório (MVP) |
-| Export | HTML / Excel / PDF / CSV inline | Job assíncrono → result rows JSON |
-| JOIN `forma` | 3 LEFT JOINs com aliases diferentes | Desnecessário (STORED GENERATED) |
+5. **Sem índice por `prd_cmp`** no schema original DATASUS: verificar se índice foi criado manualmente antes de rodar queries em produção.
