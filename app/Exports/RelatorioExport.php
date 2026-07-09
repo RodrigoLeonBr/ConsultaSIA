@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Exports\Concerns\FormatsBrazilianExcelColumns;
+use App\Support\BrazilianNumberFormatter;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -11,8 +11,6 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class RelatorioExport implements FromCollection, WithHeadings, WithStyles, WithColumnFormatting
 {
-    use FormatsBrazilianExcelColumns;
-
     protected $data;
     protected $selectedFields;
     protected $totals;
@@ -40,7 +38,7 @@ class RelatorioExport implements FromCollection, WithHeadings, WithStyles, WithC
 
                 $processedRow = [];
                 foreach ($row as $value) {
-                    $processedRow[] = $this->processValueForExcel($value);
+                    $processedRow[] = BrazilianNumberFormatter::parseForExcel($value);
                 }
 
                 return $processedRow;
@@ -50,7 +48,7 @@ class RelatorioExport implements FromCollection, WithHeadings, WithStyles, WithC
                 $collection->push([]);
                 $collection->push(['TOTAIS']);
                 foreach ($this->totals as $label => $value) {
-                    $collection->push([$label, $this->processValueForExcel($value)]);
+                    $collection->push([$label, BrazilianNumberFormatter::parseForExcel($value)]);
                 }
             }
 
@@ -87,7 +85,7 @@ class RelatorioExport implements FromCollection, WithHeadings, WithStyles, WithC
 
     public function columnFormats(): array
     {
-        return $this->columnFormatsForHeaders($this->headings());
+        return BrazilianNumberFormatter::columnFormatsForHeaders($this->headings());
     }
 
     public function styles(Worksheet $sheet)

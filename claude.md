@@ -95,7 +95,7 @@ Ver detalhes completos em [`.context/docs/routes-map.md`](.context/docs/routes-m
 
 | Módulo | URI base | Controller |
 |---|---|---|
-| Dashboard | `/dashboard` | `DashboardController` |
+| Dashboard | `/dashboard` | `HomeController` |
 | Admin (usuários) | `/admin` | `AdminController` |
 | Prestadores | `/prestador` | `PrestadorController` |
 | Import Prestador | `/prestador-import` | `PrestadorImportController` |
@@ -124,7 +124,7 @@ app/Http/Controllers/
   RelatorioApacController.php          ← relatório APAC (s_pap + s_apa)
   RelatorioBpiController.php           ← relatório BPI (s_bpi)
   FaturamentoPrestadorController.php   ← faturamento hierárquico (s_prd)
-  DashboardController.php
+  HomeController.php                   ← dashboard (competências SIA/SIH)
   AdminController.php
   PrestadorController.php + PrestadorImportController.php
   ProcedimentoController.php + ProcedimentoImportController.php
@@ -141,18 +141,16 @@ app/Exports/
   RelatorioApacExport.php              ← export lista APAC
   MatrixReportExport.php               ← export matriz pivot (SIA/BPI)
   MatrixReportByPrestadorExport.php    ← export matriz por prestador (APAC)
-  Concerns/
-    FormatsBrazilianExcelColumns.php   ← trait: formatação BR em xlsx
 
 app/Support/
-  BrazilianNumberFormatter.php         ← helper: formatação numérica R$
+  BrazilianNumberFormatter.php         ← helper: formatação numérica R$ e colunas Excel
 
 public/js/
   relatorios-base.js                   ← JS frontend do sistema de relatórios
 
 resources/views/
   relatorios/                          ← todas as views de relatório
-  dashboard.blade.php
+  home.blade.php                       ← dashboard principal
   layouts/
 
 routes/web.php                         ← todas as 123 rotas
@@ -221,10 +219,9 @@ php artisan view:cache
 
 Ver [`.context/docs/current-work.md`](.context/docs/current-work.md) para status detalhado do sprint atual.
 
-**Resumo (2026-06-21):**
-- Refactor exports: `Concerns/FormatsBrazilianExcelColumns.php` + `Support/BrazilianNumberFormatter.php`
-- `MatrixReportExport`, `MatrixReportByPrestadorExport`, `RelatorioApacExport`, `RelatorioExport` modificados
-- `RelatorioController.php` e `relatorios-base.js` com mudanças ativas
+**Resumo (2026-07-09):**
+- Dashboard consolidado em `HomeController` + `home.blade.php` (`/dashboard`; `/painel` redireciona)
+- Exports usam `BrazilianNumberFormatter` diretamente (sem trait intermediária)
 
 ---
 

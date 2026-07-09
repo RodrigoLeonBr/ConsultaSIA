@@ -185,4 +185,28 @@ class BrazilianNumberFormatter
 
         return implode(' / ', $parts) ?: '0';
     }
+
+    /**
+     * @param  array<int, string>  $headers
+     * @return array<string, string>
+     */
+    public static function columnFormatsForHeaders(array $headers): array
+    {
+        $formats = [];
+
+        foreach ($headers as $index => $header) {
+            $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
+            $header = (string) $header;
+
+            if (self::isCurrencyHeader($header)) {
+                $formats[$columnLetter] = self::EXCEL_CURRENCY;
+            } elseif (self::isNumberHeader($header)) {
+                $formats[$columnLetter] = self::EXCEL_INTEGER;
+            } elseif (self::isCodeHeader($header)) {
+                $formats[$columnLetter] = \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT;
+            }
+        }
+
+        return $formats;
+    }
 }

@@ -12,8 +12,6 @@
 | GET | /login | login | Auth\AuthenticatedSessionController@create |
 | POST | /login | — | Auth\AuthenticatedSessionController@store |
 | POST | /logout | logout | Auth\AuthenticatedSessionController@destroy |
-| GET | /register | register | Auth\RegisteredUserController@create |
-| POST | /register | — | Auth\RegisteredUserController@store |
 | GET | /forgot-password | password.request | Auth\PasswordResetLinkController@create |
 | POST | /forgot-password | password.email | Auth\PasswordResetLinkController@store |
 | GET | /reset-password/{token} | password.reset | Auth\NewPasswordController@create |
@@ -23,9 +21,6 @@
 | GET | /confirm-password | password.confirm | Auth\ConfirmablePasswordController@show |
 | POST | /confirm-password | — | Auth\ConfirmablePasswordController@store |
 | PUT | /password | password.update | Auth\PasswordController@update |
-| GET | /verify-email | verification.notice | Auth\EmailVerificationPromptController |
-| GET | /verify-email/{id}/{hash} | verification.verify | Auth\VerifyEmailController |
-| POST | /email/verification-notification | verification.send | Auth\EmailVerificationNotificationController@store |
 | GET | /profile | profile.edit | ProfileController@edit |
 | PATCH | /profile | profile.update | ProfileController@update |
 | DELETE | /profile | profile.destroy | ProfileController@destroy |
@@ -37,9 +32,8 @@
 | Method | URI | Name | Controller |
 |---|---|---|---|
 | GET | / | — | Closure (redirect para dashboard) |
-| GET | /dashboard | dashboard | DashboardController@index |
-| GET | /dashboard/activity | dashboard.activity | DashboardController@getRecentActivity |
-| GET | /operator | operator.dashboard | — |
+| GET | /dashboard | dashboard | HomeController@index |
+| ANY | /painel | — | Redirect 301 → /dashboard |
 
 ---
 

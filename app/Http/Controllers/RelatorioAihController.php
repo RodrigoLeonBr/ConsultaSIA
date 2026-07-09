@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\RelatorioAihExport;
+use App\Exports\RelatorioExport;
 use App\Exports\MatrixReportExport;
 use App\Http\Controllers\Concerns\HasMatrixReport;
 use App\Http\Controllers\Concerns\HasSusPaulistaReport;
@@ -250,7 +250,7 @@ class RelatorioAihController extends BaseRelatorioController
     protected function getTableName(): string { return 's_aih'; }
     protected function getTableAlias(): string { return 'sa'; }
     protected function getCompetenciaField(): string { return 'COMPETENCIA'; }
-    protected function getExportClass(): string { return RelatorioAihExport::class; }
+    protected function getExportClass(): string { return RelatorioExport::class; }
     protected function getMatrixExportClass(): string { return MatrixReportExport::class; }
     protected function getPdfView(): string { return 'relatorios.aih.pdf'; }
     protected function getReportTitle(): string { return 'Relatório de Internações AIH'; }

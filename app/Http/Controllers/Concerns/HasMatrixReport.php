@@ -464,7 +464,7 @@ trait HasMatrixReport
     protected function pivotDataBySplitField($data, $competencias, $groupFields, $numericFields, $splitField)
     {
         $splitGroups = $data->groupBy(function ($item) use ($splitField) {
-            return $this->getSplitGroupKey($item, $splitField);
+            return $this->getGroupKeyPart($item, $splitField);
         });
         
         $result = [
@@ -551,22 +551,9 @@ trait HasMatrixReport
         return $result;
     }
     
-    /**
-     * @deprecated Use getMatrixSplitField()
-     */
-    protected function getPrestadorFieldForMatrix($selectedFields)
-    {
-        return $this->getMatrixSplitField($selectedFields);
-    }
-    
-    protected function getSplitGroupKey($item, $splitField)
-    {
-        return $this->getGroupKeyPart($item, $splitField);
-    }
-    
     protected function getSplitGroupInfo($item, $splitField)
     {
-        $key = $this->getSplitGroupKey($item, $splitField);
+        $key = $this->getGroupKeyPart($item, $splitField);
         $parts = explode('|', $key);
         $fieldConfig = $this->getFieldConfig($splitField);
         $fallback = $fieldConfig['label'] ?? 'Grupo';
