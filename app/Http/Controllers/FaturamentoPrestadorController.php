@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Barryvdh\DomPDF\Facade\Pdf;
-use App\Models\Forma;
 
 class FaturamentoPrestadorController extends Controller
 {
@@ -36,7 +35,7 @@ class FaturamentoPrestadorController extends Controller
             ->map(function ($item) {
                 return [
                     'value' => $item->prd_cmp,
-                    'label' => $this->formatCompetencia($item->prd_cmp)
+                    'label' => $this->formatCompetencia($item->prd_cmp),
                 ];
             });
 
@@ -48,19 +47,19 @@ class FaturamentoPrestadorController extends Controller
             ->map(function ($item) {
                 return [
                     'value' => $item->re_cunid,
-                    'label' => $item->re_cunid . ' - ' . $item->re_cnome
+                    'label' => $item->re_cunid.' - '.$item->re_cnome,
                 ];
             });
 
         // Adicionar opção "Todos"
         $prestadores->prepend([
             'value' => '',
-            'label' => 'Todos os Prestadores'
+            'label' => 'Todos os Prestadores',
         ]);
 
         return view('relatorios.faturamento-prestador', compact(
-            'competencias', 
-            'prestadores', 
+            'competencias',
+            'prestadores',
             'ultimaCompetencia'
         ));
     }
@@ -72,7 +71,7 @@ class FaturamentoPrestadorController extends Controller
     {
         $request->validate([
             'competencia' => 'required|string|size:6',
-            'prestador_id' => 'nullable|string'
+            'prestador_id' => 'nullable|string',
         ]);
 
         $competencia = $request->competencia;
@@ -82,16 +81,16 @@ class FaturamentoPrestadorController extends Controller
         $query = DB::table('s_prd as sp')
             ->leftJoin('prestador as pr', 'sp.prd_uid', '=', 'pr.re_cunid')
             ->leftJoin('procedimento as proc', 'sp.prd_pa', '=', 'proc.codigo')
-            ->leftJoin('forma as f_grupo', function($join) {
+            ->leftJoin('forma as f_grupo', function ($join) {
                 $join->on(DB::raw('SUBSTRING(sp.prd_pa, 1, 2)'), '=', 'f_grupo.grupo')
-                     ->where('f_grupo.subgrupo', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "00")'))
-                     ->where('f_grupo.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "0000")'));
+                    ->where('f_grupo.subgrupo', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "00")'))
+                    ->where('f_grupo.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "0000")'));
             })
-            ->leftJoin('forma as f_subgrupo', function($join) {
+            ->leftJoin('forma as f_subgrupo', function ($join) {
                 $join->on(DB::raw('SUBSTRING(sp.prd_pa, 1, 4)'), '=', 'f_subgrupo.subgrupo')
-                     ->where('f_subgrupo.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 4), "00")'));
+                    ->where('f_subgrupo.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 4), "00")'));
             })
-            ->leftJoin('forma as f_forma', function($join) {
+            ->leftJoin('forma as f_forma', function ($join) {
                 $join->on(DB::raw('SUBSTRING(sp.prd_pa, 1, 6)'), '=', 'f_forma.forma');
             })
             ->select([
@@ -112,7 +111,7 @@ class FaturamentoPrestadorController extends Controller
                 DB::raw('SUM(CAST(sp.PRD_QT_P as UNSIGNED)) as quantidade_apresentada'),
                 DB::raw('SUM(CAST(sp.PRD_QT_P as UNSIGNED) * CAST(proc.PA_TOTAL as DECIMAL(15,2))) as valor_apresentado'),
                 DB::raw('SUM(CAST(sp.PRD_QT_A as UNSIGNED)) as quantidade_aprovada'),
-                DB::raw('SUM(CAST(sp.PRD_VL_A as DECIMAL(15,2))) as valor_aprovado')
+                DB::raw('SUM(CAST(sp.PRD_VL_A as DECIMAL(15,2))) as valor_aprovado'),
             ])
             ->where('sp.prd_cmp', $competencia);
 
@@ -122,19 +121,19 @@ class FaturamentoPrestadorController extends Controller
         }
 
         $dados = $query->groupBy([
-                'pr.re_cunid',
-                'pr.re_cnome', 
-                'sp.prd_rub',
-                'grupo_codigo',
-                'f_grupo.descricao',
-                'subgrupo_codigo', 
-                'f_subgrupo.descricao',
-                'forma_codigo',
-                'f_forma.descricao',
-                'sp.prd_pa',
-                'proc.procedimento',
-                'proc.PA_TOTAL'
-            ])
+            'pr.re_cunid',
+            'pr.re_cnome',
+            'sp.prd_rub',
+            'grupo_codigo',
+            'f_grupo.descricao',
+            'subgrupo_codigo',
+            'f_subgrupo.descricao',
+            'forma_codigo',
+            'f_forma.descricao',
+            'sp.prd_pa',
+            'proc.procedimento',
+            'proc.PA_TOTAL',
+        ])
             ->orderBy('pr.re_cnome')
             ->orderBy('sp.prd_rub')
             ->orderBy('grupo_codigo')
@@ -149,7 +148,7 @@ class FaturamentoPrestadorController extends Controller
         $competenciaFormatada = $this->formatCompetencia($competencia);
 
         return view('relatorios.faturamento-prestador-resultado', compact(
-            'dadosProcessados', 
+            'dadosProcessados',
             'competenciaFormatada',
             'competencia',
             'prestadorId'
@@ -163,7 +162,7 @@ class FaturamentoPrestadorController extends Controller
     {
         $request->validate([
             'competencia' => 'required|string|size:6',
-            'prestador_id' => 'nullable|string'
+            'prestador_id' => 'nullable|string',
         ]);
 
         $competencia = $request->competencia;
@@ -173,16 +172,16 @@ class FaturamentoPrestadorController extends Controller
         $query = DB::table('s_prd as sp')
             ->leftJoin('prestador as pr', 'sp.prd_uid', '=', 'pr.re_cunid')
             ->leftJoin('procedimento as proc', 'sp.prd_pa', '=', 'proc.codigo')
-            ->leftJoin('forma as f_grupo', function($join) {
+            ->leftJoin('forma as f_grupo', function ($join) {
                 $join->on(DB::raw('SUBSTRING(sp.prd_pa, 1, 2)'), '=', 'f_grupo.grupo')
-                     ->where('f_grupo.subgrupo', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "00")'))
-                     ->where('f_grupo.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "0000")'));
+                    ->where('f_grupo.subgrupo', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "00")'))
+                    ->where('f_grupo.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "0000")'));
             })
-            ->leftJoin('forma as f_subgrupo', function($join) {
+            ->leftJoin('forma as f_subgrupo', function ($join) {
                 $join->on(DB::raw('SUBSTRING(sp.prd_pa, 1, 4)'), '=', 'f_subgrupo.subgrupo')
-                     ->where('f_subgrupo.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 4), "00")'));
+                    ->where('f_subgrupo.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 4), "00")'));
             })
-            ->leftJoin('forma as f_forma', function($join) {
+            ->leftJoin('forma as f_forma', function ($join) {
                 $join->on(DB::raw('SUBSTRING(sp.prd_pa, 1, 6)'), '=', 'f_forma.forma');
             })
             ->select([
@@ -201,7 +200,7 @@ class FaturamentoPrestadorController extends Controller
                 DB::raw('SUM(CAST(sp.PRD_QT_P as UNSIGNED)) as quantidade_apresentada'),
                 DB::raw('SUM(CAST(sp.PRD_QT_P as UNSIGNED) * CAST(proc.PA_TOTAL as DECIMAL(15,2))) as valor_apresentado'),
                 DB::raw('SUM(CAST(sp.PRD_QT_A as UNSIGNED)) as quantidade_aprovada'),
-                DB::raw('SUM(CAST(sp.PRD_VL_A as DECIMAL(15,2))) as valor_aprovado')
+                DB::raw('SUM(CAST(sp.PRD_VL_A as DECIMAL(15,2))) as valor_aprovado'),
             ])
             ->where('sp.prd_cmp', $competencia);
 
@@ -210,19 +209,19 @@ class FaturamentoPrestadorController extends Controller
         }
 
         $dados = $query->groupBy([
-                'pr.re_cunid',
-                'pr.re_cnome', 
-                'sp.prd_rub',
-                'grupo_codigo',
-                'f_grupo.descricao',
-                'subgrupo_codigo', 
-                'f_subgrupo.descricao',
-                'forma_codigo',
-                'f_forma.descricao',
-                'sp.prd_pa',
-                'proc.procedimento',
-                'proc.PA_TOTAL'
-            ])
+            'pr.re_cunid',
+            'pr.re_cnome',
+            'sp.prd_rub',
+            'grupo_codigo',
+            'f_grupo.descricao',
+            'subgrupo_codigo',
+            'f_subgrupo.descricao',
+            'forma_codigo',
+            'f_forma.descricao',
+            'sp.prd_pa',
+            'proc.procedimento',
+            'proc.PA_TOTAL',
+        ])
             ->orderBy('pr.re_cnome')
             ->orderBy('sp.prd_rub')
             ->orderBy('grupo_codigo')
@@ -236,27 +235,27 @@ class FaturamentoPrestadorController extends Controller
 
         // Configurar PDF com quebra de página por prestador
         $pdf = Pdf::loadView('relatorios.faturamento-prestador-pdf', compact(
-            'dadosProcessados', 
+            'dadosProcessados',
             'competenciaFormatada',
             'competencia',
             'prestadorId'
         ));
 
         $pdf->setPaper('A4', 'portrait');
-        
+
         // Configurar margens e quebra de página
         $pdf->getDomPDF()->getOptions()->set([
             'isHtml5ParserEnabled' => true,
             'isPhpEnabled' => true,
         ]);
 
-        $nomeArquivo = 'faturamento-prestador-' . $competencia;
+        $nomeArquivo = 'faturamento-prestador-'.$competencia;
         if ($prestadorId) {
             $prestador = DB::table('prestador')->where('re_cunid', $prestadorId)->first();
-            $nomeArquivo .= '-' . ($prestador ? $prestador->re_cunid : $prestadorId);
+            $nomeArquivo .= '-'.($prestador ? $prestador->re_cunid : $prestadorId);
         }
 
-        return $pdf->download($nomeArquivo . '.pdf');
+        return $pdf->download($nomeArquivo.'.pdf');
     }
 
     /**
@@ -279,7 +278,7 @@ class FaturamentoPrestadorController extends Controller
             $formaDescricao = $registro->forma_descricao ?: "Forma $formaCodigo";
 
             // Nível 1: Prestador
-            if (!isset($resultado[$prestadorCodigo])) {
+            if (! isset($resultado[$prestadorCodigo])) {
                 $resultado[$prestadorCodigo] = [
                     'codigo' => $prestadorCodigo,
                     'nome' => $prestadorNome,
@@ -287,12 +286,12 @@ class FaturamentoPrestadorController extends Controller
                     'total_valor_apresentado' => 0,
                     'total_quantidade_aprovada' => 0,
                     'total_valor_aprovado' => 0,
-                    'tipos_financiamento' => []
+                    'tipos_financiamento' => [],
                 ];
             }
 
             // Nível 2: Tipo de Financiamento
-            if (!isset($resultado[$prestadorCodigo]['tipos_financiamento'][$tipoFinanciamento])) {
+            if (! isset($resultado[$prestadorCodigo]['tipos_financiamento'][$tipoFinanciamento])) {
                 $resultado[$prestadorCodigo]['tipos_financiamento'][$tipoFinanciamento] = [
                     'codigo' => $tipoFinanciamento,
                     'descricao' => $this->traduzirTipoFinanciamento($tipoFinanciamento),
@@ -300,12 +299,12 @@ class FaturamentoPrestadorController extends Controller
                     'total_valor_apresentado' => 0,
                     'total_quantidade_aprovada' => 0,
                     'total_valor_aprovado' => 0,
-                    'grupos' => []
+                    'grupos' => [],
                 ];
             }
 
             // Nível 3: Grupo
-            if (!isset($resultado[$prestadorCodigo]['tipos_financiamento'][$tipoFinanciamento]['grupos'][$grupoCodigo])) {
+            if (! isset($resultado[$prestadorCodigo]['tipos_financiamento'][$tipoFinanciamento]['grupos'][$grupoCodigo])) {
                 $resultado[$prestadorCodigo]['tipos_financiamento'][$tipoFinanciamento]['grupos'][$grupoCodigo] = [
                     'codigo' => $grupoCodigo,
                     'descricao' => $grupoDescricao,
@@ -313,12 +312,12 @@ class FaturamentoPrestadorController extends Controller
                     'total_valor_apresentado' => 0,
                     'total_quantidade_aprovada' => 0,
                     'total_valor_aprovado' => 0,
-                    'subgrupos' => []
+                    'subgrupos' => [],
                 ];
             }
 
             // Nível 4: Sub-grupo
-            if (!isset($resultado[$prestadorCodigo]['tipos_financiamento'][$tipoFinanciamento]['grupos'][$grupoCodigo]['subgrupos'][$subgrupoCodigo])) {
+            if (! isset($resultado[$prestadorCodigo]['tipos_financiamento'][$tipoFinanciamento]['grupos'][$grupoCodigo]['subgrupos'][$subgrupoCodigo])) {
                 $resultado[$prestadorCodigo]['tipos_financiamento'][$tipoFinanciamento]['grupos'][$grupoCodigo]['subgrupos'][$subgrupoCodigo] = [
                     'codigo' => $subgrupoCodigo,
                     'descricao' => $subgrupoDescricao,
@@ -326,12 +325,12 @@ class FaturamentoPrestadorController extends Controller
                     'total_valor_apresentado' => 0,
                     'total_quantidade_aprovada' => 0,
                     'total_valor_aprovado' => 0,
-                    'formas' => []
+                    'formas' => [],
                 ];
             }
 
             // Nível 5: Forma de Organização
-            if (!isset($resultado[$prestadorCodigo]['tipos_financiamento'][$tipoFinanciamento]['grupos'][$grupoCodigo]['subgrupos'][$subgrupoCodigo]['formas'][$formaCodigo])) {
+            if (! isset($resultado[$prestadorCodigo]['tipos_financiamento'][$tipoFinanciamento]['grupos'][$grupoCodigo]['subgrupos'][$subgrupoCodigo]['formas'][$formaCodigo])) {
                 $resultado[$prestadorCodigo]['tipos_financiamento'][$tipoFinanciamento]['grupos'][$grupoCodigo]['subgrupos'][$subgrupoCodigo]['formas'][$formaCodigo] = [
                     'codigo' => $formaCodigo,
                     'descricao' => $formaDescricao,
@@ -339,7 +338,7 @@ class FaturamentoPrestadorController extends Controller
                     'total_valor_apresentado' => 0,
                     'total_quantidade_aprovada' => 0,
                     'total_valor_aprovado' => 0,
-                    'procedimentos' => []
+                    'procedimentos' => [],
                 ];
             }
 
@@ -351,7 +350,7 @@ class FaturamentoPrestadorController extends Controller
                 'quantidade_apresentada' => $registro->quantidade_apresentada,
                 'valor_apresentado' => $registro->valor_apresentado,
                 'quantidade_aprovada' => $registro->quantidade_aprovada,
-                'valor_aprovado' => $registro->valor_aprovado
+                'valor_aprovado' => $registro->valor_aprovado,
             ];
 
             // Somar totais em todos os níveis
@@ -419,7 +418,7 @@ class FaturamentoPrestadorController extends Controller
             '17' => 'Atenção Básica - PAB Equipe de Saúde da Família',
             '18' => 'Atenção Básica - PAB Equipe de Saúde Bucal',
             '19' => 'Atenção Básica - PAB Equipe de Saúde Mental',
-            '20' => 'Atenção Básica - PAB Equipe de Saúde da Família'
+            '20' => 'Atenção Básica - PAB Equipe de Saúde da Família',
         ];
 
         return $traducoes[$codigo] ?? "Tipo de Financiamento $codigo";
@@ -430,15 +429,15 @@ class FaturamentoPrestadorController extends Controller
         if (strlen($competencia) === 6) {
             $ano = substr($competencia, 0, 4);
             $mes = substr($competencia, 4, 2);
-            
+
             $meses = [
                 '01' => 'Janeiro', '02' => 'Fevereiro', '03' => 'Março',
                 '04' => 'Abril', '05' => 'Maio', '06' => 'Junho',
                 '07' => 'Julho', '08' => 'Agosto', '09' => 'Setembro',
-                '10' => 'Outubro', '11' => 'Novembro', '12' => 'Dezembro'
+                '10' => 'Outubro', '11' => 'Novembro', '12' => 'Dezembro',
             ];
 
-            return $meses[$mes] . '/' . $ano;
+            return $meses[$mes].'/'.$ano;
         }
 
         return $competencia;

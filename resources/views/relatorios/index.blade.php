@@ -152,9 +152,6 @@
                         <button id="export-csv" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
                             📋 Exportar CSV
                         </button>
-                        <a href="{{ route('relatorios.test-excel') }}" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 inline-block">
-                            🧪 Teste Excel
-                        </a>
                     </div>
                 </div>
             </div>

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 abstract class BaseRelatorioController extends Controller
 {
@@ -41,25 +41,25 @@ abstract class BaseRelatorioController extends Controller
     {
         $field = $request->get('field');
         $search = $request->get('search', '');
-        
+
         $fieldConfig = $this->getFieldConfig($field);
-        
-        if (!$fieldConfig || $fieldConfig['type'] !== 'lookup') {
+
+        if (! $fieldConfig || $fieldConfig['type'] !== 'lookup') {
             return response()->json(['error' => 'Invalid field'], 400);
         }
-        
+
         $query = DB::table($fieldConfig['lookup_table'])
             ->select([
-                $fieldConfig['lookup_key'] . ' as value',
-                $fieldConfig['lookup_display'] . ' as label'
+                $fieldConfig['lookup_key'].' as value',
+                $fieldConfig['lookup_display'].' as label',
             ]);
-            
+
         if ($search) {
-            $query->where($fieldConfig['lookup_display'], 'like', '%' . $search . '%');
+            $query->where($fieldConfig['lookup_display'], 'like', '%'.$search.'%');
         }
-        
+
         $data = $query->limit(50)->get();
-        
+
         return response()->json($data);
     }
 
@@ -73,50 +73,42 @@ abstract class BaseRelatorioController extends Controller
             $filters = $request->get('filters', []);
             $format = $request->get('format', 'html');
             $groupBy = $request->get('group_by', true);
-            
+
             // Validate that fields are selected
             if (empty($selectedFields)) {
                 return response()->json([
-                    'error' => 'Nenhum campo selecionado'
+                    'error' => 'Nenhum campo selecionado',
                 ], 400);
             }
-            
+
             // Build the query
             $query = $this->buildQuery($selectedFields, $filters, $groupBy);
 
-            // SQL disponível antes da execução (debug e diagnóstico de erro)
             $sql = $query->toSql();
             $bindings = $query->getBindings();
-
-            \Log::info('Relatório SQL gerado', [
-                'sql' => $sql,
-                'bindings' => $bindings,
-                'fields' => $selectedFields,
-                'filters' => $filters,
-            ]);
 
             // Execute query
             try {
                 $data = $query->get();
             } catch (\Exception $queryException) {
-                \Log::error('Erro ao executar SQL do relatório: ' . $queryException->getMessage(), [
+                \Log::error('Erro ao executar SQL do relatório: '.$queryException->getMessage(), [
                     'sql' => $sql,
                     'bindings' => $bindings,
                 ]);
 
                 return response()->json([
-                    'error' => 'Erro ao gerar relatório: ' . $queryException->getMessage(),
+                    'error' => 'Erro ao gerar relatório: '.$queryException->getMessage(),
                     'sql' => $sql,
                     'bindings' => $bindings,
                 ], 500);
             }
-            
+
             // Format data for display
             $formattedData = $this->formatData($data, $selectedFields);
-            
+
             // Calculate totals
             $totals = $this->calculateTotals($data, $selectedFields);
-            
+
             switch ($format) {
                 case 'excel':
                     return $this->exportExcel($formattedData, $selectedFields, $totals);
@@ -130,18 +122,16 @@ abstract class BaseRelatorioController extends Controller
                         'fields' => $selectedFields,
                         'total' => $data->count(),
                         'totals' => $totals,
-                        'sql' => $sql,
-                        'bindings' => $bindings
                     ]);
             }
         } catch (\Exception $e) {
-            \Log::error('Error generating report: ' . $e->getMessage(), [
+            \Log::error('Error generating report: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
+                'request' => $request->all(),
             ]);
-            
+
             return response()->json([
-                'error' => 'Erro ao gerar relatório: ' . $e->getMessage()
+                'error' => 'Erro ao gerar relatório: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -162,9 +152,9 @@ abstract class BaseRelatorioController extends Controller
             'cbo' => 'cb',
             'procedimento' => 'pc',
             's_rub' => 'sr',
-            'cismetro' => 'cs'
+            'cismetro' => 'cs',
         ];
-        
+
         return $aliases[$table] ?? substr($table, 0, 2);
     }
 
@@ -176,18 +166,18 @@ abstract class BaseRelatorioController extends Controller
     {
         return $data->map(function ($row) use ($selectedFields) {
             $formatted = [];
-            
+
             foreach ($selectedFields as $field) {
                 $fieldConfig = $this->getFieldConfig($field);
-                
-                if (!$fieldConfig) {
+
+                if (! $fieldConfig) {
                     continue;
                 }
-                
+
                 // Handle special field mappings - can be overridden
                 $formatted = array_merge($formatted, $this->formatFieldValue($row, $field, $fieldConfig));
             }
-            
+
             return $formatted;
         });
     }
@@ -199,23 +189,23 @@ abstract class BaseRelatorioController extends Controller
     protected function formatFieldValue($row, $field, $fieldConfig)
     {
         $formatted = [];
-        
+
         if ($fieldConfig['type'] === 'lookup') {
-            $displayField = $field . '_display';
+            $displayField = $field.'_display';
             $formatted[$fieldConfig['label']] = $row->{$displayField} ?? $row->{$field} ?? '';
         } elseif ($fieldConfig['type'] === 'currency') {
             $value = $row->{$field} ?? 0;
-            $formatted[$fieldConfig['label']] = 'R$ ' . number_format((float)$value, 2, ',', '.');
+            $formatted[$fieldConfig['label']] = 'R$ '.number_format((float) $value, 2, ',', '.');
         } elseif ($fieldConfig['type'] === 'number') {
             $value = $row->{$field} ?? 0;
-            $formatted[$fieldConfig['label']] = number_format((float)$value, 0, ',', '.');
+            $formatted[$fieldConfig['label']] = number_format((float) $value, 0, ',', '.');
         } elseif ($fieldConfig['type'] === 'date') {
             $value = $row->{$field} ?? '';
             $formatted[$fieldConfig['label']] = $value ? date('d/m/Y', strtotime($value)) : '';
         } else {
             $formatted[$fieldConfig['label']] = $row->{$field} ?? '';
         }
-        
+
         return $formatted;
     }
 
@@ -226,10 +216,10 @@ abstract class BaseRelatorioController extends Controller
     protected function calculateTotals($data, $selectedFields)
     {
         $totals = [];
-        
+
         // This is a base implementation - child classes should override
         // to handle their specific numeric fields
-        
+
         return $totals;
     }
 
@@ -241,14 +231,15 @@ abstract class BaseRelatorioController extends Controller
         try {
             $exportClass = $this->getExportClass();
             $export = new $exportClass($data, $selectedFields, $totals);
+
             return Excel::download($export, $this->getExportFilename('xlsx'));
         } catch (\Exception $e) {
-            \Log::error('Error in Excel export: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+            \Log::error('Error in Excel export: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return response()->json([
-                'error' => 'Erro ao exportar Excel: ' . $e->getMessage()
+                'error' => 'Erro ao exportar Excel: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -262,9 +253,9 @@ abstract class BaseRelatorioController extends Controller
             'data' => $data,
             'fields' => $selectedFields,
             'totals' => $totals,
-            'title' => $this->getReportTitle()
+            'title' => $this->getReportTitle(),
         ]);
-        
+
         return $pdf->download($this->getExportFilename('pdf'));
     }
 
@@ -279,26 +270,26 @@ abstract class BaseRelatorioController extends Controller
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
-        $callback = function() use ($data, $selectedFields, $totals) {
+        $callback = function () use ($data, $totals) {
             $file = fopen('php://output', 'w');
-            
+
             // Add BOM for UTF-8
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-            
+
             // Headers - get from first row if data exists
-            if (!empty($data)) {
+            if (! empty($data)) {
                 $firstRow = $data->first();
                 $fieldLabels = array_keys($firstRow);
                 fputcsv($file, $fieldLabels, ';');
-                
+
                 // Data
                 foreach ($data as $row) {
                     $csvRow = array_values($row);
                     fputcsv($file, $csvRow, ';');
                 }
-                
+
                 // Add totals if available
-                if (!empty($totals)) {
+                if (! empty($totals)) {
                     fputcsv($file, [], ';'); // Empty line
                     fputcsv($file, ['TOTAIS'], ';');
                     foreach ($totals as $label => $value) {
@@ -306,7 +297,7 @@ abstract class BaseRelatorioController extends Controller
                     }
                 }
             }
-            
+
             fclose($file);
         };
 
@@ -333,7 +324,7 @@ abstract class BaseRelatorioController extends Controller
      */
     protected function getExportFilename($extension)
     {
-        return 'relatorio.' . $extension;
+        return 'relatorio.'.$extension;
     }
 
     /**
@@ -345,16 +336,16 @@ abstract class BaseRelatorioController extends Controller
         $field = $filter['field'];
         $operator = $filter['operator'];
         $value = $filter['value'];
-        
+
         $tableAlias = $this->getTableAlias();
-        
+
         // Handle special fields - can be overridden
         if (str_starts_with($field, 'cismetro_')) {
-            $field = 'cs.' . substr($field, 9); // Remove 'cismetro_' prefix
+            $field = 'cs.'.substr($field, 9); // Remove 'cismetro_' prefix
         } else {
             $field = "{$tableAlias}.{$field}";
         }
-        
+
         switch ($operator) {
             case '=':
                 $query->where($field, '=', $value);
@@ -372,13 +363,13 @@ abstract class BaseRelatorioController extends Controller
                 $query->where($field, '<=', $value);
                 break;
             case 'like':
-                $query->where($field, 'like', '%' . $value . '%');
+                $query->where($field, 'like', '%'.$value.'%');
                 break;
             case 'starts_with':
-                $query->where($field, 'like', $value . '%');
+                $query->where($field, 'like', $value.'%');
                 break;
             case 'ends_with':
-                $query->where($field, 'like', '%' . $value);
+                $query->where($field, 'like', '%'.$value);
                 break;
             case 'between':
                 if (is_array($value) && count($value) === 2) {
@@ -432,4 +423,3 @@ abstract class BaseRelatorioController extends Controller
         return "CASE WHEN CAST({$column} AS SIGNED) > {$max} THEN NULL ELSE {$column} END";
     }
 }
-

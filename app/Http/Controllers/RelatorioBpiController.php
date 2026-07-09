@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use App\Exports\RelatorioExport;
 use App\Exports\MatrixReportExport;
+use App\Exports\RelatorioExport;
 use App\Http\Controllers\Concerns\HasMatrixReport;
 use App\Http\Controllers\Concerns\HasSusPaulistaReport;
+use Illuminate\Support\Facades\DB;
 
 class RelatorioBpiController extends BaseRelatorioController
 {
     use HasMatrixReport;
     use HasSusPaulistaReport;
+
     /**
      * Display the report builder interface
      */
@@ -32,13 +32,13 @@ class RelatorioBpiController extends BaseRelatorioController
                     'label' => 'Data Competência',
                     'type' => 'date',
                     'table' => 's_bpi',
-                    'operators' => ['=', '>=', '<=', 'between']
+                    'operators' => ['=', '>=', '<=', 'between'],
                 ],
                 'BPI_MVM' => [
                     'label' => 'Data Movimento',
                     'type' => 'date',
                     'table' => 's_bpi',
-                    'operators' => ['=', '>=', '<=', 'between']
+                    'operators' => ['=', '>=', '<=', 'between'],
                 ],
                 'BPI_UID' => [
                     'label' => 'Prestador',
@@ -47,14 +47,14 @@ class RelatorioBpiController extends BaseRelatorioController
                     'lookup_table' => 'prestador',
                     'lookup_key' => 're_cunid',
                     'lookup_display' => 're_cnome',
-                    'operators' => ['=', 'in']
+                    'operators' => ['=', 'in'],
                 ],
                 'tipo_relatorio' => [
                     'label' => 'Tipo de Relatório',
                     'type' => 'text',
                     'table' => 'prestador',
                     'field' => 'relatorio',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'BPI_CBO' => [
                     'label' => 'CBO',
@@ -63,7 +63,7 @@ class RelatorioBpiController extends BaseRelatorioController
                     'lookup_table' => 'cbo',
                     'lookup_key' => 'cbo',
                     'lookup_display' => 'ds_cbo',
-                    'operators' => ['=', 'in']
+                    'operators' => ['=', 'in'],
                 ],
                 'BPI_PA' => [
                     'label' => 'Procedimento',
@@ -72,50 +72,50 @@ class RelatorioBpiController extends BaseRelatorioController
                     'lookup_table' => 'procedimento',
                     'lookup_key' => 'codigo',
                     'lookup_display' => 'procedimento',
-                    'operators' => ['=', 'in', 'like']
+                    'operators' => ['=', 'in', 'like'],
                 ],
                 'procedimento_descricao' => [
                     'label' => 'Descrição do Procedimento',
                     'type' => 'text',
                     'table' => 'procedimento',
                     'field' => 'procedimento',
-                    'operators' => ['=', 'like', 'starts_with', 'ends_with']
+                    'operators' => ['=', 'like', 'starts_with', 'ends_with'],
                 ],
                 'BPI_QT_P' => [
                     'label' => 'Quantidade',
                     'type' => 'number',
                     'table' => 's_bpi',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                    'operators' => ['=', '>', '<', '>=', '<=', 'between'],
                 ],
                 'BPI_CID' => [
                     'label' => 'CID',
                     'type' => 'text',
                     'table' => 's_bpi',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'BPI_CNSMED' => [
                     'label' => 'CNS Profissional',
                     'type' => 'text',
                     'table' => 's_bpi',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'BPI_CNSPAC' => [
                     'label' => 'CNS Paciente',
                     'type' => 'text',
                     'table' => 's_bpi',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'BPI_NMPAC' => [
                     'label' => 'Nome do Paciente',
                     'type' => 'text',
                     'table' => 's_bpi',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'BPI_DTNASC' => [
                     'label' => 'Data de Nascimento',
                     'type' => 'text',
                     'table' => 's_bpi',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'BPI_SEXO' => [
                     'label' => 'Sexo',
@@ -125,50 +125,50 @@ class RelatorioBpiController extends BaseRelatorioController
                         'M' => 'Masculino',
                         'F' => 'Feminino',
                     ],
-                    'operators' => ['=']
+                    'operators' => ['='],
                 ],
                 'BPI_DTATEN' => [
                     'label' => 'Data de Atendimento',
                     'type' => 'text',
                     'table' => 's_bpi',
-                    'operators' => ['=', '>=', '<=', 'between']
+                    'operators' => ['=', '>=', '<=', 'between'],
                 ],
                 'BPI_IDADE' => [
                     'label' => 'Idade',
                     'type' => 'number',
                     'table' => 's_bpi',
-                    'operators' => ['=', '>=', '<=']
+                    'operators' => ['=', '>=', '<='],
                 ],
                 'faixa_etaria_1' => [
                     'label' => 'Faixa Etária (detalhada)',
                     'type' => 'calculated',
                     'table' => 's_bpi',
-                    'operators' => []
+                    'operators' => [],
                 ],
                 'faixa_etaria_2' => [
                     'label' => 'Faixa Etária (resumida)',
                     'type' => 'calculated',
                     'table' => 's_bpi',
-                    'operators' => []
+                    'operators' => [],
                 ],
                 'BPI_CATEN' => [
                     'label' => 'Caráter de Atendimento',
                     'type' => 'text',
                     'table' => 's_bpi',
-                    'operators' => ['=', 'in']
+                    'operators' => ['=', 'in'],
                 ],
                 // NOVOS CAMPOS CISMETRO
                 'cismetro_valor' => [
                     'label' => 'Cismetro - Valor Unitário',
                     'type' => 'currency',
                     'table' => 'cismetro',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                    'operators' => ['=', '>', '<', '>=', '<=', 'between'],
                 ],
                 'cismetro_total' => [
                     'label' => 'Cismetro - Valor Total',
                     'type' => 'currency',
                     'table' => 'calculated',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                    'operators' => ['=', '>', '<', '>=', '<=', 'between'],
                 ],
                 'cismetro_descricao' => [
                     'label' => 'Cismetro - Descrição',
@@ -177,46 +177,46 @@ class RelatorioBpiController extends BaseRelatorioController
                     'lookup_table' => 'cismetro',
                     'lookup_key' => 'codigo',
                     'lookup_display' => 'descricao',
-                    'operators' => ['=', 'like']
+                    'operators' => ['=', 'like'],
                 ],
                 ...$this->getSusPaulistaFieldConfigs(),
                 'grupo' => [
                     'label' => 'Grupo',
                     'type' => 'text',
                     'table' => 'forma',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'descgrupo' => [
                     'label' => 'Descrição do Grupo',
                     'type' => 'text',
                     'table' => 'forma',
-                    'operators' => []
+                    'operators' => [],
                 ],
                 'subgrupo' => [
                     'label' => 'Subgrupo',
                     'type' => 'text',
                     'table' => 'forma',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'descsubgrupo' => [
                     'label' => 'Descrição do Subgrupo',
                     'type' => 'text',
                     'table' => 'forma',
-                    'operators' => []
+                    'operators' => [],
                 ],
                 'forma' => [
                     'label' => 'Forma de Organização',
                     'type' => 'text',
                     'table' => 'forma',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'descforma' => [
                     'label' => 'Descrição da Forma',
                     'type' => 'text',
                     'table' => 'forma',
-                    'operators' => ['=', 'like', 'starts_with']
-                ]
-            ]
+                    'operators' => ['=', 'like', 'starts_with'],
+                ],
+            ],
         ]);
     }
 
@@ -356,12 +356,12 @@ class RelatorioBpiController extends BaseRelatorioController
     {
         $query->leftJoin('forma as fg', function ($join) {
             $join->on(DB::raw('SUBSTRING(sb.BPI_PA, 1, 2)'), '=', 'fg.grupo')
-                 ->where('fg.subgrupo', '=', DB::raw('CONCAT(SUBSTRING(sb.BPI_PA, 1, 2), "00")'))
-                 ->where('fg.forma', '=', DB::raw('CONCAT(SUBSTRING(sb.BPI_PA, 1, 2), "0000")'));
+                ->where('fg.subgrupo', '=', DB::raw('CONCAT(SUBSTRING(sb.BPI_PA, 1, 2), "00")'))
+                ->where('fg.forma', '=', DB::raw('CONCAT(SUBSTRING(sb.BPI_PA, 1, 2), "0000")'));
         });
         $query->leftJoin('forma as fs', function ($join) {
             $join->on(DB::raw('SUBSTRING(sb.BPI_PA, 1, 4)'), '=', 'fs.subgrupo')
-                 ->where('fs.forma', '=', DB::raw('CONCAT(SUBSTRING(sb.BPI_PA, 1, 4), "00")'));
+                ->where('fs.forma', '=', DB::raw('CONCAT(SUBSTRING(sb.BPI_PA, 1, 4), "00")'));
         });
         $query->leftJoin('forma as ff', function ($join) {
             $join->on(DB::raw('SUBSTRING(sb.BPI_PA, 1, 6)'), '=', 'ff.forma');
@@ -386,7 +386,7 @@ class RelatorioBpiController extends BaseRelatorioController
      */
     protected function addPrestadorJoinIfNeeded($query, &$joins): void
     {
-        if (!in_array('prestador', $joins, true)) {
+        if (! in_array('prestador', $joins, true)) {
             $query->leftJoin('prestador as pr', 'sb.BPI_UID', '=', 'pr.re_cunid');
             $joins[] = 'prestador';
         }
@@ -401,7 +401,7 @@ class RelatorioBpiController extends BaseRelatorioController
             $this->addPrestadorJoinIfNeeded($query, $joins);
         }
 
-        if ($this->needsFormaJoins($selectedFields, $filters) && !in_array('forma', $joins, true)) {
+        if ($this->needsFormaJoins($selectedFields, $filters) && ! in_array('forma', $joins, true)) {
             $this->addFormaJoins($query);
             $joins[] = 'forma';
         }
@@ -418,20 +418,20 @@ class RelatorioBpiController extends BaseRelatorioController
     protected function buildQuery($selectedFields, $filters, $groupBy = true)
     {
         $query = DB::table('s_bpi as sb');
-        
+
         // Check if cismetro fields are needed
-        $needsCismetro = collect($selectedFields)->contains(function($field) {
+        $needsCismetro = collect($selectedFields)->contains(function ($field) {
             return str_starts_with($field, 'cismetro_');
         }) || collect($filters)->contains(fn ($f) => str_starts_with($f['field'] ?? '', 'cismetro_'));
-        
+
         // Add joins based on selected fields
         $joins = [];
-        
+
         foreach ($selectedFields as $field) {
             $fieldConfig = $this->getFieldConfig($field);
             if ($fieldConfig && $fieldConfig['type'] === 'lookup') {
                 $joinKey = $fieldConfig['lookup_table'];
-                if (!in_array($joinKey, $joins)) {
+                if (! in_array($joinKey, $joins)) {
                     $this->addJoin($query, $field, $fieldConfig);
                     $joins[] = $joinKey;
                 }
@@ -439,39 +439,39 @@ class RelatorioBpiController extends BaseRelatorioController
         }
 
         $this->addReportJoins($query, $selectedFields, $filters, 'sb', $joins);
-        
+
         // Add cismetro join if needed
-        if ($needsCismetro && !in_array('cismetro', $joins)) {
+        if ($needsCismetro && ! in_array('cismetro', $joins)) {
             $query->leftJoin('cismetro as cs', 'sb.BPI_PA', '=', 'cs.codigo');
             $joins[] = 'cismetro';
         }
-        
+
         // Build select fields with grouping and aggregation
         $selectFields = [];
         $groupByFields = [];
-        
+
         foreach ($selectedFields as $field) {
             $fieldConfig = $this->getFieldConfig($field);
             if ($fieldConfig) {
                 if ($fieldConfig['type'] === 'lookup') {
                     $alias = $this->getTableAliasForJoin($fieldConfig['lookup_table']);
-                    
+
                     // Add both code and display fields
                     if ($field === 'BPI_UID') {
-                        $selectFields[] = "sb.BPI_UID as cnes";
-                        $selectFields[] = "pr.re_cnome as prestador_nome";
-                        $groupByFields[] = "sb.BPI_UID";
-                        $groupByFields[] = "pr.re_cnome";
+                        $selectFields[] = 'sb.BPI_UID as cnes';
+                        $selectFields[] = 'pr.re_cnome as prestador_nome';
+                        $groupByFields[] = 'sb.BPI_UID';
+                        $groupByFields[] = 'pr.re_cnome';
                     } elseif ($field === 'BPI_PA') {
-                        $selectFields[] = "sb.BPI_PA as procedimento_codigo";
-                        $selectFields[] = "pc.procedimento as procedimento_nome";
-                        $groupByFields[] = "sb.BPI_PA";
-                        $groupByFields[] = "pc.procedimento";
+                        $selectFields[] = 'sb.BPI_PA as procedimento_codigo';
+                        $selectFields[] = 'pc.procedimento as procedimento_nome';
+                        $groupByFields[] = 'sb.BPI_PA';
+                        $groupByFields[] = 'pc.procedimento';
                     } elseif ($field === 'cismetro_descricao') {
-                        $selectFields[] = "sb.BPI_PA as cismetro_codigo";
-                        $selectFields[] = "cs.descricao as cismetro_descricao";
-                        $groupByFields[] = "sb.BPI_PA";
-                        $groupByFields[] = "cs.descricao";
+                        $selectFields[] = 'sb.BPI_PA as cismetro_codigo';
+                        $selectFields[] = 'cs.descricao as cismetro_descricao';
+                        $groupByFields[] = 'sb.BPI_PA';
+                        $groupByFields[] = 'cs.descricao';
                     } else {
                         $selectFields[] = "sb.{$field}";
                         $selectFields[] = "{$alias}.{$fieldConfig['lookup_display']} as {$field}_display";
@@ -484,14 +484,14 @@ class RelatorioBpiController extends BaseRelatorioController
                     continue;
                 } elseif ($field === 'BPI_QT_P') {
                     // Sum quantities
-                    $selectFields[] = DB::raw("SUM(CAST(sb.BPI_QT_P as UNSIGNED)) as total_quantidade");
+                    $selectFields[] = DB::raw('SUM(CAST(sb.BPI_QT_P as UNSIGNED)) as total_quantidade');
                 } elseif ($field === 'cismetro_valor') {
                     // Cismetro unit value
-                    $selectFields[] = "cs.valor as cismetro_valor";
-                    $groupByFields[] = "cs.valor";
+                    $selectFields[] = 'cs.valor as cismetro_valor';
+                    $groupByFields[] = 'cs.valor';
                 } elseif ($field === 'cismetro_total') {
                     // Cismetro total value (quantity * unit value)
-                    $selectFields[] = DB::raw("SUM(CAST(sb.BPI_QT_P as UNSIGNED) * COALESCE(cs.valor, 0)) as cismetro_total");
+                    $selectFields[] = DB::raw('SUM(CAST(sb.BPI_QT_P as UNSIGNED) * COALESCE(cs.valor, 0)) as cismetro_total');
                 } elseif (($susPaulista = $this->buildSusPaulistaListSelect($field, 'sb'))['handled']) {
                     $selectFields = array_merge($selectFields, $susPaulista['select']);
                     if (! empty($susPaulista['groupBy'])) {
@@ -500,10 +500,10 @@ class RelatorioBpiController extends BaseRelatorioController
                 } elseif ($field === 'BPI_CMP') {
                     // Format competencia as YYYY-MM
                     $selectFields[] = DB::raw("CONCAT(SUBSTRING(sb.BPI_CMP, 1, 4), '-', SUBSTRING(sb.BPI_CMP, 5, 2)) as competencia");
-                    $groupByFields[] = "sb.BPI_CMP";
+                    $groupByFields[] = 'sb.BPI_CMP';
                 } elseif ($field === 'BPI_MVM') {
                     $selectFields[] = DB::raw("CONCAT(SUBSTRING(sb.BPI_MVM, 1, 4), '-', SUBSTRING(sb.BPI_MVM, 5, 2)) as movimento");
-                    $groupByFields[] = "sb.BPI_MVM";
+                    $groupByFields[] = 'sb.BPI_MVM';
                 } elseif ($field === 'grupo') {
                     $selectFields[] = DB::raw('SUBSTRING(sb.BPI_PA, 1, 2) as grupo');
                     $groupByFields[] = DB::raw('SUBSTRING(sb.BPI_PA, 1, 2)');
@@ -543,19 +543,19 @@ class RelatorioBpiController extends BaseRelatorioController
                 }
             }
         }
-        
+
         $query->select($selectFields);
-        
+
         // Apply filters
         foreach ($filters as $filter) {
             $this->applyFilter($query, $filter);
         }
-        
+
         // Group by non-aggregate fields if grouping is enabled
-        if ($groupBy && !empty($groupByFields)) {
+        if ($groupBy && ! empty($groupByFields)) {
             $query->groupBy($groupByFields);
         }
-        
+
         // Order by first dimensional field
         $firstOrderField = collect($selectedFields)->first(
             fn ($field) => ! in_array($field, ['BPI_QT_P', 'cismetro_total', 'procedimento_descricao', ...$this->getSusPaulistaAggregateFieldIds()], true)
@@ -565,10 +565,10 @@ class RelatorioBpiController extends BaseRelatorioController
             $query->orderBy(DB::raw($this->faixaEtaria1OrderExpression('sb')));
         } elseif ($firstOrderField === 'faixa_etaria_2') {
             $query->orderBy(DB::raw($this->faixaEtaria2OrderExpression('sb')));
-        } elseif (!empty($groupByFields)) {
+        } elseif (! empty($groupByFields)) {
             $query->orderBy($groupByFields[0]);
         }
-        
+
         return $query;
     }
 
@@ -579,7 +579,7 @@ class RelatorioBpiController extends BaseRelatorioController
     {
         $alias = $this->getTableAliasForJoin($fieldConfig['lookup_table']);
         $tableAlias = $this->getTableAlias();
-        
+
         switch ($fieldConfig['lookup_table']) {
             case 'prestador':
                 $query->leftJoin("prestador as {$alias}", "{$tableAlias}.BPI_UID", '=', "{$alias}.re_cunid");
@@ -596,7 +596,6 @@ class RelatorioBpiController extends BaseRelatorioController
         }
     }
 
-
     /**
      * Apply filter to query
      */
@@ -605,58 +604,63 @@ class RelatorioBpiController extends BaseRelatorioController
         $field = $filter['field'];
         $operator = $filter['operator'];
         $value = $filter['value'];
-        
+
         // Otimização especial para filtro de descrição de procedimento
         if ($field === 'procedimento_descricao') {
             // Primeiro, buscar os códigos dos procedimentos que atendem o critério
             $subquery = DB::table('procedimento')->select('codigo');
-            
+
             switch ($operator) {
                 case '=':
                     $subquery->where('procedimento', '=', $value);
                     break;
                 case 'like':
-                    $subquery->where('procedimento', 'like', '%' . $value . '%');
+                    $subquery->where('procedimento', 'like', '%'.$value.'%');
                     break;
                 case 'starts_with':
-                    $subquery->where('procedimento', 'like', $value . '%');
+                    $subquery->where('procedimento', 'like', $value.'%');
                     break;
                 case 'ends_with':
-                    $subquery->where('procedimento', 'like', '%' . $value);
+                    $subquery->where('procedimento', 'like', '%'.$value);
                     break;
             }
-            
+
             $procedimentoCodigos = $subquery->pluck('codigo')->toArray();
-            
+
             // Aplicar filtro IN na tabela principal
-            if (!empty($procedimentoCodigos)) {
+            if (! empty($procedimentoCodigos)) {
                 $query->whereIn('sb.BPI_PA', $procedimentoCodigos);
             } else {
                 // Se nenhum procedimento foi encontrado, garantir que nenhum resultado seja retornado
                 $query->whereRaw('1 = 0');
             }
-            
+
             return;
         }
 
         if ($field === 'grupo') {
             $this->applyFormaCodeFilter($query, 2, $operator, $value);
+
             return;
         }
         if ($field === 'subgrupo') {
             $this->applyFormaCodeFilter($query, 4, $operator, $value);
+
             return;
         }
         if ($field === 'forma') {
             $this->applyFormaCodeFilter($query, 6, $operator, $value);
+
             return;
         }
         if ($field === 'descforma') {
             $this->applyTextFilter($query, 'ff.descricao', $operator, $value);
+
             return;
         }
         if ($field === 'tipo_relatorio') {
             $this->applyTextFilter($query, 'pr.relatorio', $operator, $value);
+
             return;
         }
 
@@ -676,13 +680,13 @@ class RelatorioBpiController extends BaseRelatorioController
             } elseif ($field === 'cismetro_total') {
                 return;
             } elseif (str_starts_with($field, 'cismetro_')) {
-                $field = 'cs.' . substr($field, 9);
+                $field = 'cs.'.substr($field, 9);
             } else {
                 $tableAlias = $this->getTableAlias();
                 $field = "{$tableAlias}.{$field}";
             }
         }
-        
+
         switch ($operator) {
             case '=':
                 $query->where($field, '=', $value);
@@ -700,13 +704,13 @@ class RelatorioBpiController extends BaseRelatorioController
                 $query->where($field, '<=', $value);
                 break;
             case 'like':
-                $query->where($field, 'like', '%' . $value . '%');
+                $query->where($field, 'like', '%'.$value.'%');
                 break;
             case 'starts_with':
-                $query->where($field, 'like', $value . '%');
+                $query->where($field, 'like', $value.'%');
                 break;
             case 'ends_with':
-                $query->where($field, 'like', '%' . $value);
+                $query->where($field, 'like', '%'.$value);
                 break;
             case 'between':
                 if (is_array($value) && count($value) === 2) {
@@ -740,10 +744,10 @@ class RelatorioBpiController extends BaseRelatorioController
                 $query->where($field, '=', $value);
                 break;
             case 'like':
-                $query->where($field, 'like', '%' . $value . '%');
+                $query->where($field, 'like', '%'.$value.'%');
                 break;
             case 'starts_with':
-                $query->where($field, 'like', $value . '%');
+                $query->where($field, 'like', $value.'%');
                 break;
         }
     }
@@ -755,10 +759,10 @@ class RelatorioBpiController extends BaseRelatorioController
     {
         return $data->map(function ($row) use ($selectedFields) {
             $formatted = [];
-            
+
             foreach ($selectedFields as $field) {
                 $fieldConfig = $this->getFieldConfig($field);
-                
+
                 // Handle special field mappings
                 if ($field === 'BPI_UID') {
                     $formatted['CNES'] = $row->cnes ?? '';
@@ -773,15 +777,15 @@ class RelatorioBpiController extends BaseRelatorioController
                     // Campo especial: não adiciona à formatação pois é apenas para filtro
                     continue;
                 } elseif ($field === 'cismetro_valor') {
-                    $formatted['Cismetro - Valor Unitário'] = $row->cismetro_valor ? 
-                        'R$ ' . number_format((float)$row->cismetro_valor, 2, ',', '.') : 'R$ 0,00';
+                    $formatted['Cismetro - Valor Unitário'] = $row->cismetro_valor ?
+                        'R$ '.number_format((float) $row->cismetro_valor, 2, ',', '.') : 'R$ 0,00';
                 } elseif ($field === 'cismetro_total') {
-                    $formatted['Cismetro - Valor Total'] = $row->cismetro_total ? 
-                        'R$ ' . number_format((float)$row->cismetro_total, 2, ',', '.') : 'R$ 0,00';
+                    $formatted['Cismetro - Valor Total'] = $row->cismetro_total ?
+                        'R$ '.number_format((float) $row->cismetro_total, 2, ',', '.') : 'R$ 0,00';
                 } elseif (($susPaulista = $this->formatSusPaulistaField($field, $row)) !== null) {
                     $formatted = array_merge($formatted, $susPaulista);
                 } elseif ($field === 'BPI_QT_P') {
-                    $formatted['Quantidade Total'] = number_format((float)($row->total_quantidade ?? 0), 0, ',', '.');
+                    $formatted['Quantidade Total'] = number_format((float) ($row->total_quantidade ?? 0), 0, ',', '.');
                 } elseif ($field === 'BPI_CMP') {
                     $formatted['Data Competência'] = $row->competencia ?? '';
                 } elseif ($field === 'BPI_MVM') {
@@ -794,20 +798,20 @@ class RelatorioBpiController extends BaseRelatorioController
                     $formatted[$fieldConfig['label']] = $row->{$field} ?? '';
                 } else {
                     $value = $row->{$field} ?? '';
-                    
+
                     // Format based on field type
                     switch ($fieldConfig['type'] ?? 'text') {
                         case 'currency':
-                            $formatted[$fieldConfig['label']] = 'R$ ' . number_format((float)$value, 2, ',', '.');
+                            $formatted[$fieldConfig['label']] = 'R$ '.number_format((float) $value, 2, ',', '.');
                             break;
                         case 'number':
-                            $formatted[$fieldConfig['label']] = number_format((float)$value, 0, ',', '.');
+                            $formatted[$fieldConfig['label']] = number_format((float) $value, 0, ',', '.');
                             break;
                         case 'date':
                             $formatted[$fieldConfig['label']] = $value ? date('d/m/Y', strtotime($value)) : '';
                             break;
                         case 'lookup':
-                            $displayField = $field . '_display';
+                            $displayField = $field.'_display';
                             $formatted[$fieldConfig['label']] = $row->{$displayField} ?? $value;
                             break;
                         case 'choice':
@@ -819,6 +823,7 @@ class RelatorioBpiController extends BaseRelatorioController
                     }
                 }
             }
+
             return $formatted;
         });
     }
@@ -829,27 +834,26 @@ class RelatorioBpiController extends BaseRelatorioController
     protected function calculateTotals($data, $selectedFields)
     {
         $totals = [];
-        
+
         if (in_array('BPI_QT_P', $selectedFields)) {
-            $totalQty = $data->sum(function($item) {
+            $totalQty = $data->sum(function ($item) {
                 return $item->total_quantidade ?? 0;
             });
             $totals['Quantidade Total'] = number_format($totalQty, 0, ',', '.');
         }
-        
+
         // NOVOS TOTAIS CISMETRO
         if (in_array('cismetro_total', $selectedFields)) {
-            $totalCismetro = $data->sum(function($item) {
+            $totalCismetro = $data->sum(function ($item) {
                 return $item->cismetro_total ?? 0;
             });
-            $totals['Cismetro - Valor Total'] = 'R$ ' . number_format($totalCismetro, 2, ',', '.');
+            $totals['Cismetro - Valor Total'] = 'R$ '.number_format($totalCismetro, 2, ',', '.');
         }
 
         $this->appendSusPaulistaTotals($selectedFields, $data, $totals);
-        
+
         return $totals;
     }
-
 
     /**
      * Get field configuration
@@ -861,13 +865,13 @@ class RelatorioBpiController extends BaseRelatorioController
                 'label' => 'Data Competência',
                 'type' => 'date',
                 'table' => 's_bpi',
-                'operators' => ['=', '>=', '<=', 'between']
+                'operators' => ['=', '>=', '<=', 'between'],
             ],
             'BPI_MVM' => [
                 'label' => 'Data Movimento',
                 'type' => 'date',
                 'table' => 's_bpi',
-                'operators' => ['=', '>=', '<=', 'between']
+                'operators' => ['=', '>=', '<=', 'between'],
             ],
             'BPI_UID' => [
                 'label' => 'Prestador',
@@ -876,14 +880,14 @@ class RelatorioBpiController extends BaseRelatorioController
                 'lookup_table' => 'prestador',
                 'lookup_key' => 're_cunid',
                 'lookup_display' => 're_cnome',
-                'operators' => ['=', 'in']
+                'operators' => ['=', 'in'],
             ],
             'tipo_relatorio' => [
                 'label' => 'Tipo de Relatório',
                 'type' => 'text',
                 'table' => 'prestador',
                 'field' => 'relatorio',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'BPI_CBO' => [
                 'label' => 'CBO',
@@ -892,7 +896,7 @@ class RelatorioBpiController extends BaseRelatorioController
                 'lookup_table' => 'cbo',
                 'lookup_key' => 'cbo',
                 'lookup_display' => 'ds_cbo',
-                'operators' => ['=', 'in']
+                'operators' => ['=', 'in'],
             ],
             'BPI_PA' => [
                 'label' => 'Procedimento',
@@ -901,50 +905,50 @@ class RelatorioBpiController extends BaseRelatorioController
                 'lookup_table' => 'procedimento',
                 'lookup_key' => 'codigo',
                 'lookup_display' => 'procedimento',
-                'operators' => ['=', 'in', 'like']
+                'operators' => ['=', 'in', 'like'],
             ],
             'procedimento_descricao' => [
                 'label' => 'Descrição do Procedimento',
                 'type' => 'text',
                 'table' => 'procedimento',
                 'field' => 'procedimento',
-                'operators' => ['=', 'like', 'starts_with', 'ends_with']
+                'operators' => ['=', 'like', 'starts_with', 'ends_with'],
             ],
             'BPI_QT_P' => [
                 'label' => 'Quantidade',
                 'type' => 'number',
                 'table' => 's_bpi',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'BPI_CID' => [
                 'label' => 'CID',
                 'type' => 'text',
                 'table' => 's_bpi',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'BPI_CNSMED' => [
                 'label' => 'CNS Profissional',
                 'type' => 'text',
                 'table' => 's_bpi',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'BPI_CNSPAC' => [
                 'label' => 'CNS Paciente',
                 'type' => 'text',
                 'table' => 's_bpi',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'BPI_NMPAC' => [
                 'label' => 'Nome do Paciente',
                 'type' => 'text',
                 'table' => 's_bpi',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'BPI_DTNASC' => [
                 'label' => 'Data de Nascimento',
                 'type' => 'text',
                 'table' => 's_bpi',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'BPI_SEXO' => [
                 'label' => 'Sexo',
@@ -954,50 +958,50 @@ class RelatorioBpiController extends BaseRelatorioController
                     'M' => 'Masculino',
                     'F' => 'Feminino',
                 ],
-                'operators' => ['=']
+                'operators' => ['='],
             ],
             'BPI_DTATEN' => [
                 'label' => 'Data de Atendimento',
                 'type' => 'text',
                 'table' => 's_bpi',
-                'operators' => ['=', '>=', '<=', 'between']
+                'operators' => ['=', '>=', '<=', 'between'],
             ],
             'BPI_IDADE' => [
                 'label' => 'Idade',
                 'type' => 'number',
                 'table' => 's_bpi',
-                'operators' => ['=', '>=', '<=']
+                'operators' => ['=', '>=', '<='],
             ],
             'faixa_etaria_1' => [
                 'label' => 'Faixa Etária (detalhada)',
                 'type' => 'calculated',
                 'table' => 's_bpi',
-                'operators' => []
+                'operators' => [],
             ],
             'faixa_etaria_2' => [
                 'label' => 'Faixa Etária (resumida)',
                 'type' => 'calculated',
                 'table' => 's_bpi',
-                'operators' => []
+                'operators' => [],
             ],
             'BPI_CATEN' => [
                 'label' => 'Caráter de Atendimento',
                 'type' => 'text',
                 'table' => 's_bpi',
-                'operators' => ['=', 'in']
+                'operators' => ['=', 'in'],
             ],
             // CAMPOS CISMETRO
             'cismetro_valor' => [
                 'label' => 'Cismetro - Valor Unitário',
                 'type' => 'currency',
                 'table' => 'cismetro',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'cismetro_total' => [
                 'label' => 'Cismetro - Valor Total',
                 'type' => 'currency',
                 'table' => 'calculated',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'cismetro_descricao' => [
                 'label' => 'Cismetro - Descrição',
@@ -1006,98 +1010,48 @@ class RelatorioBpiController extends BaseRelatorioController
                 'lookup_table' => 'cismetro',
                 'lookup_key' => 'codigo',
                 'lookup_display' => 'descricao',
-                'operators' => ['=', 'like']
+                'operators' => ['=', 'like'],
             ],
             ...$this->getSusPaulistaFieldConfigs(),
             'grupo' => [
                 'label' => 'Grupo',
                 'type' => 'text',
                 'table' => 'forma',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'descgrupo' => [
                 'label' => 'Descrição do Grupo',
                 'type' => 'text',
                 'table' => 'forma',
-                'operators' => []
+                'operators' => [],
             ],
             'subgrupo' => [
                 'label' => 'Subgrupo',
                 'type' => 'text',
                 'table' => 'forma',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'descsubgrupo' => [
                 'label' => 'Descrição do Subgrupo',
                 'type' => 'text',
                 'table' => 'forma',
-                'operators' => []
+                'operators' => [],
             ],
             'forma' => [
                 'label' => 'Forma de Organização',
                 'type' => 'text',
                 'table' => 'forma',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'descforma' => [
                 'label' => 'Descrição da Forma',
                 'type' => 'text',
                 'table' => 'forma',
-                'operators' => ['=', 'like', 'starts_with']
-            ]
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
         ];
-        
+
         return $fields[$field] ?? null;
-    }    /**
-
-     * Debug endpoint to test query building
-     */
-    public function debug(Request $request)
-    {
-        try {
-            $selectedFields = $request->get('fields', []);
-            $filters = $request->get('filters', []);
-            
-            if (empty($selectedFields)) {
-                return response()->json(['error' => 'No fields selected']);
-            }
-            
-            $query = $this->buildQuery($selectedFields, $filters, true);
-            
-            return response()->json([
-                'sql' => $query->toSql(),
-                'bindings' => $query->getBindings(),
-                'fields' => $selectedFields,
-                'filters' => $filters
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
-    }
-
-    /**
-     * Test Excel export with simple data
-     */
-    public function testExcel()
-    {
-        try {
-            $testData = collect([
-                ['Campo 1' => 'Valor 1', 'Campo 2' => 'Valor 2'],
-                ['Campo 1' => 'Valor 3', 'Campo 2' => 'Valor 4']
-            ]);
-            
-            $export = new RelatorioExport($testData, ['campo1', 'campo2'], []);
-            return Excel::download($export, 'teste.xlsx');
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Erro no teste Excel: ' . $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ], 500);
-        }
     }
 
     /**
@@ -1137,27 +1091,27 @@ class RelatorioBpiController extends BaseRelatorioController
     {
         $selectFields = [];
         $groupByFields = [];
-        
+
         if ($field === 'BPI_UID') {
             $selectFields[] = "{$tableAlias}.BPI_UID as prestador_codigo";
-            $selectFields[] = "pr.re_cnome as prestador_nome";
+            $selectFields[] = 'pr.re_cnome as prestador_nome';
             $groupByFields[] = "{$tableAlias}.BPI_UID";
-            $groupByFields[] = "pr.re_cnome";
+            $groupByFields[] = 'pr.re_cnome';
         } elseif ($field === 'BPI_PA') {
             $selectFields[] = "{$tableAlias}.BPI_PA as procedimento_codigo";
-            $selectFields[] = "pc.procedimento as procedimento_nome";
+            $selectFields[] = 'pc.procedimento as procedimento_nome';
             $groupByFields[] = "{$tableAlias}.BPI_PA";
-            $groupByFields[] = "pc.procedimento";
+            $groupByFields[] = 'pc.procedimento';
         } elseif ($field === 'BPI_CBO') {
             $selectFields[] = "{$tableAlias}.BPI_CBO as cbo_codigo";
-            $selectFields[] = "cb.ds_cbo as cbo_nome";
+            $selectFields[] = 'cb.ds_cbo as cbo_nome';
             $groupByFields[] = "{$tableAlias}.BPI_CBO";
-            $groupByFields[] = "cb.ds_cbo";
+            $groupByFields[] = 'cb.ds_cbo';
         } elseif ($field === 'cismetro_descricao') {
             $selectFields[] = "{$tableAlias}.BPI_PA as cismetro_codigo";
-            $selectFields[] = "cs.descricao as cismetro_descricao";
+            $selectFields[] = 'cs.descricao as cismetro_descricao';
             $groupByFields[] = "{$tableAlias}.BPI_PA";
-            $groupByFields[] = "cs.descricao";
+            $groupByFields[] = 'cs.descricao';
         } elseif ($field === 'grupo') {
             $selectFields[] = DB::raw("SUBSTRING({$tableAlias}.BPI_PA, 1, 2) as grupo");
             $groupByFields[] = DB::raw("SUBSTRING({$tableAlias}.BPI_PA, 1, 2)");
@@ -1192,14 +1146,14 @@ class RelatorioBpiController extends BaseRelatorioController
             $selectFields[] = DB::raw("{$expr} as BPI_IDADE");
             $groupByFields[] = DB::raw($expr);
         }
-        
+
         return ['select' => $selectFields, 'groupBy' => $groupByFields];
     }
 
     protected function getMatrixNumericFields($field, $tableAlias): array
     {
         $fields = [];
-        
+
         if ($field === 'BPI_QT_P') {
             $fields[] = DB::raw("SUM(CAST({$tableAlias}.BPI_QT_P as UNSIGNED)) as total_quantidade");
         } elseif ($field === 'cismetro_total') {
@@ -1207,20 +1161,20 @@ class RelatorioBpiController extends BaseRelatorioController
         } else {
             $fields = array_merge($fields, $this->getSusPaulistaMatrixNumericFields($field, $tableAlias));
         }
-        
+
         return $fields;
     }
 
     protected function getGroupKeyPart($item, $field)
     {
         if ($field === 'BPI_UID') {
-            return ($item->prestador_codigo ?? '') . '|' . ($item->prestador_nome ?? '');
+            return ($item->prestador_codigo ?? '').'|'.($item->prestador_nome ?? '');
         } elseif ($field === 'BPI_PA') {
-            return ($item->procedimento_codigo ?? '') . '|' . ($item->procedimento_nome ?? '');
+            return ($item->procedimento_codigo ?? '').'|'.($item->procedimento_nome ?? '');
         } elseif ($field === 'BPI_CBO') {
-            return ($item->cbo_codigo ?? '') . '|' . ($item->cbo_nome ?? '');
+            return ($item->cbo_codigo ?? '').'|'.($item->cbo_nome ?? '');
         } elseif ($field === 'cismetro_descricao') {
-            return ($item->cismetro_codigo ?? '') . '|' . ($item->cismetro_descricao ?? '');
+            return ($item->cismetro_codigo ?? '').'|'.($item->cismetro_descricao ?? '');
         } elseif (in_array($field, $this->getFaixaEtariaFieldIds(), true)) {
             return $item->{$field} ?? '';
         } elseif (in_array($field, $this->getFormaFieldIds(), true)) {
@@ -1230,7 +1184,7 @@ class RelatorioBpiController extends BaseRelatorioController
         } elseif ($field === 'BPI_IDADE') {
             return $this->idadeAgrupamentoKey($item->BPI_IDADE ?? null);
         }
-        
+
         return $item->{$field} ?? '';
     }
 
@@ -1238,17 +1192,18 @@ class RelatorioBpiController extends BaseRelatorioController
     {
         switch ($field) {
             case 'BPI_QT_P':
-                return (float)($item->total_quantidade ?? 0);
+                return (float) ($item->total_quantidade ?? 0);
             case 'cismetro_total':
-                return (float)($item->cismetro_total ?? 0);
+                return (float) ($item->cismetro_total ?? 0);
             case 'cismetro_valor':
-                return (float)($item->cismetro_valor ?? 0);
+                return (float) ($item->cismetro_valor ?? 0);
             default:
                 $susValue = $this->getSusPaulistaNumericValue($item, $field);
-                return $susValue ?? (float)($item->{$field} ?? 0);
+
+                return $susValue ?? (float) ($item->{$field} ?? 0);
         }
     }
-    
+
     /**
      * Get default numeric field for matrix
      */

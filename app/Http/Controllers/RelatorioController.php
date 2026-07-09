@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use App\Exports\RelatorioExport;
 use App\Exports\MatrixReportExport;
+use App\Exports\RelatorioExport;
 use App\Http\Controllers\Concerns\HasMatrixReport;
 use App\Http\Controllers\Concerns\HasSusPaulistaReport;
+use Illuminate\Support\Facades\DB;
 
 class RelatorioController extends BaseRelatorioController
 {
     use HasMatrixReport;
     use HasSusPaulistaReport;
+
     /**
      * Display the report builder interface
      */
@@ -32,13 +32,13 @@ class RelatorioController extends BaseRelatorioController
                     'label' => 'Data Competência',
                     'type' => 'date',
                     'table' => 's_prd',
-                    'operators' => ['=', '>=', '<=', 'between']
+                    'operators' => ['=', '>=', '<=', 'between'],
                 ],
                 'prd_mvm' => [
                     'label' => 'Data Movimento',
                     'type' => 'date',
                     'table' => 's_prd',
-                    'operators' => ['=', '>=', '<=', 'between']
+                    'operators' => ['=', '>=', '<=', 'between'],
                 ],
                 'prd_uid' => [
                     'label' => 'Prestador',
@@ -47,14 +47,14 @@ class RelatorioController extends BaseRelatorioController
                     'lookup_table' => 'prestador',
                     'lookup_key' => 're_cunid',
                     'lookup_display' => 're_cnome',
-                    'operators' => ['=', 'in']
+                    'operators' => ['=', 'in'],
                 ],
                 'tipo_relatorio' => [
                     'label' => 'Tipo de Relatório',
                     'type' => 'text',
                     'table' => 'prestador',
                     'field' => 'relatorio',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'prd_cbo' => [
                     'label' => 'CBO',
@@ -63,7 +63,7 @@ class RelatorioController extends BaseRelatorioController
                     'lookup_table' => 'cbo',
                     'lookup_key' => 'cbo',
                     'lookup_display' => 'ds_cbo',
-                    'operators' => ['=', 'in']
+                    'operators' => ['=', 'in'],
                 ],
                 'prd_pa' => [
                     'label' => 'Procedimento',
@@ -72,26 +72,26 @@ class RelatorioController extends BaseRelatorioController
                     'lookup_table' => 'procedimento',
                     'lookup_key' => 'codigo',
                     'lookup_display' => 'procedimento',
-                    'operators' => ['=', 'in', 'like']
+                    'operators' => ['=', 'in', 'like'],
                 ],
                 'procedimento_descricao' => [
                     'label' => 'Descrição do Procedimento',
                     'type' => 'text',
                     'table' => 'procedimento',
                     'field' => 'procedimento',
-                    'operators' => ['=', 'like', 'starts_with', 'ends_with']
+                    'operators' => ['=', 'like', 'starts_with', 'ends_with'],
                 ],
                 'PRD_QT_P' => [
                     'label' => 'Quantidade',
                     'type' => 'number',
                     'table' => 's_prd',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                    'operators' => ['=', '>', '<', '>=', '<=', 'between'],
                 ],
                 'PRD_VL_P' => [
                     'label' => 'Valor',
                     'type' => 'currency',
                     'table' => 's_prd',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                    'operators' => ['=', '>', '<', '>=', '<=', 'between'],
                 ],
                 'PRD_RUB' => [
                     'label' => 'Rubrica',
@@ -100,44 +100,44 @@ class RelatorioController extends BaseRelatorioController
                     'lookup_table' => 's_rub',
                     'lookup_key' => 'RUB_ID',
                     'lookup_display' => 'RUB_DC',
-                    'operators' => ['=', 'in']
+                    'operators' => ['=', 'in'],
                 ],
                 'PRD_CIDPRI' => [
                     'label' => 'CID Principal',
                     'type' => 'text',
                     'table' => 's_prd',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'PRD_IDADE' => [
                     'label' => 'Idade',
                     'type' => 'number',
                     'table' => 's_prd',
-                    'operators' => ['=', '>=', '<=']
+                    'operators' => ['=', '>=', '<='],
                 ],
                 'faixa_etaria_1' => [
                     'label' => 'Faixa Etária (detalhada)',
                     'type' => 'calculated',
                     'table' => 's_prd',
-                    'operators' => []
+                    'operators' => [],
                 ],
                 'faixa_etaria_2' => [
                     'label' => 'Faixa Etária (resumida)',
                     'type' => 'calculated',
                     'table' => 's_prd',
-                    'operators' => []
+                    'operators' => [],
                 ],
                 // NOVOS CAMPOS CISMETRO
                 'cismetro_valor' => [
                     'label' => 'Cismetro - Valor Unitário',
                     'type' => 'currency',
                     'table' => 'cismetro',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                    'operators' => ['=', '>', '<', '>=', '<=', 'between'],
                 ],
                 'cismetro_total' => [
                     'label' => 'Cismetro - Valor Total',
                     'type' => 'currency',
                     'table' => 'calculated',
-                    'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                    'operators' => ['=', '>', '<', '>=', '<=', 'between'],
                 ],
                 'cismetro_descricao' => [
                     'label' => 'Cismetro - Descrição',
@@ -146,46 +146,46 @@ class RelatorioController extends BaseRelatorioController
                     'lookup_table' => 'cismetro',
                     'lookup_key' => 'codigo',
                     'lookup_display' => 'descricao',
-                    'operators' => ['=', 'like']
+                    'operators' => ['=', 'like'],
                 ],
                 ...$this->getSusPaulistaFieldConfigs(),
                 'grupo' => [
                     'label' => 'Grupo',
                     'type' => 'text',
                     'table' => 'forma',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'descgrupo' => [
                     'label' => 'Descrição do Grupo',
                     'type' => 'text',
                     'table' => 'forma',
-                    'operators' => []
+                    'operators' => [],
                 ],
                 'subgrupo' => [
                     'label' => 'Subgrupo',
                     'type' => 'text',
                     'table' => 'forma',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'descsubgrupo' => [
                     'label' => 'Descrição do Subgrupo',
                     'type' => 'text',
                     'table' => 'forma',
-                    'operators' => []
+                    'operators' => [],
                 ],
                 'forma' => [
                     'label' => 'Forma de Organização',
                     'type' => 'text',
                     'table' => 'forma',
-                    'operators' => ['=', 'like', 'starts_with']
+                    'operators' => ['=', 'like', 'starts_with'],
                 ],
                 'descforma' => [
                     'label' => 'Descrição da Forma',
                     'type' => 'text',
                     'table' => 'forma',
-                    'operators' => ['=', 'like', 'starts_with']
-                ]
-            ]
+                    'operators' => ['=', 'like', 'starts_with'],
+                ],
+            ],
         ]);
     }
 
@@ -325,12 +325,12 @@ class RelatorioController extends BaseRelatorioController
     {
         $query->leftJoin('forma as fg', function ($join) {
             $join->on(DB::raw('SUBSTRING(sp.prd_pa, 1, 2)'), '=', 'fg.grupo')
-                 ->where('fg.subgrupo', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "00")'))
-                 ->where('fg.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "0000")'));
+                ->where('fg.subgrupo', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "00")'))
+                ->where('fg.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 2), "0000")'));
         });
         $query->leftJoin('forma as fs', function ($join) {
             $join->on(DB::raw('SUBSTRING(sp.prd_pa, 1, 4)'), '=', 'fs.subgrupo')
-                 ->where('fs.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 4), "00")'));
+                ->where('fs.forma', '=', DB::raw('CONCAT(SUBSTRING(sp.prd_pa, 1, 4), "00")'));
         });
         $query->leftJoin('forma as ff', function ($join) {
             $join->on(DB::raw('SUBSTRING(sp.prd_pa, 1, 6)'), '=', 'ff.forma');
@@ -355,7 +355,7 @@ class RelatorioController extends BaseRelatorioController
      */
     protected function addPrestadorJoinIfNeeded($query, &$joins): void
     {
-        if (!in_array('prestador', $joins, true)) {
+        if (! in_array('prestador', $joins, true)) {
             $query->leftJoin('prestador as pr', 'sp.prd_uid', '=', 'pr.re_cunid');
             $joins[] = 'prestador';
         }
@@ -392,20 +392,20 @@ class RelatorioController extends BaseRelatorioController
     protected function buildQuery($selectedFields, $filters, $groupBy = true)
     {
         $query = DB::table('s_prd as sp');
-        
+
         // Check if cismetro fields are needed
-        $needsCismetro = collect($selectedFields)->contains(function($field) {
+        $needsCismetro = collect($selectedFields)->contains(function ($field) {
             return str_starts_with($field, 'cismetro_');
         }) || collect($filters)->contains(fn ($f) => str_starts_with($f['field'] ?? '', 'cismetro_'));
-        
+
         // Add joins based on selected fields
         $joins = [];
-        
+
         foreach ($selectedFields as $field) {
             $fieldConfig = $this->getFieldConfig($field);
             if ($fieldConfig && $fieldConfig['type'] === 'lookup') {
                 $joinKey = $fieldConfig['lookup_table'];
-                if (!in_array($joinKey, $joins)) {
+                if (! in_array($joinKey, $joins)) {
                     $this->addJoin($query, $field, $fieldConfig);
                     $joins[] = $joinKey;
                 }
@@ -413,39 +413,39 @@ class RelatorioController extends BaseRelatorioController
         }
 
         $this->addReportJoins($query, $selectedFields, $filters, 'sp', $joins);
-        
+
         // Add cismetro join if needed
-        if ($needsCismetro && !in_array('cismetro', $joins)) {
+        if ($needsCismetro && ! in_array('cismetro', $joins)) {
             $query->leftJoin('cismetro as cs', 'sp.prd_pa', '=', 'cs.codigo');
             $joins[] = 'cismetro';
         }
-        
+
         // Build select fields with grouping and aggregation
         $selectFields = [];
         $groupByFields = [];
-        
+
         foreach ($selectedFields as $field) {
             $fieldConfig = $this->getFieldConfig($field);
             if ($fieldConfig) {
                 if ($fieldConfig['type'] === 'lookup') {
                     $alias = $this->getTableAliasForJoin($fieldConfig['lookup_table']);
-                    
+
                     // Add both code and display fields
                     if ($field === 'prd_uid') {
-                        $selectFields[] = "sp.prd_uid as cnes";
-                        $selectFields[] = "pr.re_cnome as prestador_nome";
-                        $groupByFields[] = "sp.prd_uid";
-                        $groupByFields[] = "pr.re_cnome";
+                        $selectFields[] = 'sp.prd_uid as cnes';
+                        $selectFields[] = 'pr.re_cnome as prestador_nome';
+                        $groupByFields[] = 'sp.prd_uid';
+                        $groupByFields[] = 'pr.re_cnome';
                     } elseif ($field === 'prd_pa') {
-                        $selectFields[] = "sp.prd_pa as procedimento_codigo";
-                        $selectFields[] = "pc.procedimento as procedimento_nome";
-                        $groupByFields[] = "sp.prd_pa";
-                        $groupByFields[] = "pc.procedimento";
+                        $selectFields[] = 'sp.prd_pa as procedimento_codigo';
+                        $selectFields[] = 'pc.procedimento as procedimento_nome';
+                        $groupByFields[] = 'sp.prd_pa';
+                        $groupByFields[] = 'pc.procedimento';
                     } elseif ($field === 'cismetro_descricao') {
-                        $selectFields[] = "sp.prd_pa as cismetro_codigo";
-                        $selectFields[] = "cs.descricao as cismetro_descricao";
-                        $groupByFields[] = "sp.prd_pa";
-                        $groupByFields[] = "cs.descricao";
+                        $selectFields[] = 'sp.prd_pa as cismetro_codigo';
+                        $selectFields[] = 'cs.descricao as cismetro_descricao';
+                        $groupByFields[] = 'sp.prd_pa';
+                        $groupByFields[] = 'cs.descricao';
                     } else {
                         $selectFields[] = "sp.{$field}";
                         $selectFields[] = "{$alias}.{$fieldConfig['lookup_display']} as {$field}_display";
@@ -458,17 +458,17 @@ class RelatorioController extends BaseRelatorioController
                     continue;
                 } elseif ($field === 'PRD_QT_P') {
                     // Sum quantities
-                    $selectFields[] = DB::raw("SUM(CAST(sp.PRD_QT_P as UNSIGNED)) as total_quantidade");
+                    $selectFields[] = DB::raw('SUM(CAST(sp.PRD_QT_P as UNSIGNED)) as total_quantidade');
                 } elseif ($field === 'PRD_VL_P') {
                     // Sum values
-                    $selectFields[] = DB::raw("SUM(CAST(sp.PRD_VL_P as DECIMAL(15,2))) as total_valor");
+                    $selectFields[] = DB::raw('SUM(CAST(sp.PRD_VL_P as DECIMAL(15,2))) as total_valor');
                 } elseif ($field === 'cismetro_valor') {
                     // Cismetro unit value
-                    $selectFields[] = "cs.valor as cismetro_valor";
-                    $groupByFields[] = "cs.valor";
+                    $selectFields[] = 'cs.valor as cismetro_valor';
+                    $groupByFields[] = 'cs.valor';
                 } elseif ($field === 'cismetro_total') {
                     // Cismetro total value (quantity * unit value)
-                    $selectFields[] = DB::raw("SUM(CAST(sp.PRD_QT_P as UNSIGNED) * COALESCE(cs.valor, 0)) as cismetro_total");
+                    $selectFields[] = DB::raw('SUM(CAST(sp.PRD_QT_P as UNSIGNED) * COALESCE(cs.valor, 0)) as cismetro_total');
                 } elseif (($susPaulista = $this->buildSusPaulistaListSelect($field, 'sp'))['handled']) {
                     $selectFields = array_merge($selectFields, $susPaulista['select']);
                     if (! empty($susPaulista['groupBy'])) {
@@ -477,10 +477,10 @@ class RelatorioController extends BaseRelatorioController
                 } elseif ($field === 'prd_cmp') {
                     // Format competencia as YYYY-MM
                     $selectFields[] = DB::raw("CONCAT(SUBSTRING(sp.prd_cmp, 1, 4), '-', SUBSTRING(sp.prd_cmp, 5, 2)) as competencia");
-                    $groupByFields[] = "sp.prd_cmp";
+                    $groupByFields[] = 'sp.prd_cmp';
                 } elseif ($field === 'prd_mvm') {
                     $selectFields[] = DB::raw("CONCAT(SUBSTRING(sp.prd_mvm, 1, 4), '-', SUBSTRING(sp.prd_mvm, 5, 2)) as movimento");
-                    $groupByFields[] = "sp.prd_mvm";
+                    $groupByFields[] = 'sp.prd_mvm';
                 } elseif ($field === 'grupo') {
                     $selectFields[] = DB::raw('SUBSTRING(sp.prd_pa, 1, 2) as grupo');
                     $groupByFields[] = DB::raw('SUBSTRING(sp.prd_pa, 1, 2)');
@@ -520,19 +520,19 @@ class RelatorioController extends BaseRelatorioController
                 }
             }
         }
-        
+
         $query->select($selectFields);
-        
+
         // Apply filters
         foreach ($filters as $filter) {
             $this->applyFilter($query, $filter);
         }
-        
+
         // Group by non-aggregate fields if grouping is enabled
-        if ($groupBy && !empty($groupByFields)) {
+        if ($groupBy && ! empty($groupByFields)) {
             $query->groupBy($groupByFields);
         }
-        
+
         // Order by first dimensional field
         $firstOrderField = collect($selectedFields)->first(
             fn ($field) => ! in_array($field, [
@@ -544,10 +544,10 @@ class RelatorioController extends BaseRelatorioController
             $query->orderBy(DB::raw($this->faixaEtaria1OrderExpression('sp')));
         } elseif ($firstOrderField === 'faixa_etaria_2') {
             $query->orderBy(DB::raw($this->faixaEtaria2OrderExpression('sp')));
-        } elseif (!empty($groupByFields)) {
+        } elseif (! empty($groupByFields)) {
             $query->orderBy($groupByFields[0]);
         }
-        
+
         return $query;
     }
 
@@ -558,7 +558,7 @@ class RelatorioController extends BaseRelatorioController
     {
         $alias = $this->getTableAliasForJoin($fieldConfig['lookup_table']);
         $tableAlias = $this->getTableAlias();
-        
+
         switch ($fieldConfig['lookup_table']) {
             case 'prestador':
                 $query->leftJoin("prestador as {$alias}", "{$tableAlias}.prd_uid", '=', "{$alias}.re_cunid");
@@ -578,7 +578,6 @@ class RelatorioController extends BaseRelatorioController
         }
     }
 
-
     /**
      * Apply filter to query
      */
@@ -587,61 +586,66 @@ class RelatorioController extends BaseRelatorioController
         $field = $filter['field'];
         $operator = $filter['operator'];
         $value = $filter['value'];
-        
+
         // Otimização especial para filtro de descrição de procedimento
         if ($field === 'procedimento_descricao') {
             // Primeiro, buscar os códigos dos procedimentos que atendem o critério
             $subquery = DB::table('procedimento')->select('codigo');
-            
+
             switch ($operator) {
                 case '=':
                     $subquery->where('procedimento', '=', $value);
                     break;
                 case 'like':
-                    $subquery->where('procedimento', 'like', '%' . $value . '%');
+                    $subquery->where('procedimento', 'like', '%'.$value.'%');
                     break;
                 case 'starts_with':
-                    $subquery->where('procedimento', 'like', $value . '%');
+                    $subquery->where('procedimento', 'like', $value.'%');
                     break;
                 case 'ends_with':
-                    $subquery->where('procedimento', 'like', '%' . $value);
+                    $subquery->where('procedimento', 'like', '%'.$value);
                     break;
             }
-            
+
             $procedimentoCodigos = $subquery->pluck('codigo')->toArray();
-            
+
             // Aplicar filtro IN na tabela principal
-            if (!empty($procedimentoCodigos)) {
+            if (! empty($procedimentoCodigos)) {
                 $query->whereIn('sp.prd_pa', $procedimentoCodigos);
             } else {
                 // Se nenhum procedimento foi encontrado, garantir que nenhum resultado seja retornado
                 $query->whereRaw('1 = 0');
             }
-            
+
             return;
         }
 
         if ($field === 'grupo') {
             $this->applyFormaCodeFilter($query, 2, $operator, $value);
+
             return;
         }
         if ($field === 'subgrupo') {
             $this->applyFormaCodeFilter($query, 4, $operator, $value);
+
             return;
         }
         if ($field === 'forma') {
             $this->applyFormaCodeFilter($query, 6, $operator, $value);
+
             return;
         }
         if ($field === 'descforma') {
             $this->applyTextFilter($query, 'ff.descricao', $operator, $value);
+
             return;
         }
         if ($field === 'tipo_relatorio') {
             $this->applyTextFilter($query, 'pr.relatorio', $operator, $value);
+
             return;
         }
-        
+
         if ($field === 'filter_sus_paulista') {
             return;
         }
@@ -658,13 +662,13 @@ class RelatorioController extends BaseRelatorioController
             } elseif ($field === 'cismetro_total') {
                 return;
             } elseif (str_starts_with($field, 'cismetro_')) {
-                $field = 'cs.' . substr($field, 9);
+                $field = 'cs.'.substr($field, 9);
             } else {
                 $tableAlias = $this->getTableAlias();
                 $field = "{$tableAlias}.{$field}";
             }
         }
-        
+
         switch ($operator) {
             case '=':
                 $query->where($field, '=', $value);
@@ -682,13 +686,13 @@ class RelatorioController extends BaseRelatorioController
                 $query->where($field, '<=', $value);
                 break;
             case 'like':
-                $query->where($field, 'like', '%' . $value . '%');
+                $query->where($field, 'like', '%'.$value.'%');
                 break;
             case 'starts_with':
-                $query->where($field, 'like', $value . '%');
+                $query->where($field, 'like', $value.'%');
                 break;
             case 'ends_with':
-                $query->where($field, 'like', '%' . $value);
+                $query->where($field, 'like', '%'.$value);
                 break;
             case 'between':
                 if (is_array($value) && count($value) === 2) {
@@ -722,10 +726,10 @@ class RelatorioController extends BaseRelatorioController
                 $query->where($field, '=', $value);
                 break;
             case 'like':
-                $query->where($field, 'like', '%' . $value . '%');
+                $query->where($field, 'like', '%'.$value.'%');
                 break;
             case 'starts_with':
-                $query->where($field, 'like', $value . '%');
+                $query->where($field, 'like', $value.'%');
                 break;
         }
     }
@@ -737,10 +741,10 @@ class RelatorioController extends BaseRelatorioController
     {
         return $data->map(function ($row) use ($selectedFields) {
             $formatted = [];
-            
+
             foreach ($selectedFields as $field) {
                 $fieldConfig = $this->getFieldConfig($field);
-                
+
                 // Handle special field mappings
                 if ($field === 'prd_uid') {
                     $formatted['CNES'] = $row->cnes ?? '';
@@ -755,31 +759,31 @@ class RelatorioController extends BaseRelatorioController
                     // Campo especial: não adiciona à formatação pois é apenas para filtro
                     continue;
                 } elseif ($field === 'cismetro_valor') {
-                    $formatted['Cismetro - Valor Unitário'] = $row->cismetro_valor ? 
-                        'R$ ' . number_format((float)$row->cismetro_valor, 2, ',', '.') : 'R$ 0,00';
+                    $formatted['Cismetro - Valor Unitário'] = $row->cismetro_valor ?
+                        'R$ '.number_format((float) $row->cismetro_valor, 2, ',', '.') : 'R$ 0,00';
                 } elseif ($field === 'cismetro_total') {
                     $formatted['Cismetro - Valor Total'] = $row->cismetro_total ?
-                        'R$ ' . number_format((float)$row->cismetro_total, 2, ',', '.') : 'R$ 0,00';
+                        'R$ '.number_format((float) $row->cismetro_total, 2, ',', '.') : 'R$ 0,00';
                 } elseif ($field === 'sus_paulista_tab') {
                     $formatted['Tab Paulista - Valor Unitário'] = $row->sus_paulista_tab
-                        ? 'R$ ' . number_format((float) $row->sus_paulista_tab, 2, ',', '.')
+                        ? 'R$ '.number_format((float) $row->sus_paulista_tab, 2, ',', '.')
                         : 'R$ 0,00';
                 } elseif ($field === 'sus_paulista_tab_total') {
                     $formatted['Tab Paulista - Valor Total'] = $row->sus_paulista_tab_total
-                        ? 'R$ ' . number_format((float) $row->sus_paulista_tab_total, 2, ',', '.')
+                        ? 'R$ '.number_format((float) $row->sus_paulista_tab_total, 2, ',', '.')
                         : 'R$ 0,00';
                 } elseif ($field === 'sus_paulista_tsp') {
                     $formatted['Compl. TSP - Valor Unitário'] = $row->sus_paulista_tsp
-                        ? 'R$ ' . number_format((float) $row->sus_paulista_tsp, 2, ',', '.')
+                        ? 'R$ '.number_format((float) $row->sus_paulista_tsp, 2, ',', '.')
                         : 'R$ 0,00';
                 } elseif ($field === 'sus_paulista_tsp_total') {
                     $formatted['Compl. TSP - Valor Total'] = $row->sus_paulista_tsp_total
-                        ? 'R$ ' . number_format((float) $row->sus_paulista_tsp_total, 2, ',', '.')
+                        ? 'R$ '.number_format((float) $row->sus_paulista_tsp_total, 2, ',', '.')
                         : 'R$ 0,00';
                 } elseif ($field === 'PRD_QT_P') {
-                    $formatted['Quantidade Total'] = number_format((float)($row->total_quantidade ?? 0), 0, ',', '.');
+                    $formatted['Quantidade Total'] = number_format((float) ($row->total_quantidade ?? 0), 0, ',', '.');
                 } elseif ($field === 'PRD_VL_P') {
-                    $formatted['Valor Total'] = 'R$ ' . number_format((float)($row->total_valor ?? 0), 2, ',', '.');
+                    $formatted['Valor Total'] = 'R$ '.number_format((float) ($row->total_valor ?? 0), 2, ',', '.');
                 } elseif ($field === 'prd_cmp') {
                     $formatted['Data Competência'] = $row->competencia ?? '';
                 } elseif ($field === 'prd_mvm') {
@@ -792,20 +796,20 @@ class RelatorioController extends BaseRelatorioController
                     $formatted[$fieldConfig['label']] = $row->{$field} ?? '';
                 } else {
                     $value = $row->{$field} ?? '';
-                    
+
                     // Format based on field type
                     switch ($fieldConfig['type'] ?? 'text') {
                         case 'currency':
-                            $formatted[$fieldConfig['label']] = 'R$ ' . number_format((float)$value, 2, ',', '.');
+                            $formatted[$fieldConfig['label']] = 'R$ '.number_format((float) $value, 2, ',', '.');
                             break;
                         case 'number':
-                            $formatted[$fieldConfig['label']] = number_format((float)$value, 0, ',', '.');
+                            $formatted[$fieldConfig['label']] = number_format((float) $value, 0, ',', '.');
                             break;
                         case 'date':
                             $formatted[$fieldConfig['label']] = $value ? date('d/m/Y', strtotime($value)) : '';
                             break;
                         case 'lookup':
-                            $displayField = $field . '_display';
+                            $displayField = $field.'_display';
                             $formatted[$fieldConfig['label']] = $row->{$displayField} ?? $value;
                             break;
                         default:
@@ -813,6 +817,7 @@ class RelatorioController extends BaseRelatorioController
                     }
                 }
             }
+
             return $formatted;
         });
     }
@@ -823,42 +828,41 @@ class RelatorioController extends BaseRelatorioController
     protected function calculateTotals($data, $selectedFields)
     {
         $totals = [];
-        
+
         if (in_array('PRD_QT_P', $selectedFields)) {
-            $totalQty = $data->sum(function($item) {
+            $totalQty = $data->sum(function ($item) {
                 return $item->total_quantidade ?? 0;
             });
             $totals['Quantidade Total'] = number_format($totalQty, 0, ',', '.');
         }
-        
+
         if (in_array('PRD_VL_P', $selectedFields)) {
-            $totalValue = $data->sum(function($item) {
+            $totalValue = $data->sum(function ($item) {
                 return $item->total_valor ?? 0;
             });
-            $totals['Valor Total'] = 'R$ ' . number_format($totalValue, 2, ',', '.');
+            $totals['Valor Total'] = 'R$ '.number_format($totalValue, 2, ',', '.');
         }
-        
+
         // NOVOS TOTAIS CISMETRO
         if (in_array('cismetro_total', $selectedFields)) {
-            $totalCismetro = $data->sum(function($item) {
+            $totalCismetro = $data->sum(function ($item) {
                 return $item->cismetro_total ?? 0;
             });
-            $totals['Cismetro - Valor Total'] = 'R$ ' . number_format($totalCismetro, 2, ',', '.');
+            $totals['Cismetro - Valor Total'] = 'R$ '.number_format($totalCismetro, 2, ',', '.');
         }
 
         if (in_array('sus_paulista_tab_total', $selectedFields)) {
             $total = $data->sum(fn ($item) => $item->sus_paulista_tab_total ?? 0);
-            $totals['Tab Paulista - Valor Total'] = 'R$ ' . number_format($total, 2, ',', '.');
+            $totals['Tab Paulista - Valor Total'] = 'R$ '.number_format($total, 2, ',', '.');
         }
 
         if (in_array('sus_paulista_tsp_total', $selectedFields)) {
             $total = $data->sum(fn ($item) => $item->sus_paulista_tsp_total ?? 0);
-            $totals['Compl. TSP - Valor Total'] = 'R$ ' . number_format($total, 2, ',', '.');
+            $totals['Compl. TSP - Valor Total'] = 'R$ '.number_format($total, 2, ',', '.');
         }
-        
+
         return $totals;
     }
-
 
     /**
      * Get field configuration
@@ -870,13 +874,13 @@ class RelatorioController extends BaseRelatorioController
                 'label' => 'Data Competência',
                 'type' => 'date',
                 'table' => 's_prd',
-                'operators' => ['=', '>=', '<=', 'between']
+                'operators' => ['=', '>=', '<=', 'between'],
             ],
             'prd_mvm' => [
                 'label' => 'Data Movimento',
                 'type' => 'date',
                 'table' => 's_prd',
-                'operators' => ['=', '>=', '<=', 'between']
+                'operators' => ['=', '>=', '<=', 'between'],
             ],
             'prd_uid' => [
                 'label' => 'Prestador',
@@ -885,14 +889,14 @@ class RelatorioController extends BaseRelatorioController
                 'lookup_table' => 'prestador',
                 'lookup_key' => 're_cunid',
                 'lookup_display' => 're_cnome',
-                'operators' => ['=', 'in']
+                'operators' => ['=', 'in'],
             ],
             'tipo_relatorio' => [
                 'label' => 'Tipo de Relatório',
                 'type' => 'text',
                 'table' => 'prestador',
                 'field' => 'relatorio',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'prd_cbo' => [
                 'label' => 'CBO',
@@ -901,7 +905,7 @@ class RelatorioController extends BaseRelatorioController
                 'lookup_table' => 'cbo',
                 'lookup_key' => 'cbo',
                 'lookup_display' => 'ds_cbo',
-                'operators' => ['=', 'in']
+                'operators' => ['=', 'in'],
             ],
             'prd_pa' => [
                 'label' => 'Procedimento',
@@ -910,26 +914,26 @@ class RelatorioController extends BaseRelatorioController
                 'lookup_table' => 'procedimento',
                 'lookup_key' => 'codigo',
                 'lookup_display' => 'procedimento',
-                'operators' => ['=', 'in', 'like']
+                'operators' => ['=', 'in', 'like'],
             ],
             'procedimento_descricao' => [
                 'label' => 'Descrição do Procedimento',
                 'type' => 'text',
                 'table' => 'procedimento',
                 'field' => 'procedimento',
-                'operators' => ['=', 'like', 'starts_with', 'ends_with']
+                'operators' => ['=', 'like', 'starts_with', 'ends_with'],
             ],
             'PRD_QT_P' => [
                 'label' => 'Quantidade',
                 'type' => 'number',
                 'table' => 's_prd',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'PRD_VL_P' => [
                 'label' => 'Valor',
                 'type' => 'currency',
                 'table' => 's_prd',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'PRD_RUB' => [
                 'label' => 'Rubrica',
@@ -938,44 +942,44 @@ class RelatorioController extends BaseRelatorioController
                 'lookup_table' => 's_rub',
                 'lookup_key' => 'RUB_ID',
                 'lookup_display' => 'RUB_DC',
-                'operators' => ['=', 'in']
+                'operators' => ['=', 'in'],
             ],
             'PRD_CIDPRI' => [
                 'label' => 'CID Principal',
                 'type' => 'text',
                 'table' => 's_prd',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'PRD_IDADE' => [
                 'label' => 'Idade',
                 'type' => 'number',
                 'table' => 's_prd',
-                'operators' => ['=', '>=', '<=']
+                'operators' => ['=', '>=', '<='],
             ],
             'faixa_etaria_1' => [
                 'label' => 'Faixa Etária (detalhada)',
                 'type' => 'calculated',
                 'table' => 's_prd',
-                'operators' => []
+                'operators' => [],
             ],
             'faixa_etaria_2' => [
                 'label' => 'Faixa Etária (resumida)',
                 'type' => 'calculated',
                 'table' => 's_prd',
-                'operators' => []
+                'operators' => [],
             ],
             // CAMPOS CISMETRO
             'cismetro_valor' => [
                 'label' => 'Cismetro - Valor Unitário',
                 'type' => 'currency',
                 'table' => 'cismetro',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'cismetro_total' => [
                 'label' => 'Cismetro - Valor Total',
                 'type' => 'currency',
                 'table' => 'calculated',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'cismetro_descricao' => [
                 'label' => 'Cismetro - Descrição',
@@ -984,121 +988,71 @@ class RelatorioController extends BaseRelatorioController
                 'lookup_table' => 'cismetro',
                 'lookup_key' => 'codigo',
                 'lookup_display' => 'descricao',
-                'operators' => ['=', 'like']
+                'operators' => ['=', 'like'],
             ],
             'sus_paulista_tab' => [
                 'label' => 'Tab Paulista - Valor Unitário',
                 'type' => 'currency',
                 'table' => 'sus_paulista',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'sus_paulista_tab_total' => [
                 'label' => 'Tab Paulista - Valor Total',
                 'type' => 'currency',
                 'table' => 'calculated',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'sus_paulista_tsp' => [
                 'label' => 'Compl. TSP - Valor Unitário',
                 'type' => 'currency',
                 'table' => 'sus_paulista',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'sus_paulista_tsp_total' => [
                 'label' => 'Compl. TSP - Valor Total',
                 'type' => 'currency',
                 'table' => 'calculated',
-                'operators' => ['=', '>', '<', '>=', '<=', 'between']
+                'operators' => ['=', '>', '<', '>=', '<=', 'between'],
             ],
             'grupo' => [
                 'label' => 'Grupo',
                 'type' => 'text',
                 'table' => 'forma',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'descgrupo' => [
                 'label' => 'Descrição do Grupo',
                 'type' => 'text',
                 'table' => 'forma',
-                'operators' => []
+                'operators' => [],
             ],
             'subgrupo' => [
                 'label' => 'Subgrupo',
                 'type' => 'text',
                 'table' => 'forma',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'descsubgrupo' => [
                 'label' => 'Descrição do Subgrupo',
                 'type' => 'text',
                 'table' => 'forma',
-                'operators' => []
+                'operators' => [],
             ],
             'forma' => [
                 'label' => 'Forma de Organização',
                 'type' => 'text',
                 'table' => 'forma',
-                'operators' => ['=', 'like', 'starts_with']
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'descforma' => [
                 'label' => 'Descrição da Forma',
                 'type' => 'text',
                 'table' => 'forma',
-                'operators' => ['=', 'like', 'starts_with']
-            ]
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
         ];
-        
+
         return $fields[$field] ?? null;
-    }    /**
-
-     * Debug endpoint to test query building
-     */
-    public function debug(Request $request)
-    {
-        try {
-            $selectedFields = $request->get('fields', []);
-            $filters = $request->get('filters', []);
-            
-            if (empty($selectedFields)) {
-                return response()->json(['error' => 'No fields selected']);
-            }
-            
-            $query = $this->buildQuery($selectedFields, $filters, true);
-            
-            return response()->json([
-                'sql' => $query->toSql(),
-                'bindings' => $query->getBindings(),
-                'fields' => $selectedFields,
-                'filters' => $filters
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
-    }
-
-    /**
-     * Test Excel export with simple data
-     */
-    public function testExcel()
-    {
-        try {
-            $testData = collect([
-                ['Campo 1' => 'Valor 1', 'Campo 2' => 'Valor 2'],
-                ['Campo 1' => 'Valor 3', 'Campo 2' => 'Valor 4']
-            ]);
-            
-            $export = new RelatorioExport($testData, ['campo1', 'campo2'], []);
-            return Excel::download($export, 'teste.xlsx');
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Erro no teste Excel: ' . $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ], 500);
-        }
     }
 
     /**
@@ -1133,32 +1087,32 @@ class RelatorioController extends BaseRelatorioController
     {
         $selectFields = [];
         $groupByFields = [];
-        
+
         if ($field === 'prd_uid') {
             $selectFields[] = "{$tableAlias}.prd_uid as prestador_codigo";
-            $selectFields[] = "pr.re_cnome as prestador_nome";
+            $selectFields[] = 'pr.re_cnome as prestador_nome';
             $groupByFields[] = "{$tableAlias}.prd_uid";
-            $groupByFields[] = "pr.re_cnome";
+            $groupByFields[] = 'pr.re_cnome';
         } elseif ($field === 'prd_pa') {
             $selectFields[] = "{$tableAlias}.prd_pa as procedimento_codigo";
-            $selectFields[] = "pc.procedimento as procedimento_nome";
+            $selectFields[] = 'pc.procedimento as procedimento_nome';
             $groupByFields[] = "{$tableAlias}.prd_pa";
-            $groupByFields[] = "pc.procedimento";
+            $groupByFields[] = 'pc.procedimento';
         } elseif ($field === 'prd_cbo') {
             $selectFields[] = "{$tableAlias}.prd_cbo as cbo_codigo";
-            $selectFields[] = "cb.ds_cbo as cbo_nome";
+            $selectFields[] = 'cb.ds_cbo as cbo_nome';
             $groupByFields[] = "{$tableAlias}.prd_cbo";
-            $groupByFields[] = "cb.ds_cbo";
+            $groupByFields[] = 'cb.ds_cbo';
         } elseif ($field === 'PRD_RUB') {
             $selectFields[] = "{$tableAlias}.PRD_RUB as rubrica_codigo";
-            $selectFields[] = "sr.RUB_DC as rubrica_nome";
+            $selectFields[] = 'sr.RUB_DC as rubrica_nome';
             $groupByFields[] = "{$tableAlias}.PRD_RUB";
-            $groupByFields[] = "sr.RUB_DC";
+            $groupByFields[] = 'sr.RUB_DC';
         } elseif ($field === 'cismetro_descricao') {
             $selectFields[] = "{$tableAlias}.prd_pa as cismetro_codigo";
-            $selectFields[] = "cs.descricao as cismetro_descricao";
+            $selectFields[] = 'cs.descricao as cismetro_descricao';
             $groupByFields[] = "{$tableAlias}.prd_pa";
-            $groupByFields[] = "cs.descricao";
+            $groupByFields[] = 'cs.descricao';
         } elseif ($field === 'grupo') {
             $selectFields[] = DB::raw("SUBSTRING({$tableAlias}.prd_pa, 1, 2) as grupo");
             $groupByFields[] = DB::raw("SUBSTRING({$tableAlias}.prd_pa, 1, 2)");
@@ -1193,14 +1147,14 @@ class RelatorioController extends BaseRelatorioController
             $selectFields[] = DB::raw("{$expr} as PRD_IDADE");
             $groupByFields[] = DB::raw($expr);
         }
-        
+
         return ['select' => $selectFields, 'groupBy' => $groupByFields];
     }
 
     protected function getMatrixNumericFields($field, $tableAlias): array
     {
         $fields = [];
-        
+
         if ($field === 'PRD_QT_P') {
             $fields[] = DB::raw("SUM(CAST({$tableAlias}.PRD_QT_P as UNSIGNED)) as total_quantidade");
         } elseif ($field === 'PRD_VL_P') {
@@ -1212,22 +1166,22 @@ class RelatorioController extends BaseRelatorioController
         } elseif ($field === 'sus_paulista_tsp_total') {
             $fields[] = DB::raw("SUM(CAST({$tableAlias}.PRD_QT_P AS UNSIGNED) * COALESCE(spaul.complementacao_tsp, 0)) as sus_paulista_tsp_total");
         }
-        
+
         return $fields;
     }
 
     protected function getGroupKeyPart($item, $field)
     {
         if ($field === 'prd_uid') {
-            return ($item->prestador_codigo ?? '') . '|' . ($item->prestador_nome ?? '');
+            return ($item->prestador_codigo ?? '').'|'.($item->prestador_nome ?? '');
         } elseif ($field === 'prd_pa') {
-            return ($item->procedimento_codigo ?? '') . '|' . ($item->procedimento_nome ?? '');
+            return ($item->procedimento_codigo ?? '').'|'.($item->procedimento_nome ?? '');
         } elseif ($field === 'prd_cbo') {
-            return ($item->cbo_codigo ?? '') . '|' . ($item->cbo_nome ?? '');
+            return ($item->cbo_codigo ?? '').'|'.($item->cbo_nome ?? '');
         } elseif ($field === 'PRD_RUB') {
-            return ($item->rubrica_codigo ?? '') . '|' . ($item->rubrica_nome ?? '');
+            return ($item->rubrica_codigo ?? '').'|'.($item->rubrica_nome ?? '');
         } elseif ($field === 'cismetro_descricao') {
-            return ($item->cismetro_codigo ?? '') . '|' . ($item->cismetro_descricao ?? '');
+            return ($item->cismetro_codigo ?? '').'|'.($item->cismetro_descricao ?? '');
         } elseif (in_array($field, $this->getFormaFieldIds(), true)) {
             return $item->{$field} ?? '';
         } elseif ($field === 'tipo_relatorio') {
@@ -1237,7 +1191,7 @@ class RelatorioController extends BaseRelatorioController
         } elseif ($field === 'PRD_IDADE') {
             return $this->idadeAgrupamentoKey($item->PRD_IDADE ?? null);
         }
-        
+
         return $item->{$field} ?? '';
     }
 
@@ -1245,13 +1199,13 @@ class RelatorioController extends BaseRelatorioController
     {
         switch ($field) {
             case 'PRD_QT_P':
-                return (float)($item->total_quantidade ?? 0);
+                return (float) ($item->total_quantidade ?? 0);
             case 'PRD_VL_P':
-                return (float)($item->total_valor ?? 0);
+                return (float) ($item->total_valor ?? 0);
             case 'cismetro_total':
-                return (float)($item->cismetro_total ?? 0);
+                return (float) ($item->cismetro_total ?? 0);
             case 'cismetro_valor':
-                return (float)($item->cismetro_valor ?? 0);
+                return (float) ($item->cismetro_valor ?? 0);
             case 'sus_paulista_tab_total':
                 return (float) ($item->sus_paulista_tab_total ?? 0);
             case 'sus_paulista_tsp_total':
@@ -1261,10 +1215,10 @@ class RelatorioController extends BaseRelatorioController
             case 'sus_paulista_tsp':
                 return (float) ($item->sus_paulista_tsp ?? 0);
             default:
-                return (float)($item->{$field} ?? 0);
+                return (float) ($item->{$field} ?? 0);
         }
     }
-    
+
     /**
      * Get default numeric field for matrix
      */
