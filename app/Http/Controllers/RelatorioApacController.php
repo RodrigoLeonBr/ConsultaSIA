@@ -2,17 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use App\Exports\RelatorioApacExport;
 use App\Exports\MatrixReportExport;
+use App\Exports\RelatorioApacExport;
 use App\Http\Controllers\Concerns\HasMatrixReport;
 use App\Http\Controllers\Concerns\HasSusPaulistaReport;
+use App\Http\Controllers\Concerns\JoinsCismetroByPrestadorTipo;
+use Illuminate\Support\Facades\DB;
 
 class RelatorioApacController extends BaseRelatorioController
 {
     use HasMatrixReport;
     use HasSusPaulistaReport;
+    use JoinsCismetroByPrestadorTipo;
+
+    protected function usesCollatedCismetroJoins(): bool
+    {
+        return true;
+    }
 
     public function index()
     {
@@ -178,7 +184,7 @@ class RelatorioApacController extends BaseRelatorioController
         if ($ociFilter && $ociFilter['value'] === true) {
             $query->join('s_apa as apa', function ($join) {
                 $join->on(DB::raw('pap.PAP_NUM COLLATE utf8mb4_unicode_ci'), '=', DB::raw('apa.APA_NUM COLLATE utf8mb4_unicode_ci'))
-                     ->where('apa.APA_PRIPAL', 'like', '09%');
+                    ->where('apa.APA_PRIPAL', 'like', '09%');
             });
         } else {
             $query->leftJoin('s_apa as apa', function ($join) {
@@ -191,12 +197,12 @@ class RelatorioApacController extends BaseRelatorioController
     {
         $query->leftJoin('forma as fg', function ($join) {
             $join->on(DB::raw('SUBSTRING(pap.PAP_PA, 1, 2)'), '=', 'fg.grupo')
-                 ->where('fg.subgrupo', '=', DB::raw('CONCAT(SUBSTRING(pap.PAP_PA, 1, 2), "00")'))
-                 ->where('fg.forma', '=', DB::raw('CONCAT(SUBSTRING(pap.PAP_PA, 1, 2), "0000")'));
+                ->where('fg.subgrupo', '=', DB::raw('CONCAT(SUBSTRING(pap.PAP_PA, 1, 2), "00")'))
+                ->where('fg.forma', '=', DB::raw('CONCAT(SUBSTRING(pap.PAP_PA, 1, 2), "0000")'));
         });
         $query->leftJoin('forma as fs', function ($join) {
             $join->on(DB::raw('SUBSTRING(pap.PAP_PA, 1, 4)'), '=', 'fs.subgrupo')
-                 ->where('fs.forma', '=', DB::raw('CONCAT(SUBSTRING(pap.PAP_PA, 1, 4), "00")'));
+                ->where('fs.forma', '=', DB::raw('CONCAT(SUBSTRING(pap.PAP_PA, 1, 4), "00")'));
         });
         $query->leftJoin('forma as ff', function ($join) {
             $join->on(DB::raw('SUBSTRING(pap.PAP_PA, 1, 6)'), '=', 'ff.forma');
@@ -205,7 +211,7 @@ class RelatorioApacController extends BaseRelatorioController
 
     protected function addPrestadorJoinIfNeeded($query, &$joins): void
     {
-        if (!in_array('prestador', $joins, true)) {
+        if (! in_array('prestador', $joins, true)) {
             $query->leftJoin('prestador as pr', function ($join) {
                 $join->on(DB::raw('pap.PAP_UID COLLATE utf8mb4_unicode_ci'), '=', DB::raw('pr.re_cunid COLLATE utf8mb4_unicode_ci'));
             });
@@ -221,12 +227,12 @@ class RelatorioApacController extends BaseRelatorioController
             $this->addPrestadorJoinIfNeeded($query, $joins);
         }
 
-        if ($this->needsFormaJoins($selectedFields, $filters) && !in_array('forma', $joins, true)) {
+        if ($this->needsFormaJoins($selectedFields, $filters) && ! in_array('forma', $joins, true)) {
             $this->addFormaJoins($query);
             $joins[] = 'forma';
         }
 
-        if (collect($selectedFields)->contains('PAP_VALOR') && !in_array('procedimento', $joins, true)) {
+        if (collect($selectedFields)->contains('PAP_VALOR') && ! in_array('procedimento', $joins, true)) {
             $query->leftJoin('procedimento as pc', function ($join) use ($tableAlias) {
                 $join->on(DB::raw("{$tableAlias}.PAP_PA COLLATE utf8mb4_unicode_ci"), '=', DB::raw('pc.codigo COLLATE utf8mb4_unicode_ci'));
             });
@@ -253,13 +259,12 @@ class RelatorioApacController extends BaseRelatorioController
             $fieldConfig = $this->getFieldConfig($field);
             if ($fieldConfig && $fieldConfig['type'] === 'lookup') {
                 $joinKey = $fieldConfig['lookup_table'];
-                if (!in_array($joinKey, $joins, true)) {
-                    $this->addJoin($query, $field, $fieldConfig);
-                    $joins[] = $joinKey;
+                if (! in_array($joinKey, $joins, true)) {
+                    $this->addJoin($query, $field, $fieldConfig, $joins);
                 }
             }
 
-            if ($field === 'PAP_VALOR' && !in_array('procedimento', $joins, true)) {
+            if ($field === 'PAP_VALOR' && ! in_array('procedimento', $joins, true)) {
                 $query->leftJoin('procedimento as pc', function ($join) {
                     $join->on(DB::raw('pap.PAP_PA COLLATE utf8mb4_unicode_ci'), '=', DB::raw('pc.codigo COLLATE utf8mb4_unicode_ci'));
                 });
@@ -268,18 +273,15 @@ class RelatorioApacController extends BaseRelatorioController
         }
 
         if (collect($filters)->contains(fn ($f) => ($f['field'] ?? '') === 'procedimento_descricao')
-            && !in_array('procedimento', $joins, true)) {
+            && ! in_array('procedimento', $joins, true)) {
             $query->leftJoin('procedimento as pc', function ($join) {
                 $join->on(DB::raw('pap.PAP_PA COLLATE utf8mb4_unicode_ci'), '=', DB::raw('pc.codigo COLLATE utf8mb4_unicode_ci'));
             });
             $joins[] = 'procedimento';
         }
 
-        if ($needsCismetro && !in_array('cismetro', $joins, true)) {
-            $query->leftJoin('cismetro as cs', function ($join) {
-                $join->on(DB::raw('pap.PAP_PA COLLATE utf8mb4_unicode_ci'), '=', DB::raw('cs.codigo COLLATE utf8mb4_unicode_ci'));
-            });
-            $joins[] = 'cismetro';
+        if ($needsCismetro) {
+            $this->joinCismetroByPrestadorTipo($query, 'pap', $this->getProcedimentoFieldForCismetro(), $joins);
         }
 
         $selectFields = [];
@@ -291,7 +293,7 @@ class RelatorioApacController extends BaseRelatorioController
             }
 
             $fieldConfig = $this->getFieldConfig($field);
-            if (!$fieldConfig) {
+            if (! $fieldConfig) {
                 continue;
             }
 
@@ -397,7 +399,7 @@ class RelatorioApacController extends BaseRelatorioController
             $this->applyFilter($query, $filter);
         }
 
-        if ($groupBy && !empty($groupByFields)) {
+        if ($groupBy && ! empty($groupByFields)) {
             $query->groupBy($groupByFields);
         }
 
@@ -409,38 +411,45 @@ class RelatorioApacController extends BaseRelatorioController
             $query->orderBy(DB::raw($this->faixaEtaria1OrderExpression('pap')));
         } elseif ($firstOrderField === 'faixa_etaria_2') {
             $query->orderBy(DB::raw($this->faixaEtaria2OrderExpression('pap')));
-        } elseif (!empty($groupByFields)) {
+        } elseif (! empty($groupByFields)) {
             $query->orderBy($groupByFields[0]);
         }
 
         return $query;
     }
 
-    protected function addJoin($query, $field, $fieldConfig)
+    protected function addJoin($query, $field, $fieldConfig, array &$joins = []): void
     {
         $alias = $this->getTableAliasForJoin($fieldConfig['lookup_table']);
         $tableAlias = $this->getTableAlias();
 
         switch ($fieldConfig['lookup_table']) {
             case 'prestador':
-                $query->leftJoin("prestador as {$alias}", function ($join) use ($tableAlias, $alias) {
-                    $join->on(DB::raw("{$tableAlias}.PAP_UID COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.re_cunid COLLATE utf8mb4_unicode_ci"));
-                });
+                if (! in_array('prestador', $joins, true)) {
+                    $query->leftJoin("prestador as {$alias}", function ($join) use ($tableAlias, $alias) {
+                        $join->on(DB::raw("{$tableAlias}.PAP_UID COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.re_cunid COLLATE utf8mb4_unicode_ci"));
+                    });
+                    $joins[] = 'prestador';
+                }
                 break;
             case 'cbo':
-                $query->leftJoin("cbo as {$alias}", function ($join) use ($tableAlias, $alias) {
-                    $join->on(DB::raw("{$tableAlias}.PAP_CBO COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.cbo COLLATE utf8mb4_unicode_ci"));
-                });
+                if (! in_array('cbo', $joins, true)) {
+                    $query->leftJoin("cbo as {$alias}", function ($join) use ($tableAlias, $alias) {
+                        $join->on(DB::raw("{$tableAlias}.PAP_CBO COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.cbo COLLATE utf8mb4_unicode_ci"));
+                    });
+                    $joins[] = 'cbo';
+                }
                 break;
             case 'procedimento':
-                $query->leftJoin("procedimento as {$alias}", function ($join) use ($tableAlias, $alias) {
-                    $join->on(DB::raw("{$tableAlias}.PAP_PA COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.codigo COLLATE utf8mb4_unicode_ci"));
-                });
+                if (! in_array('procedimento', $joins, true)) {
+                    $query->leftJoin("procedimento as {$alias}", function ($join) use ($tableAlias, $alias) {
+                        $join->on(DB::raw("{$tableAlias}.PAP_PA COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.codigo COLLATE utf8mb4_unicode_ci"));
+                    });
+                    $joins[] = 'procedimento';
+                }
                 break;
             case 'cismetro':
-                $query->leftJoin("cismetro as {$alias}", function ($join) use ($tableAlias, $alias) {
-                    $join->on(DB::raw("{$tableAlias}.PAP_PA COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.codigo COLLATE utf8mb4_unicode_ci"));
-                });
+                $this->joinCismetroByPrestadorTipo($query, $tableAlias, $this->getProcedimentoFieldForCismetro(), $joins);
                 break;
         }
     }
@@ -463,19 +472,19 @@ class RelatorioApacController extends BaseRelatorioController
                     $subquery->where('procedimento', '=', $value);
                     break;
                 case 'like':
-                    $subquery->where('procedimento', 'like', '%' . $value . '%');
+                    $subquery->where('procedimento', 'like', '%'.$value.'%');
                     break;
                 case 'starts_with':
-                    $subquery->where('procedimento', 'like', $value . '%');
+                    $subquery->where('procedimento', 'like', $value.'%');
                     break;
                 case 'ends_with':
-                    $subquery->where('procedimento', 'like', '%' . $value);
+                    $subquery->where('procedimento', 'like', '%'.$value);
                     break;
             }
 
             $procedimentoCodigos = $subquery->pluck('codigo')->toArray();
 
-            if (!empty($procedimentoCodigos)) {
+            if (! empty($procedimentoCodigos)) {
                 $query->whereIn('pap.PAP_PA', $procedimentoCodigos);
             } else {
                 $query->whereRaw('1 = 0');
@@ -486,22 +495,27 @@ class RelatorioApacController extends BaseRelatorioController
 
         if ($field === 'grupo') {
             $this->applyFormaCodeFilter($query, 2, $operator, $value);
+
             return;
         }
         if ($field === 'subgrupo') {
             $this->applyFormaCodeFilter($query, 4, $operator, $value);
+
             return;
         }
         if ($field === 'forma') {
             $this->applyFormaCodeFilter($query, 6, $operator, $value);
+
             return;
         }
         if ($field === 'descforma') {
             $this->applyTextFilter($query, 'ff.descricao', $operator, $value);
+
             return;
         }
         if ($field === 'tipo_relatorio') {
             $this->applyTextFilter($query, 'pr.relatorio', $operator, $value);
+
             return;
         }
 
@@ -517,7 +531,7 @@ class RelatorioApacController extends BaseRelatorioController
             } elseif ($field === 'cismetro_total') {
                 return;
             } elseif (str_starts_with($field, 'cismetro_')) {
-                $fullField = 'cs.' . substr($field, 9);
+                $fullField = 'cs.'.substr($field, 9);
             } else {
                 $tablePrefix = str_starts_with($field, 'APA_') ? 'apa' : $this->getTableAlias();
                 $fullField = "{$tablePrefix}.{$field}";
@@ -541,13 +555,13 @@ class RelatorioApacController extends BaseRelatorioController
                 $query->where($fullField, '<=', $value);
                 break;
             case 'like':
-                $query->where($fullField, 'like', '%' . $value . '%');
+                $query->where($fullField, 'like', '%'.$value.'%');
                 break;
             case 'starts_with':
-                $query->where($fullField, 'like', $value . '%');
+                $query->where($fullField, 'like', $value.'%');
                 break;
             case 'ends_with':
-                $query->where($fullField, 'like', '%' . $value);
+                $query->where($fullField, 'like', '%'.$value);
                 break;
             case 'between':
                 if (is_array($value) && count($value) === 2) {
@@ -575,10 +589,10 @@ class RelatorioApacController extends BaseRelatorioController
                 $query->where($field, '=', $value);
                 break;
             case 'like':
-                $query->where($field, 'like', '%' . $value . '%');
+                $query->where($field, 'like', '%'.$value.'%');
                 break;
             case 'starts_with':
-                $query->where($field, 'like', $value . '%');
+                $query->where($field, 'like', $value.'%');
                 break;
         }
     }
@@ -608,19 +622,19 @@ class RelatorioApacController extends BaseRelatorioController
                     continue;
                 } elseif ($field === 'cismetro_valor') {
                     $formatted['Cismetro - Valor Unitário'] = $row->cismetro_valor
-                        ? 'R$ ' . number_format((float) $row->cismetro_valor, 2, ',', '.')
+                        ? 'R$ '.number_format((float) $row->cismetro_valor, 2, ',', '.')
                         : 'R$ 0,00';
                 } elseif ($field === 'cismetro_total') {
                     $formatted['Cismetro - Valor Total'] = $row->cismetro_total
-                        ? 'R$ ' . number_format((float) $row->cismetro_total, 2, ',', '.')
+                        ? 'R$ '.number_format((float) $row->cismetro_total, 2, ',', '.')
                         : 'R$ 0,00';
                 } elseif (($susPaulista = $this->formatSusPaulistaField($field, $row)) !== null) {
                     $formatted = array_merge($formatted, $susPaulista);
                 } elseif ($field === 'PAP_QT_P') {
                     $formatted['Quantidade Total'] = number_format((float) ($row->total_quantidade ?? 0), 0, ',', '.');
                 } elseif ($field === 'PAP_VALOR') {
-                    $formatted['Valor Unitário'] = 'R$ ' . number_format((float) ($row->valor_unitario ?? 0), 2, ',', '.');
-                    $formatted['Valor Total'] = 'R$ ' . number_format((float) ($row->valor_total ?? 0), 2, ',', '.');
+                    $formatted['Valor Unitário'] = 'R$ '.number_format((float) ($row->valor_unitario ?? 0), 2, ',', '.');
+                    $formatted['Valor Total'] = 'R$ '.number_format((float) ($row->valor_total ?? 0), 2, ',', '.');
                 } elseif ($field === 'PAP_CMP') {
                     $formatted['Data Competência'] = $row->competencia ?? '';
                 } elseif ($field === 'PAP_MVM') {
@@ -640,7 +654,7 @@ class RelatorioApacController extends BaseRelatorioController
 
                     switch ($fieldConfig['type'] ?? 'text') {
                         case 'currency':
-                            $formatted[$fieldConfig['label']] = 'R$ ' . number_format((float) $value, 2, ',', '.');
+                            $formatted[$fieldConfig['label']] = 'R$ '.number_format((float) $value, 2, ',', '.');
                             break;
                         case 'number':
                             $formatted[$fieldConfig['label']] = number_format((float) $value, 0, ',', '.');
@@ -648,12 +662,12 @@ class RelatorioApacController extends BaseRelatorioController
                         case 'date':
                             $formatted[$fieldConfig['label']] = $value
                                 ? (strlen((string) $value) === 6
-                                    ? substr($value, 4, 2) . '/' . substr($value, 0, 4)
+                                    ? substr($value, 4, 2).'/'.substr($value, 0, 4)
                                     : $value)
                                 : '';
                             break;
                         case 'lookup':
-                            $displayField = $field . '_display';
+                            $displayField = $field.'_display';
                             $formatted[$fieldConfig['label']] = $row->{$displayField} ?? $value;
                             break;
                         case 'choice':
@@ -681,12 +695,12 @@ class RelatorioApacController extends BaseRelatorioController
 
         if (in_array('PAP_VALOR', $selectedFields)) {
             $totalValue = $data->sum(fn ($item) => $item->valor_total ?? 0);
-            $totals['Valor Total Geral'] = 'R$ ' . number_format($totalValue, 2, ',', '.');
+            $totals['Valor Total Geral'] = 'R$ '.number_format($totalValue, 2, ',', '.');
         }
 
         if (in_array('cismetro_total', $selectedFields)) {
             $totalCismetro = $data->sum(fn ($item) => $item->cismetro_total ?? 0);
-            $totals['Cismetro - Valor Total Geral'] = 'R$ ' . number_format($totalCismetro, 2, ',', '.');
+            $totals['Cismetro - Valor Total Geral'] = 'R$ '.number_format($totalCismetro, 2, ',', '.');
         }
 
         $this->appendSusPaulistaTotals($selectedFields, $data, $totals);
@@ -701,18 +715,18 @@ class RelatorioApacController extends BaseRelatorioController
                 throw new \Exception('Nenhum dado encontrado para exportação');
             }
 
-            if (!$data instanceof \Illuminate\Support\Collection) {
+            if (! $data instanceof \Illuminate\Support\Collection) {
                 $data = collect($data);
             }
 
             $export = new RelatorioApacExport($data, $selectedFields, $totals);
 
-            return Excel::download($export, 'relatorio_apac_' . date('Y-m-d_H-i-s') . '.xlsx');
+            return Excel::download($export, 'relatorio_apac_'.date('Y-m-d_H-i-s').'.xlsx');
         } catch (\Exception $e) {
-            \Log::error('APAC Excel Export Error: ' . $e->getMessage());
+            \Log::error('APAC Excel Export Error: '.$e->getMessage());
 
             return response()->json([
-                'error' => 'Erro ao exportar Excel: ' . $e->getMessage(),
+                'error' => 'Erro ao exportar Excel: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -739,9 +753,9 @@ class RelatorioApacController extends BaseRelatorioController
 
         $callback = function () use ($data, $totals) {
             $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
-            if (!empty($data)) {
+            if (! empty($data)) {
                 $firstRow = $data->first();
                 $fieldLabels = array_keys($firstRow);
                 fputcsv($file, $fieldLabels, ';');
@@ -750,7 +764,7 @@ class RelatorioApacController extends BaseRelatorioController
                     fputcsv($file, array_values($row), ';');
                 }
 
-                if (!empty($totals)) {
+                if (! empty($totals)) {
                     fputcsv($file, [], ';');
                     fputcsv($file, ['TOTAIS'], ';');
                     foreach ($totals as $label => $value) {
@@ -1127,13 +1141,13 @@ class RelatorioApacController extends BaseRelatorioController
     protected function getGroupKeyPart($item, $field)
     {
         if ($field === 'PAP_UID') {
-            return ($item->prestador_codigo ?? '') . '|' . ($item->prestador_nome ?? '');
+            return ($item->prestador_codigo ?? '').'|'.($item->prestador_nome ?? '');
         } elseif ($field === 'PAP_PA') {
-            return ($item->procedimento_codigo ?? '') . '|' . ($item->procedimento_nome ?? '');
+            return ($item->procedimento_codigo ?? '').'|'.($item->procedimento_nome ?? '');
         } elseif ($field === 'PAP_CBO') {
-            return ($item->cbo_codigo ?? '') . '|' . ($item->cbo_nome ?? '');
+            return ($item->cbo_codigo ?? '').'|'.($item->cbo_nome ?? '');
         } elseif ($field === 'cismetro_descricao') {
-            return ($item->cismetro_codigo ?? '') . '|' . ($item->cismetro_descricao ?? '');
+            return ($item->cismetro_codigo ?? '').'|'.($item->cismetro_descricao ?? '');
         } elseif (in_array($field, $this->getFaixaEtariaFieldIds(), true)) {
             return $item->{$field} ?? '';
         } elseif (in_array($field, $this->getFormaFieldIds(), true)) {
@@ -1162,6 +1176,7 @@ class RelatorioApacController extends BaseRelatorioController
                 return (float) ($item->cismetro_valor ?? 0);
             default:
                 $susValue = $this->getSusPaulistaNumericValue($item, $field);
+
                 return $susValue ?? (float) ($item->{$field} ?? 0);
         }
     }

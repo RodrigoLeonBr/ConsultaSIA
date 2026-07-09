@@ -6,12 +6,14 @@ use App\Exports\MatrixReportExport;
 use App\Exports\RelatorioExport;
 use App\Http\Controllers\Concerns\HasMatrixReport;
 use App\Http\Controllers\Concerns\HasSusPaulistaReport;
+use App\Http\Controllers\Concerns\JoinsCismetroByPrestadorTipo;
 use Illuminate\Support\Facades\DB;
 
 class RelatorioController extends BaseRelatorioController
 {
     use HasMatrixReport;
     use HasSusPaulistaReport;
+    use JoinsCismetroByPrestadorTipo;
 
     /**
      * Display the report builder interface
@@ -416,18 +418,15 @@ class RelatorioController extends BaseRelatorioController
             if ($fieldConfig && $fieldConfig['type'] === 'lookup') {
                 $joinKey = $fieldConfig['lookup_table'];
                 if (! in_array($joinKey, $joins)) {
-                    $this->addJoin($query, $field, $fieldConfig);
-                    $joins[] = $joinKey;
+                    $this->addJoin($query, $field, $fieldConfig, $joins);
                 }
             }
         }
 
         $this->addReportJoins($query, $selectedFields, $filters, 'sp', $joins);
 
-        // Add cismetro join if needed
-        if ($needsCismetro && ! in_array('cismetro', $joins)) {
-            $query->leftJoin('cismetro as cs', 'sp.prd_pa', '=', 'cs.codigo');
-            $joins[] = 'cismetro';
+        if ($needsCismetro) {
+            $this->joinCismetroByPrestadorTipo($query, 'sp', $this->getProcedimentoFieldForCismetro(), $joins);
         }
 
         // Build select fields with grouping and aggregation
@@ -564,26 +563,32 @@ class RelatorioController extends BaseRelatorioController
     /**
      * Add appropriate join to query
      */
-    protected function addJoin($query, $field, $fieldConfig)
+    protected function addJoin($query, $field, $fieldConfig, array &$joins = []): void
     {
         $alias = $this->getTableAliasForJoin($fieldConfig['lookup_table']);
         $tableAlias = $this->getTableAlias();
 
         switch ($fieldConfig['lookup_table']) {
             case 'prestador':
-                $query->leftJoin("prestador as {$alias}", "{$tableAlias}.prd_uid", '=', "{$alias}.re_cunid");
+                if (! in_array('prestador', $joins, true)) {
+                    $query->leftJoin("prestador as {$alias}", "{$tableAlias}.prd_uid", '=', "{$alias}.re_cunid");
+                    $joins[] = 'prestador';
+                }
                 break;
             case 'cbo':
                 $query->leftJoin("cbo as {$alias}", "{$tableAlias}.prd_cbo", '=', "{$alias}.cbo");
+                $joins[] = 'cbo';
                 break;
             case 'procedimento':
                 $query->leftJoin("procedimento as {$alias}", "{$tableAlias}.prd_pa", '=', "{$alias}.codigo");
+                $joins[] = 'procedimento';
                 break;
             case 's_rub':
                 $query->leftJoin("s_rub as {$alias}", "{$tableAlias}.PRD_RUB", '=', "{$alias}.RUB_ID");
+                $joins[] = 's_rub';
                 break;
             case 'cismetro':
-                $query->leftJoin("cismetro as {$alias}", "{$tableAlias}.prd_pa", '=', "{$alias}.codigo");
+                $this->joinCismetroByPrestadorTipo($query, $tableAlias, $this->getProcedimentoFieldForCismetro(), $joins);
                 break;
         }
     }

@@ -63,13 +63,13 @@ trait HasMatrixReport
                     ->implode('" ou "');
 
                 return response()->json([
-                    'error' => 'Para visualização matriz, selecione "Data Competência" ou "Data Movimento" (apenas um deles).'
+                    'error' => 'Para visualização matriz, selecione "Data Competência" ou "Data Movimento" (apenas um deles).',
                 ], 400);
             }
 
             if (count($selectedPivot) > 1) {
                 return response()->json([
-                    'error' => 'Não é possível selecionar "Data Competência" e "Data Movimento" ao mesmo tempo na matriz.'
+                    'error' => 'Não é possível selecionar "Data Competência" e "Data Movimento" ao mesmo tempo na matriz.',
                 ], 400);
             }
 
@@ -80,29 +80,29 @@ trait HasMatrixReport
             $groupFields = array_filter($selectedFields, fn ($field) => $field !== $pivotField);
             if (empty($groupFields)) {
                 return response()->json([
-                    'error' => 'Pelo menos um campo além de "' . $pivotLabel . '" deve ser selecionado'
+                    'error' => 'Pelo menos um campo além de "'.$pivotLabel.'" deve ser selecionado',
                 ], 400);
             }
-            
+
             // Verificar se há campos numéricos selecionados
             $numericFields = $this->getNumericFields($selectedFields);
             if (empty($numericFields)) {
                 // Se não há campos numéricos, adicionar automaticamente o campo padrão
                 $defaultNumericField = $this->getDefaultNumericField();
-                if ($defaultNumericField && !in_array($defaultNumericField, $selectedFields)) {
+                if ($defaultNumericField && ! in_array($defaultNumericField, $selectedFields)) {
                     $selectedFields[] = $defaultNumericField;
                 }
             }
-            
+
             // Construir query específica para matriz
             $matrixResult = $this->buildMatrixData($selectedFields, $filters);
             $matrixData = $matrixResult['data'];
             $sql = $matrixResult['sql'];
             $bindings = $matrixResult['bindings'];
-            
+
             // Transformar em estrutura pivot
             $pivotData = $this->pivotData($matrixData, $selectedFields);
-            
+
             switch ($format) {
                 case 'excel':
                     return $this->exportMatrixExcel($pivotData, $selectedFields);
@@ -116,11 +116,11 @@ trait HasMatrixReport
                         'data' => $pivotData,
                         'type' => 'matrix',
                         'sql' => $sql,
-                        'bindings' => $bindings
+                        'bindings' => $bindings,
                     ]);
             }
         } catch (\Exception $e) {
-            \Log::error('Error generating matrix report: ' . $e->getMessage(), [
+            \Log::error('Error generating matrix report: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'request' => $request->all(),
                 'sql' => $sql ?? null,
@@ -128,7 +128,7 @@ trait HasMatrixReport
             ]);
 
             $payload = [
-                'error' => 'Erro ao gerar relatório matriz: ' . $e->getMessage(),
+                'error' => 'Erro ao gerar relatório matriz: '.$e->getMessage(),
             ];
 
             if (isset($sql)) {
@@ -148,52 +148,60 @@ trait HasMatrixReport
         $tableName = $this->getTableName();
         $tableAlias = $this->getTableAlias();
         $pivotField = $this->getSelectedMatrixPivotFields($selectedFields)[0];
-        
+
         $query = DB::table("{$tableName} as {$tableAlias}");
-        
+
         // Campos de agrupamento (exceto eixo temporal da matriz)
         $groupFields = array_filter($selectedFields, fn ($field) => $field !== $pivotField);
-        
+
         // Verificar se precisa de joins
-        $needsCismetro = collect($selectedFields)->contains(function($field) {
+        $needsCismetro = collect($selectedFields)->contains(function ($field) {
             return str_starts_with($field, 'cismetro_');
         });
-        
+
         // Adicionar joins baseado nos campos selecionados
         $joins = [];
-        
+
         foreach ($selectedFields as $field) {
             $fieldConfig = $this->getFieldConfig($field);
             if ($fieldConfig && $fieldConfig['type'] === 'lookup') {
                 $joinKey = $fieldConfig['lookup_table'];
-                if (!in_array($joinKey, $joins)) {
-                    $this->addMatrixJoin($query, $field, $fieldConfig, $tableAlias);
-                    $joins[] = $joinKey;
+                if (! in_array($joinKey, $joins)) {
+                    $this->addMatrixJoin($query, $field, $fieldConfig, $tableAlias, $joins);
                 }
             }
         }
-        
+
         // Adicionar join do cismetro se necessário
-        if ($needsCismetro && !in_array('cismetro', $joins)) {
-            $procedimentoField = $this->getProcedimentoFieldForCismetro();
-            $query->leftJoin('cismetro as cs', function($join) use ($tableAlias, $procedimentoField) {
-                $join->on(DB::raw("{$tableAlias}.{$procedimentoField} COLLATE utf8mb4_unicode_ci"), '=', DB::raw('cs.codigo COLLATE utf8mb4_unicode_ci'));
-            });
-            $joins[] = 'cismetro';
+        if ($needsCismetro && ! in_array('cismetro', $joins)) {
+            if (method_exists($this, 'joinCismetroByPrestadorTipo')) {
+                $this->joinCismetroByPrestadorTipo(
+                    $query,
+                    $tableAlias,
+                    $this->getProcedimentoFieldForCismetro(),
+                    $joins
+                );
+            } else {
+                $procedimentoField = $this->getProcedimentoFieldForCismetro();
+                $query->leftJoin('cismetro as cs', function ($join) use ($tableAlias, $procedimentoField) {
+                    $join->on(DB::raw("{$tableAlias}.{$procedimentoField} COLLATE utf8mb4_unicode_ci"), '=', DB::raw('cs.codigo COLLATE utf8mb4_unicode_ci'));
+                });
+                $joins[] = 'cismetro';
+            }
         }
 
         if (method_exists($this, 'addReportJoins')) {
             $this->addReportJoins($query, $selectedFields, $filters, $tableAlias, $joins);
         }
-        
+
         // Campos de seleção
         $selectFields = [];
         $groupByFields = [];
-        
+
         // Sempre incluir eixo temporal (competência ou movimento)
         $selectFields[] = "{$tableAlias}.{$pivotField} as competencia";
         $groupByFields[] = "{$tableAlias}.{$pivotField}";
-        
+
         // Processar outros campos
         foreach ($groupFields as $field) {
             $fieldConfig = $this->getFieldConfig($field);
@@ -216,6 +224,7 @@ trait HasMatrixReport
                     if (! empty($custom['select'])) {
                         $selectFields = array_merge($selectFields, $custom['select']);
                         $groupByFields = array_merge($groupByFields, $custom['groupBy']);
+
                         continue;
                     }
                 }
@@ -224,6 +233,7 @@ trait HasMatrixReport
                 if (! empty($customFields['select'])) {
                     $selectFields = array_merge($selectFields, $customFields['select']);
                     $groupByFields = array_merge($groupByFields, $customFields['groupBy']);
+
                     continue;
                 }
 
@@ -231,36 +241,36 @@ trait HasMatrixReport
                 $groupByFields[] = "{$tableAlias}.{$field}";
             }
         }
-        
+
         $query->select($selectFields);
-        
+
         // Aplicar filtros
         foreach ($filters as $filter) {
             $this->applyFilter($query, $filter);
         }
-        
+
         // Agrupar por campos não-numéricos
-        if (!empty($groupByFields)) {
+        if (! empty($groupByFields)) {
             $query->groupBy($groupByFields);
         }
-        
+
         // Ordenar por eixo temporal e primeiro campo de agrupamento
         $query->orderBy("{$tableAlias}.{$pivotField}");
-        if (!empty($groupByFields) && count($groupByFields) > 1) {
+        if (! empty($groupByFields) && count($groupByFields) > 1) {
             $query->orderBy($groupByFields[1]);
         }
-        
+
         // Capturar SQL e bindings antes de executar
         $sql = $query->toSql();
         $bindings = $query->getBindings();
-        
+
         $data = $query->get();
-        
+
         // Retornar dados, SQL e bindings
         return [
             'data' => $data,
             'sql' => $sql,
-            'bindings' => $bindings
+            'bindings' => $bindings,
         ];
     }
 
@@ -282,42 +292,57 @@ trait HasMatrixReport
     /**
      * Add join for matrix query
      */
-    protected function addMatrixJoin($query, $field, $fieldConfig, $tableAlias)
+    protected function addMatrixJoin($query, $field, $fieldConfig, $tableAlias, array &$joins = []): void
     {
         $alias = $this->getTableAliasForJoin($fieldConfig['lookup_table']);
-        
+
         switch ($fieldConfig['lookup_table']) {
             case 'prestador':
-                $prestadorField = $this->getPrestadorField();
-                $query->leftJoin("prestador as {$alias}", function($join) use ($tableAlias, $alias, $prestadorField) {
-                    $join->on(DB::raw("{$tableAlias}.{$prestadorField} COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.re_cunid COLLATE utf8mb4_unicode_ci"));
-                });
+                if (! in_array('prestador', $joins, true)) {
+                    $prestadorField = $this->getPrestadorField();
+                    $query->leftJoin("prestador as {$alias}", function ($join) use ($tableAlias, $alias, $prestadorField) {
+                        $join->on(DB::raw("{$tableAlias}.{$prestadorField} COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.re_cunid COLLATE utf8mb4_unicode_ci"));
+                    });
+                    $joins[] = 'prestador';
+                }
                 break;
             case 'cbo':
-                $cboField = $this->getCboField();
-                $query->leftJoin("cbo as {$alias}", function($join) use ($tableAlias, $alias, $cboField) {
-                    $join->on(DB::raw("{$tableAlias}.{$cboField} COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.cbo COLLATE utf8mb4_unicode_ci"));
-                });
+                if (! in_array('cbo', $joins, true)) {
+                    $cboField = $this->getCboField();
+                    $query->leftJoin("cbo as {$alias}", function ($join) use ($tableAlias, $alias, $cboField) {
+                        $join->on(DB::raw("{$tableAlias}.{$cboField} COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.cbo COLLATE utf8mb4_unicode_ci"));
+                    });
+                    $joins[] = 'cbo';
+                }
                 break;
             case 'procedimento':
-                $procedimentoField = $this->getProcedimentoFieldForCismetro();
-                $query->leftJoin("procedimento as {$alias}", function($join) use ($tableAlias, $alias, $procedimentoField) {
-                    $join->on(DB::raw("{$tableAlias}.{$procedimentoField} COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.codigo COLLATE utf8mb4_unicode_ci"));
-                });
+                if (! in_array('procedimento', $joins, true)) {
+                    $procedimentoField = $this->getProcedimentoFieldForCismetro();
+                    $query->leftJoin("procedimento as {$alias}", function ($join) use ($tableAlias, $alias, $procedimentoField) {
+                        $join->on(DB::raw("{$tableAlias}.{$procedimentoField} COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.codigo COLLATE utf8mb4_unicode_ci"));
+                    });
+                    $joins[] = 'procedimento';
+                }
                 break;
             case 's_rub':
                 $rubField = $this->getRubField();
-                if ($rubField) {
-                    $query->leftJoin("s_rub as {$alias}", function($join) use ($tableAlias, $alias, $rubField) {
+                if ($rubField && ! in_array('s_rub', $joins, true)) {
+                    $query->leftJoin("s_rub as {$alias}", function ($join) use ($tableAlias, $alias, $rubField) {
                         $join->on(DB::raw("{$tableAlias}.{$rubField} COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.RUB_ID COLLATE utf8mb4_unicode_ci"));
                     });
+                    $joins[] = 's_rub';
                 }
                 break;
             case 'cismetro':
-                $procedimentoField = $this->getProcedimentoFieldForCismetro();
-                $query->leftJoin("cismetro as {$alias}", function($join) use ($tableAlias, $alias, $procedimentoField) {
-                    $join->on(DB::raw("{$tableAlias}.{$procedimentoField} COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.codigo COLLATE utf8mb4_unicode_ci"));
-                });
+                if (method_exists($this, 'joinCismetroByPrestadorTipo')) {
+                    $this->joinCismetroByPrestadorTipo($query, $tableAlias, $this->getProcedimentoFieldForCismetro(), $joins);
+                } else {
+                    $procedimentoField = $this->getProcedimentoFieldForCismetro();
+                    $query->leftJoin("cismetro as {$alias}", function ($join) use ($tableAlias, $alias, $procedimentoField) {
+                        $join->on(DB::raw("{$tableAlias}.{$procedimentoField} COLLATE utf8mb4_unicode_ci"), '=', DB::raw("{$alias}.codigo COLLATE utf8mb4_unicode_ci"));
+                    });
+                    $joins[] = 'cismetro';
+                }
                 break;
         }
     }
@@ -370,44 +395,44 @@ trait HasMatrixReport
     {
         $pivotField = $this->getSelectedMatrixPivotFields($selectedFields)[0];
         $splitField = $this->getMatrixSplitField($selectedFields);
-        
+
         // Identificar períodos únicos (competência ou movimento)
         $competencias = $data->pluck('competencia')->unique()->sort()->values();
-        
+
         // Identificar campos de agrupamento (excluindo eixo temporal, quebra e agregados numéricos)
         $groupFields = $this->getMatrixRowDimensionFields($selectedFields, $pivotField, $splitField);
         $numericFields = $this->getNumericFields($selectedFields);
-        
+
         if ($splitField) {
             return $this->pivotDataBySplitField($data, $competencias, $groupFields, $numericFields, $splitField);
         }
-        
+
         // Estrutura de resultado padrão (sem agrupamento por prestador)
         $result = [
-            'competencias' => $competencias->map(function($comp) {
+            'competencias' => $competencias->map(function ($comp) {
                 return [
                     'code' => $comp,
-                    'label' => $this->formatCompetencia($comp)
+                    'label' => $this->formatCompetencia($comp),
                 ];
             }),
             'rows' => [],
             'totals' => [],
-            'grand_totals' => []
+            'grand_totals' => [],
         ];
-        
+
         // Agrupar dados por categoria (linhas)
-        $groupedData = $data->groupBy(function($item) use ($groupFields) {
+        $groupedData = $data->groupBy(function ($item) use ($groupFields) {
             return $this->getGroupKey($item, $groupFields);
         });
-        
+
         // Processar cada grupo (linha da matriz)
         foreach ($groupedData as $groupKey => $groupItems) {
             $rowData = [
                 'category' => $this->formatRowCategory($groupKey, $groupFields),
                 'values' => [],
-                'totals' => []
+                'totals' => [],
             ];
-            
+
             // Inicializar valores para todas as competências
             foreach ($competencias as $comp) {
                 $rowData['values'][$comp] = [];
@@ -415,7 +440,7 @@ trait HasMatrixReport
                     $rowData['values'][$comp][$field] = 0;
                 }
             }
-            
+
             // Preencher valores reais
             foreach ($groupItems as $item) {
                 $comp = $item->competencia;
@@ -424,7 +449,7 @@ trait HasMatrixReport
                     $rowData['values'][$comp][$field] = $value;
                 }
             }
-            
+
             // Calcular totais da linha
             foreach ($numericFields as $field) {
                 $rowData['totals'][$field] = 0;
@@ -432,10 +457,10 @@ trait HasMatrixReport
                     $rowData['totals'][$field] += $rowData['values'][$comp][$field] ?? 0;
                 }
             }
-            
+
             $result['rows'][] = $rowData;
         }
-        
+
         // Calcular totais das colunas
         foreach ($competencias as $comp) {
             $result['totals'][$comp] = [];
@@ -446,7 +471,7 @@ trait HasMatrixReport
                 }
             }
         }
-        
+
         // Calcular total geral
         foreach ($numericFields as $field) {
             $result['grand_totals'][$field] = 0;
@@ -454,10 +479,10 @@ trait HasMatrixReport
                 $result['grand_totals'][$field] += $result['totals'][$comp][$field] ?? 0;
             }
         }
-        
+
         return $result;
     }
-    
+
     /**
      * Transform data into pivot structure grouped by split field
      */
@@ -466,48 +491,48 @@ trait HasMatrixReport
         $splitGroups = $data->groupBy(function ($item) use ($splitField) {
             return $this->getGroupKeyPart($item, $splitField);
         });
-        
+
         $result = [
-            'competencias' => $competencias->map(function($comp) {
+            'competencias' => $competencias->map(function ($comp) {
                 return [
                     'code' => $comp,
-                    'label' => $this->formatCompetencia($comp)
+                    'label' => $this->formatCompetencia($comp),
                 ];
             }),
             'prestadores' => [],
             'split_field' => $splitField,
         ];
-        
+
         foreach ($splitGroups as $splitKey => $splitData) {
             $splitInfo = $this->getSplitGroupInfo($splitData->first(), $splitField);
             $splitCode = $splitInfo['code'];
             $splitNome = $splitInfo['nome'];
-            
+
             $splitMatrix = [
                 'competencias' => $result['competencias'],
                 'rows' => [],
                 'totals' => [],
-                'grand_totals' => []
+                'grand_totals' => [],
             ];
-            
-            $groupedData = $splitData->groupBy(function($item) use ($groupFields) {
+
+            $groupedData = $splitData->groupBy(function ($item) use ($groupFields) {
                 return $this->getGroupKey($item, $groupFields);
             });
-            
+
             foreach ($groupedData as $groupKey => $groupItems) {
                 $rowData = [
                     'category' => $this->formatRowCategory($groupKey, $groupFields),
                     'values' => [],
-                    'totals' => []
+                    'totals' => [],
                 ];
-                
+
                 foreach ($competencias as $comp) {
                     $rowData['values'][$comp] = [];
                     foreach ($numericFields as $field) {
                         $rowData['values'][$comp][$field] = 0;
                     }
                 }
-                
+
                 foreach ($groupItems as $item) {
                     $comp = $item->competencia;
                     foreach ($numericFields as $field) {
@@ -515,17 +540,17 @@ trait HasMatrixReport
                         $rowData['values'][$comp][$field] = $value;
                     }
                 }
-                
+
                 foreach ($numericFields as $field) {
                     $rowData['totals'][$field] = 0;
                     foreach ($competencias as $comp) {
                         $rowData['totals'][$field] += $rowData['values'][$comp][$field] ?? 0;
                     }
                 }
-                
+
                 $splitMatrix['rows'][] = $rowData;
             }
-            
+
             foreach ($competencias as $comp) {
                 $splitMatrix['totals'][$comp] = [];
                 foreach ($numericFields as $field) {
@@ -535,32 +560,32 @@ trait HasMatrixReport
                     }
                 }
             }
-            
+
             foreach ($numericFields as $field) {
                 $splitMatrix['grand_totals'][$field] = 0;
                 foreach ($competencias as $comp) {
                     $splitMatrix['grand_totals'][$field] += $splitMatrix['totals'][$comp][$field] ?? 0;
                 }
             }
-            
+
             $result['prestadores'][$splitCode] = array_merge($splitMatrix, [
-                'nome' => $splitNome
+                'nome' => $splitNome,
             ]);
         }
-        
+
         return $result;
     }
-    
+
     protected function getSplitGroupInfo($item, $splitField)
     {
         $key = $this->getGroupKeyPart($item, $splitField);
         $parts = explode('|', $key);
         $fieldConfig = $this->getFieldConfig($splitField);
         $fallback = $fieldConfig['label'] ?? 'Grupo';
-        
+
         return [
             'code' => $parts[0] ?? '',
-            'nome' => $parts[1] ?? $parts[0] ?? "{$fallback} não informado"
+            'nome' => $parts[1] ?? $parts[0] ?? "{$fallback} não informado",
         ];
     }
 
@@ -573,6 +598,7 @@ trait HasMatrixReport
         foreach ($groupFields as $field) {
             $key[] = $this->getGroupKeyPart($item, $field);
         }
+
         return implode('||', $key);
     }
 
@@ -625,6 +651,7 @@ trait HasMatrixReport
                 $numericFields[] = $field;
             }
         }
+
         return $numericFields;
     }
 
@@ -634,8 +661,9 @@ trait HasMatrixReport
     protected function formatCompetencia($competencia)
     {
         if (strlen($competencia) === 6) {
-            return substr($competencia, 4, 2) . '/' . substr($competencia, 0, 4);
+            return substr($competencia, 4, 2).'/'.substr($competencia, 0, 4);
         }
+
         return $competencia;
     }
 
@@ -646,16 +674,16 @@ trait HasMatrixReport
     {
         $parts = explode('||', $groupKey);
         $formatted = [];
-        
+
         foreach ($parts as $i => $part) {
             if (str_contains($part, '|')) {
                 $subParts = explode('|', $part);
                 $codigo = $subParts[0] ?? '';
                 $nome = $subParts[1] ?? '';
-                
+
                 // Mostrar código e nome quando ambos existirem
                 if ($codigo && $nome) {
-                    $formatted[] = $codigo . ' - ' . $nome;
+                    $formatted[] = $codigo.' - '.$nome;
                 } elseif ($nome) {
                     $formatted[] = $nome;
                 } elseif ($codigo) {
@@ -665,7 +693,7 @@ trait HasMatrixReport
                 $formatted[] = $part;
             }
         }
-        
+
         return implode(' - ', $formatted);
     }
 
@@ -676,21 +704,21 @@ trait HasMatrixReport
     {
         // Default implementation - can be overridden
         $fieldConfig = $this->getFieldConfig($field);
-        
+
         if ($fieldConfig && $fieldConfig['type'] === 'currency') {
             // Try common field names
-            $value = $item->{'total_' . strtolower($field)} ?? 
-                     $item->{'valor_total'} ?? 
+            $value = $item->{'total_'.strtolower($field)} ??
+                     $item->{'valor_total'} ??
                      $item->{$field} ?? 0;
         } elseif ($fieldConfig && $fieldConfig['type'] === 'number') {
-            $value = $item->{'total_' . strtolower($field)} ?? 
-                     $item->{'total_quantidade'} ?? 
+            $value = $item->{'total_'.strtolower($field)} ??
+                     $item->{'total_quantidade'} ??
                      $item->{$field} ?? 0;
         } else {
             $value = $item->{$field} ?? 0;
         }
-        
-        return (float)$value;
+
+        return (float) $value;
     }
 
     /**
@@ -702,21 +730,21 @@ trait HasMatrixReport
             $exportClass = $this->getMatrixExportClass();
             $numericFields = $this->getNumericFields($selectedFields);
             $splitField = $this->getMatrixSplitField($selectedFields);
-            
+
             if ($splitField && isset($pivotData['prestadores'])) {
                 $export = new \App\Exports\MatrixReportByPrestadorExport($pivotData, $numericFields, $splitField);
             } else {
                 $export = new $exportClass($pivotData, $numericFields);
             }
-            
+
             return \Maatwebsite\Excel\Facades\Excel::download($export, $this->getMatrixExportFilename());
         } catch (\Exception $e) {
-            \Log::error('Error in matrix Excel export: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+            \Log::error('Error in matrix Excel export: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return response()->json([
-                'error' => 'Erro ao exportar Excel matriz: ' . $e->getMessage()
+                'error' => 'Erro ao exportar Excel matriz: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -751,7 +779,7 @@ trait HasMatrixReport
     {
         return 'relatorio-matriz.xlsx';
     }
-    
+
     /**
      * Get default numeric field to include in matrix if none selected
      * Override in child classes if needed
@@ -761,4 +789,3 @@ trait HasMatrixReport
         return null; // Child classes should override this
     }
 }
-

@@ -38,16 +38,20 @@ class ClassificarCismetro extends Command
             ->update(['tipo_valor' => Cismetro::TIPO_PRESTADOR]);
         $this->line("Classificados como Prestador (tipo_valor=2): {$prestador}");
 
-        $duplicados = $this->markDuplicatePadraoAsIndefinido();
-        $this->line("Marcados como duplicado (tipo_valor=0): {$duplicados}");
+        $dupMunicipio = $this->markDuplicateTipoAsIndefinido(Cismetro::TIPO_MUNICIPIO);
+        $this->line("Duplicados Municipio (tipo_valor=1 → 0): {$dupMunicipio}");
 
+        $dupPrestador = $this->markDuplicateTipoAsIndefinido(Cismetro::TIPO_PRESTADOR);
+        $this->line("Duplicados Prestador (tipo_valor=2 → 0): {$dupPrestador}");
+
+        $duplicados = $dupMunicipio + $dupPrestador;
         $indefinidos = DB::table('cismetro')
             ->where('tipo_valor', Cismetro::TIPO_INDEFINIDO)
             ->count();
         $this->line("Total com tipo_valor=0: {$indefinidos}");
 
         if ($duplicados > 0) {
-            $this->warn("{$duplicados} registro(s) com codigo repetido marcado(s) como tipo_valor=0");
+            $this->warn("{$duplicados} registro(s) extra(s) por codigo marcado(s) como tipo_valor=0");
         }
 
         $this->info('Classificacao concluida!');
@@ -56,16 +60,16 @@ class ClassificarCismetro extends Command
     }
 
     /**
-     * ponytail: zera apenas o 2º+ registro por codigo que ainda está no padrao (1);
-     * pares municipio/prestador (tipo 2) não são afetados.
+     * Mantém o 1º registro de cada tipo por codigo; demais viram 0.
      *
      * @param  Collection<int, object{id: int, codigo: string}>|null  $records
+     * @return list<int>
      */
-    public static function duplicatePadraoIdsToZero(?Collection $records = null): array
+    public static function duplicateTipoIdsToZero(int $tipoValor, ?Collection $records = null): array
     {
         $records ??= DB::table('cismetro')
-            ->select('id', 'codigo')
-            ->where('tipo_valor', Cismetro::TIPO_MUNICIPIO)
+            ->select('id', 'codigo', 'tipo_valor')
+            ->where('tipo_valor', $tipoValor)
             ->orderBy('id')
             ->get();
 
@@ -76,9 +80,9 @@ class ClassificarCismetro extends Command
             ->all();
     }
 
-    private function markDuplicatePadraoAsIndefinido(): int
+    private function markDuplicateTipoAsIndefinido(int $tipoValor): int
     {
-        $ids = self::duplicatePadraoIdsToZero();
+        $ids = self::duplicateTipoIdsToZero($tipoValor);
 
         if ($ids === []) {
             return 0;
