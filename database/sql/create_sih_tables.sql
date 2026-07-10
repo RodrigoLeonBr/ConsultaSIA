@@ -12,7 +12,7 @@ DROP TABLE IF EXISTS `s_aih`;
 -- Tabela: s_aih
 -- Resumo das internações (TB_HAIH do SIHD)
 -- Formato de importação: arquivo .txt separado por ";"
--- 18 colunas, sem linha de cabeçalho, decimal BR (vírgula)
+-- 23 colunas, sem linha de cabeçalho, decimal BR (vírgula)
 -- ============================================================
 
 CREATE TABLE `s_aih` (
@@ -20,8 +20,10 @@ CREATE TABLE `s_aih` (
 
   -- Identificação
   `AIH`             varchar(13)  NOT NULL COMMENT 'Número da AIH (ah_num_aih)',
+  `IDENT_AIH`       varchar(2)   DEFAULT NULL COMMENT 'Identificador da AIH (ah_ident)',
   `CNES`            varchar(7)   NOT NULL COMMENT 'CNES da unidade (ah_cnes)',
   `COMPETENCIA`     varchar(6)   NOT NULL COMMENT 'Competência AAAAMM (ah_cmpt)',
+  `MUN_RESIDENCIA`  varchar(6)   DEFAULT NULL COMMENT 'Município de residência (ah_mun_paci)',
 
   -- Dados do paciente
   `DT_NASC`         varchar(8)   DEFAULT NULL COMMENT 'Data de nascimento AAAAMMDD',
@@ -31,15 +33,18 @@ CREATE TABLE `s_aih` (
   -- Datas da internação
   `DT_INT`          varchar(8)   DEFAULT NULL COMMENT 'Data de internação AAAAMMDD',
   `DT_SAIDA`        varchar(8)   DEFAULT NULL COMMENT 'Data de saída AAAAMMDD',
+  `CARATER_INTERNACAO` varchar(2) DEFAULT NULL COMMENT 'Caráter do atendimento (ah_car_internacao)',
 
   -- Classificação clínica
   `ESPECIALIDADE`   varchar(3)   DEFAULT NULL,
   `PROC_PRINCIPAL`  varchar(10)  DEFAULT NULL COMMENT 'Procedimento realizado (ah_proc_realizado)',
   `DIAG_PRINCIPAL`  varchar(4)   DEFAULT NULL COMMENT 'CID-10 principal (ah_diag_pri)',
+  `DIAG_SECUNDARIO` varchar(4)   DEFAULT NULL COMMENT 'CID-10 secundário (ah_diag_sec)',
   `COMPLEXIDADE`    varchar(2)   DEFAULT NULL,
   `FINANCIAMENTO`   varchar(2)   DEFAULT NULL,
   `ENFERMARIA`      varchar(4)   DEFAULT NULL,
   `MOTIVO_SAIDA`    varchar(2)   DEFAULT NULL,
+  `CID_OBITO`       varchar(4)   DEFAULT NULL COMMENT 'CID do óbito (ah_cid_obito)',
 
   -- Quantitativos
   `DIARIAS`         int(5)       DEFAULT NULL COMMENT 'Total de diárias',

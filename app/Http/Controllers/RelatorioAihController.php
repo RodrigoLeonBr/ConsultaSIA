@@ -6,6 +6,8 @@ use App\Exports\MatrixReportExport;
 use App\Exports\RelatorioExport;
 use App\Http\Controllers\Concerns\HasMatrixReport;
 use App\Http\Controllers\Concerns\HasSusPaulistaReport;
+use App\Support\AihCaraterInternacao;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class RelatorioAihController extends BaseRelatorioController
@@ -94,6 +96,11 @@ class RelatorioAihController extends BaseRelatorioController
                 'type' => 'text',
                 'operators' => ['=', 'between', 'pattern'],
             ],
+            'IDENT_AIH' => [
+                'label' => 'Identificador da AIH',
+                'type' => 'text',
+                'operators' => ['='],
+            ],
             'CNES' => [
                 'label' => 'Prestador (CNES)',
                 'type' => 'lookup',
@@ -101,6 +108,11 @@ class RelatorioAihController extends BaseRelatorioController
                 'lookup_key' => 're_cunid',
                 'lookup_display' => 're_cnome',
                 'operators' => ['='],
+            ],
+            'MUN_RESIDENCIA' => [
+                'label' => 'Município de Residência',
+                'type' => 'text',
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'DT_NASC' => [
                 'label' => 'Data de Nascimento',
@@ -136,6 +148,18 @@ class RelatorioAihController extends BaseRelatorioController
                 'label' => 'Data de Saída',
                 'type' => 'text',
                 'operators' => ['=', '>=', '<=', 'between'],
+            ],
+            'CARATER_INTERNACAO' => [
+                'label' => 'Caráter da Internação',
+                'type' => 'lookup',
+                'lookup_static' => 'aih_carater',
+                'operators' => ['='],
+            ],
+            'carater_internacao_resumo' => [
+                'label' => 'Caráter da Internação (resumo)',
+                'type' => 'lookup',
+                'lookup_static' => 'aih_carater_resumo',
+                'operators' => ['='],
             ],
             'ESPECIALIDADE' => [
                 'label' => 'Especialidade',
@@ -190,6 +214,11 @@ class RelatorioAihController extends BaseRelatorioController
                 'type' => 'text',
                 'operators' => ['=', 'like', 'starts_with'],
             ],
+            'DIAG_SECUNDARIO' => [
+                'label' => 'Diagnóstico Secundário (CID)',
+                'type' => 'text',
+                'operators' => ['=', 'like', 'starts_with'],
+            ],
             'COMPLEXIDADE' => [
                 'label' => 'Complexidade',
                 'type' => 'text',
@@ -207,6 +236,11 @@ class RelatorioAihController extends BaseRelatorioController
                 'label' => 'Motivo de Saída',
                 'type' => 'text',
                 'operators' => ['='],
+            ],
+            'CID_OBITO' => [
+                'label' => 'CID do Óbito',
+                'type' => 'text',
+                'operators' => ['=', 'like', 'starts_with'],
             ],
             'DIARIAS' => [
                 'label' => 'Diárias (soma)',
@@ -242,6 +276,22 @@ class RelatorioAihController extends BaseRelatorioController
     public function getFields()
     {
         return response()->json(['fields' => $this->getAllFieldConfigs()]);
+    }
+
+    public function getLookupData(Request $request)
+    {
+        $field = $request->get('field');
+        $search = $request->get('search', '');
+
+        if ($field === 'CARATER_INTERNACAO') {
+            return response()->json(AihCaraterInternacao::lookupOptions($search));
+        }
+
+        if ($field === 'carater_internacao_resumo') {
+            return response()->json(AihCaraterInternacao::resumoLookupOptions($search));
+        }
+
+        return parent::getLookupData($request);
     }
 
     protected function getFieldConfig($field)
@@ -393,7 +443,12 @@ class RelatorioAihController extends BaseRelatorioController
         // Standard lookup joins
         foreach ($allFields as $field) {
             $cfg = $this->getFieldConfig($field);
-            if ($cfg && $cfg['type'] === 'lookup' && ! in_array($cfg['lookup_table'], $joins, true)) {
+            if (
+                $cfg
+                && $cfg['type'] === 'lookup'
+                && ! isset($cfg['lookup_static'])
+                && ! in_array($cfg['lookup_table'], $joins, true)
+            ) {
                 $this->addLookupJoin($query, $field);
                 $joins[] = $cfg['lookup_table'];
             }
@@ -441,6 +496,26 @@ class RelatorioAihController extends BaseRelatorioController
                     $selectFields[] = 'pr.re_cnome as CNES_display';
                     $groupByFields[] = 'sa.CNES';
                     $groupByFields[] = 'pr.re_cnome';
+                    break;
+
+                case 'MUN_RESIDENCIA':
+                case 'CID_OBITO':
+                    $selectFields[] = "sa.{$field}";
+                    $groupByFields[] = "sa.{$field}";
+                    break;
+
+                case 'CARATER_INTERNACAO':
+                    $descExpr = AihCaraterInternacao::sqlDescExpression();
+                    $selectFields[] = 'sa.CARATER_INTERNACAO';
+                    $selectFields[] = DB::raw("({$descExpr}) as CARATER_INTERNACAO_display");
+                    $groupByFields[] = 'sa.CARATER_INTERNACAO';
+                    $groupByFields[] = DB::raw("({$descExpr})");
+                    break;
+
+                case 'carater_internacao_resumo':
+                    $resumoExpr = AihCaraterInternacao::sqlResumoExpression();
+                    $selectFields[] = DB::raw("({$resumoExpr}) as carater_internacao_resumo");
+                    $groupByFields[] = DB::raw("({$resumoExpr})");
                     break;
 
                 case 'PROC_PRINCIPAL':
@@ -602,6 +677,15 @@ class RelatorioAihController extends BaseRelatorioController
             return;
         }
 
+        if ($field === 'carater_internacao_resumo') {
+            $codes = AihCaraterInternacao::codesForResumo((string) $value);
+            empty($codes)
+                ? $query->whereRaw('1 = 0')
+                : $query->whereIn('sa.CARATER_INTERNACAO', $codes);
+
+            return;
+        }
+
         // grupo / subgrupo / forma → SUBSTRING filter
         if (in_array($field, ['grupo', 'subgrupo', 'forma'], true)) {
             $len = match ($field) {
@@ -698,6 +782,26 @@ class RelatorioAihController extends BaseRelatorioController
                 'select' => ['sa.CNES', 'pr.re_cnome as CNES_display'],
                 'groupBy' => ['sa.CNES', 'pr.re_cnome'],
             ],
+            in_array($field, ['MUN_RESIDENCIA', 'CARATER_INTERNACAO', 'CID_OBITO'], true) => match ($field) {
+                'CARATER_INTERNACAO' => [
+                    'select' => [
+                        'sa.CARATER_INTERNACAO',
+                        DB::raw('('.AihCaraterInternacao::sqlDescExpression().') as CARATER_INTERNACAO_display'),
+                    ],
+                    'groupBy' => [
+                        'sa.CARATER_INTERNACAO',
+                        DB::raw('('.AihCaraterInternacao::sqlDescExpression().')'),
+                    ],
+                ],
+                default => [
+                    'select' => ["sa.{$field}"],
+                    'groupBy' => ["sa.{$field}"],
+                ],
+            },
+            $field === 'carater_internacao_resumo' => [
+                'select' => [DB::raw('('.AihCaraterInternacao::sqlResumoExpression().') as carater_internacao_resumo')],
+                'groupBy' => [DB::raw('('.AihCaraterInternacao::sqlResumoExpression().')')],
+            ],
             $field === 'PROC_PRINCIPAL' => [
                 'select' => ['sa.PROC_PRINCIPAL', 'proc.procedimento as PROC_PRINCIPAL_display'],
                 'groupBy' => ['sa.PROC_PRINCIPAL', 'proc.procedimento'],
@@ -777,6 +881,7 @@ class RelatorioAihController extends BaseRelatorioController
             'CNES' => ($item->CNES ?? '').'|'.($item->CNES_display ?? ''),
             'PROC_PRINCIPAL' => ($item->PROC_PRINCIPAL ?? '').'|'.($item->PROC_PRINCIPAL_display ?? ''),
             'FINANCIAMENTO' => ($item->FINANCIAMENTO ?? '').'|'.($item->FINANCIAMENTO_display ?? ''),
+            'CARATER_INTERNACAO' => ($item->CARATER_INTERNACAO ?? '').'|'.($item->CARATER_INTERNACAO_display ?? ''),
             default => parent::getGroupKeyPart($item, $field),
         };
     }
@@ -818,6 +923,17 @@ class RelatorioAihController extends BaseRelatorioController
         }
         if ($field === 'FINANCIAMENTO') {
             return ['Financiamento' => $row->FINANCIAMENTO ?? '', 'Desc. Financiamento' => $row->FINANCIAMENTO_display ?? ''];
+        }
+        if ($field === 'CARATER_INTERNACAO') {
+            return [
+                'Caráter' => $row->CARATER_INTERNACAO ?? '',
+                'Desc. Caráter' => $row->CARATER_INTERNACAO_display
+                    ?? AihCaraterInternacao::label($row->CARATER_INTERNACAO ?? null),
+            ];
+        }
+        if ($field === 'carater_internacao_resumo') {
+            return ['Caráter (resumo)' => $row->carater_internacao_resumo
+                ?? AihCaraterInternacao::resumo($row->CARATER_INTERNACAO ?? null)];
         }
         if (in_array($field, $this->getFaixaEtariaFieldIds(), true)) {
             return [$fieldConfig['label'] => $row->{$field} ?? ''];

@@ -8,19 +8,47 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('s_aih')) {
+            return;
+        }
+
         Schema::table('s_aih', function (Blueprint $table) {
-            $table->string('DT_NASC', 8)->nullable()->after('COMPETENCIA');
-            $table->integer('IDADE')->nullable()->after('DT_NASC');
-            $table->string('DT_INT', 8)->nullable()->after('SEXO_PACIENTE');
-            $table->string('DT_SAIDA', 8)->nullable()->after('DT_INT');
-            $table->decimal('VALOR_TOTAL_AIH', 12, 2)->nullable()->after('DIARIAS_UTI');
+            if (! Schema::hasColumn('s_aih', 'DT_NASC')) {
+                $table->string('DT_NASC', 8)->nullable()->after('COMPETENCIA');
+            }
+            if (! Schema::hasColumn('s_aih', 'IDADE')) {
+                $table->integer('IDADE')->nullable()->after('DT_NASC');
+            }
+            if (! Schema::hasColumn('s_aih', 'DT_INT')) {
+                $table->string('DT_INT', 8)->nullable()->after('SEXO_PACIENTE');
+            }
+            if (! Schema::hasColumn('s_aih', 'DT_SAIDA')) {
+                $table->string('DT_SAIDA', 8)->nullable()->after('DT_INT');
+            }
+            if (! Schema::hasColumn('s_aih', 'VALOR_TOTAL_AIH')) {
+                $table->decimal('VALOR_TOTAL_AIH', 12, 2)->nullable()->after('DIARIAS_UTI');
+            }
         });
     }
 
     public function down(): void
     {
+        if (! Schema::hasTable('s_aih')) {
+            return;
+        }
+
         Schema::table('s_aih', function (Blueprint $table) {
-            $table->dropColumn(['DT_NASC', 'IDADE', 'DT_INT', 'DT_SAIDA', 'VALOR_TOTAL_AIH']);
+            $columns = array_values(array_filter([
+                Schema::hasColumn('s_aih', 'DT_NASC') ? 'DT_NASC' : null,
+                Schema::hasColumn('s_aih', 'IDADE') ? 'IDADE' : null,
+                Schema::hasColumn('s_aih', 'DT_INT') ? 'DT_INT' : null,
+                Schema::hasColumn('s_aih', 'DT_SAIDA') ? 'DT_SAIDA' : null,
+                Schema::hasColumn('s_aih', 'VALOR_TOTAL_AIH') ? 'VALOR_TOTAL_AIH' : null,
+            ]));
+
+            if ($columns !== []) {
+                $table->dropColumn($columns);
+            }
         });
     }
 };

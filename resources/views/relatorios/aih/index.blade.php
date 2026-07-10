@@ -326,7 +326,7 @@
             select.replaceChildren(new Option('Selecione um campo...', ''));
             Object.keys(availableFields).forEach(key => {
                 const field = availableFields[key];
-                if (!field?.label) return;
+                if (!field?.label || !(field.operators || []).length) return;
                 select.appendChild(new Option(field.label, key));
             });
         }

@@ -138,6 +138,8 @@ php artisan migrate:status
 |-----------|--------------|------------------------|
 | `2026_06_21_000000_create_s_aih_tables` | Cria `s_aih` e `s_aih_pa` (módulo AIH/SIH) | `SHOW TABLES LIKE 's_aih';` |
 | `2026_06_21_100000_add_fields_to_s_aih` | Campos extras em `s_aih` (datas, idade, valor total) | `SHOW COLUMNS FROM s_aih LIKE 'VALOR_TOTAL_AIH';` |
+| `2026_07_10_000000_update_s_aih_unique_key` | Chave única `uk_aih` passa a incluir `DT_SAIDA` (reabertura na competência) | `SHOW INDEX FROM s_aih WHERE Key_name = 'uk_aih';` |
+| **`2026_07_10_203500_add_extended_fields_to_s_aih`** | Campos SIHD: `IDENT_AIH`, `MUN_RESIDENCIA`, `CARATER_INTERNACAO`, `DIAG_SECUNDARIO`, `CID_OBITO` | `SHOW COLUMNS FROM s_aih LIKE 'CARATER_INTERNACAO';` |
 | `2026_06_22_152310_add_aih_values_to_procedimento_table` | `VL_SP`, `VL_SH` em `procedimento` + descrição até 255 chars | `SHOW COLUMNS FROM procedimento LIKE 'VL_SP';` |
 | `2026_06_24_000001_create_sus_paulista_table` | Cria tabela `sus_paulista` (tabela paulista) | `SHOW TABLES LIKE 'sus_paulista';` |
 | `2025_09_17_184500_add_must_change_password_to_users_table` | `must_change_password` e `password_changed_at` em `users` | `SHOW COLUMNS FROM users LIKE 'must_change_password';` |
@@ -159,6 +161,8 @@ php artisan migrate --path=database/migrations/CAMINHO.php --no-interaction
 ```bash
 php artisan migrate --path=database/migrations/2026_06_21_000000_create_s_aih_tables.php --no-interaction
 php artisan migrate --path=database/migrations/2026_06_21_100000_add_fields_to_s_aih.php --no-interaction
+php artisan migrate --path=database/migrations/2026_07_10_000000_update_s_aih_unique_key.php --no-interaction
+php artisan migrate --path=database/migrations/2026_07_10_203500_add_extended_fields_to_s_aih.php --no-interaction
 php artisan migrate --path=database/migrations/2026_06_22_152310_add_aih_values_to_procedimento_table.php --no-interaction
 php artisan migrate --path=database/migrations/2026_06_24_000001_create_sus_paulista_table.php --no-interaction
 php artisan migrate --path=database/migrations/2025_09_17_184500_add_must_change_password_to_users_table.php --no-interaction
