@@ -49,7 +49,7 @@ CREATE TABLE `s_aih` (
   `VALOR_TOTAL_AIH` decimal(12,2) DEFAULT NULL COMMENT 'Valor total (SUM TB_HPA.pa_valor)',
 
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_aih` (`AIH`, `CNES`, `COMPETENCIA`),
+  UNIQUE KEY `uk_aih` (`AIH`, `CNES`, `COMPETENCIA`, `DT_SAIDA`),
   KEY `idx_aih_cnes`     (`CNES`),
   KEY `idx_aih_cmp`      (`COMPETENCIA`),
   KEY `idx_aih_cnes_cmp` (`CNES`, `COMPETENCIA`)

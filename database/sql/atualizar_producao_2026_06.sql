@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS `s_aih` (
   `DIARIAS_UTI` int(11) DEFAULT NULL,
   `VALOR_TOTAL_AIH` decimal(12,2) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_aih` (`AIH`,`CNES`,`COMPETENCIA`),
+  UNIQUE KEY `uk_aih` (`AIH`,`CNES`,`COMPETENCIA`,`DT_SAIDA`),
   KEY `idx_aih_cnes` (`CNES`),
   KEY `idx_aih_cmp` (`COMPETENCIA`),
   KEY `idx_aih_cnes_cmp` (`CNES`,`COMPETENCIA`)

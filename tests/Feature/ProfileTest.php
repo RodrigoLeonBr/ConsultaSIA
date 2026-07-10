@@ -28,37 +28,39 @@ class ProfileTest extends TestCase
         $response = $this
             ->actingAs($user)
             ->patch('/profile', [
-                'name' => 'Test User',
+                'first_name' => 'Test',
+                'last_name' => 'User',
                 'email' => 'test@example.com',
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect(route('profile.edit'));
 
         $user->refresh();
 
-        $this->assertSame('Test User', $user->name);
+        $this->assertSame('Test', $user->first_name);
+        $this->assertSame('User', $user->last_name);
         $this->assertSame('test@example.com', $user->email);
-        $this->assertNull($user->email_verified_at);
     }
 
-    public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
+    public function test_email_can_be_cleared(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['email' => 'old@example.com']);
 
         $response = $this
             ->actingAs($user)
             ->patch('/profile', [
-                'name' => 'Test User',
-                'email' => $user->email,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'email' => null,
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect(route('profile.edit'));
 
-        $this->assertNotNull($user->refresh()->email_verified_at);
+        $this->assertNull($user->refresh()->email);
     }
 
     public function test_user_can_delete_their_account(): void

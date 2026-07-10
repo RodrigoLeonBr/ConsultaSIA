@@ -6,6 +6,7 @@ use App\Exports\MatrixReportExport;
 use App\Exports\RelatorioExport;
 use App\Http\Controllers\Concerns\HasMatrixReport;
 use App\Http\Controllers\Concerns\HasSusPaulistaReport;
+use App\Support\AihEpisodeJoin;
 use Illuminate\Support\Facades\DB;
 
 class RelatorioAihPaController extends BaseRelatorioController
@@ -310,11 +311,8 @@ class RelatorioAihPaController extends BaseRelatorioController
 
     private function addAihHeaderJoin($query): void
     {
-        // JOIN on AIH + CNES + COMPETENCIA for uniqueness
         $query->leftJoin('s_aih as aih', function ($join) {
-            $join->on(DB::raw('sp.AIH COLLATE utf8mb4_unicode_ci'), '=', DB::raw('aih.AIH COLLATE utf8mb4_unicode_ci'))
-                ->on(DB::raw('sp.CNES COLLATE utf8mb4_unicode_ci'), '=', DB::raw('aih.CNES COLLATE utf8mb4_unicode_ci'))
-                ->on(DB::raw('sp.COMPETENCIA COLLATE utf8mb4_unicode_ci'), '=', DB::raw('aih.COMPETENCIA COLLATE utf8mb4_unicode_ci'));
+            AihEpisodeJoin::applyPaToHeaderJoin($join);
         });
     }
 

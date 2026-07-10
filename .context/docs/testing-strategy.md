@@ -44,9 +44,22 @@ Delta ≠ 0 é **bloqueante** para mudanças em agregações de relatório.
 ## Executar testes
 
 ```bash
-php artisan test                                    # suite completa
+php artisan test                                    # suite completa (MariaDB: producao_test)
 php artisan test tests/Feature/RelatorioTest.php   # arquivo específico
 php artisan test --filter=testNome                 # filtro por método
+```
+
+### Banco de testes
+
+PHPUnit usa **MariaDB/MySQL** (mesmo driver de produção), nunca SQLite. O banco padrão é `producao_test`, definido em `phpunit.xml` e opcionalmente em `.env.testing` (copie de `.env.testing.example`).
+
+`RefreshDatabase` roda migrations nesse banco isolado. Testes **falham** se `DB_DATABASE=producao` (guarda em `tests/TestCase.php`).
+
+Criar o banco uma vez:
+
+```sql
+CREATE DATABASE IF NOT EXISTS producao_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+GRANT ALL ON producao_test.* TO 'hospital'@'localhost';
 ```
 
 ## Prioridade de cobertura
