@@ -20,8 +20,7 @@ class PrestadorController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('re_cunid', 'like', "%{$search}%")
-                  ->orWhere('re_cnome', 'like', "%{$search}%")
-                  ->orWhere('cnpj', 'like', "%{$search}%");
+                  ->orWhere('re_cnome', 'like', "%{$search}%");
             });
         }
 

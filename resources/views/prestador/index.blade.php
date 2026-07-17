@@ -50,7 +50,7 @@
                             <input type="text" 
                                    name="search" 
                                    value="{{ request('search') }}"
-                                   placeholder="Buscar por código, nome ou CNPJ..."
+                                   placeholder="Buscar por código ou nome..."
                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <div>
@@ -101,7 +101,7 @@
                                         Tipo
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        CNPJ/CPF
+                                        Relatório
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Unidade
@@ -135,8 +135,8 @@
                                                 @endswitch
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                                            {{ $prestador->cnpj }}
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {{ $prestador->relatorio }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             @switch($prestador->tipouni)
