@@ -132,6 +132,23 @@ php artisan migrate:status
 
 > **Atenção:** `php artisan migrate` sem filtro **falha** se o banco já veio do `producao.sql` (tabelas `users`, `s_prd`, `cismetro`, etc. já existem). Rode **somente** as migrations pendentes que ainda não foram aplicadas no seu ambiente, uma a uma com `--path`.
 
+### Atalho SQL (phpMyAdmin / mysql CLI)
+
+Se preferir aplicar DDL direto no MariaDB (sem Artisan), use os scripts idempotentes:
+
+| Script | O que faz |
+|--------|-----------|
+| `database/sql/atualizar_producao_2026_06.sql` | Cria `s_aih`, `s_aih_pa`, `sus_paulista`; `VL_SP`/`VL_SH` em `procedimento` |
+| `database/sql/atualizar_producao_2026_07.sql` | Campos SIHD estendidos em `s_aih` + `uk_aih` com `DT_SAIDA` |
+| `database/sql/create_sih_tables.sql` | DDL completo (recria `s_aih`/`s_aih_pa` — **apaga dados**) |
+
+```bash
+mysql -u root producao < database/sql/atualizar_producao_2026_06.sql
+mysql -u root producao < database/sql/atualizar_producao_2026_07.sql
+```
+
+Schema detalhado AIH: [`docs/sih-aih-schema-for-llm.md`](docs/sih-aih-schema-for-llm.md).
+
 ### Migrations incrementais (após import do `producao.sql`)
 
 | Migration | O que altera | Verificar se já existe |
@@ -220,6 +237,39 @@ ORDER BY codigo;
 ```
 
 > O command é **idempotente** — pode rodar de novo após importar novos dados de cismetro. Não altera tabelas core além da coluna `tipo_valor`.
+
+### Atualização 2026-07 — campos SIHD estendidos em `s_aih`
+
+Novos campos alinhados ao export `TB_HAIH` (23 colunas) e chave única com `DT_SAIDA` para reabertura de UTI na mesma competência.
+
+| Coluna / índice | Origem SIHD |
+|---|---|
+| `IDENT_AIH` | `ah_ident` |
+| `MUN_RESIDENCIA` | município de residência |
+| `CARATER_INTERNACAO` | `ah_car_internacao` (`01`–`06`) |
+| `DIAG_SECUNDARIO` | `ah_diag_sec` |
+| `CID_OBITO` | `ah_diag_obito` |
+| `uk_aih` | `(AIH, CNES, COMPETENCIA, DT_SAIDA)` |
+
+**Opção A — script SQL** (recomendado em XAMPP/phpMyAdmin):
+
+```bash
+mysql -u root producao < database/sql/atualizar_producao_2026_07.sql
+```
+
+**Opção B — migrations Artisan:**
+
+```bash
+php artisan migrate --path=database/migrations/2026_07_10_000000_update_s_aih_unique_key.php --no-interaction
+php artisan migrate --path=database/migrations/2026_07_10_203500_add_extended_fields_to_s_aih.php --no-interaction
+```
+
+Verificar:
+
+```sql
+SHOW COLUMNS FROM s_aih LIKE 'CARATER_INTERNACAO';
+SHOW INDEX FROM s_aih WHERE Key_name = 'uk_aih';
+```
 
 ### Migrations que NÃO rodar em banco importado
 

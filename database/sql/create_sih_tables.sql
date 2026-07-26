@@ -1,6 +1,6 @@
 -- ============================================================
 -- ConsultaProd — Tabelas SIH (Internações AIH)
--- Gerado em: 2026-06-21
+-- Gerado em: 2026-07-26 (campos SIHD estendidos + uk com DT_SAIDA)
 -- Executar no banco: producao
 -- ============================================================
 

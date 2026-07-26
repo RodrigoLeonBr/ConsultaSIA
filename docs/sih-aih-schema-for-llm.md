@@ -35,40 +35,55 @@ s_aih_pa  ←──────→  forma         (via SUBSTRING(s_aih_pa.PROC_D
 
 **Engine:** InnoDB | **Charset:** utf8mb4_unicode_ci  
 **Origem:** arquivo `.txt` exportado da tabela `TB_HAIH` do SIHD  
-**Formato de importação:** 18 colunas, separador `;`, sem linha de cabeçalho, decimal BR (vírgula)
+**Formato de importação:** **23 colunas** (com `DIAG_SECUNDARIO`); aceita **22** quando o SIHD omite o campo vazio. Separador `;`, sem cabeçalho, decimal BR (vírgula).  
+**DDL de referência:** `database/sql/create_sih_tables.sql`  
+**Atualização incremental (banco existente):** `database/sql/atualizar_producao_2026_07.sql`
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
 | `id` | bigint UNSIGNED | PK AUTO_INCREMENT |
 | `AIH` | varchar(13) | Número da AIH — chave natural (`ah_num_aih`) |
+| `IDENT_AIH` | varchar(2) | Identificador da AIH (`ah_ident`) |
 | `CNES` | varchar(7) | CNES da unidade → `prestador.re_cunid` |
 | `COMPETENCIA` | varchar(6) | Competência **AAAAMM** (ex: `202501`) |
+| `MUN_RESIDENCIA` | varchar(6) | Município de residência do paciente (`ah_paciente_logr_municipio`) |
 | `DT_NASC` | varchar(8) | Data de nascimento **AAAAMMDD** (`ah_paciente_dt_nascimento`) |
 | `IDADE` | int | Idade em anos completos na data da internação |
 | `SEXO_PACIENTE` | varchar(1) | `M` ou `F` |
 | `DT_INT` | varchar(8) | Data de internação **AAAAMMDD** (`ah_dt_internacao`) |
 | `DT_SAIDA` | varchar(8) | Data de saída **AAAAMMDD** (`ah_dt_saida`) |
+| `CARATER_INTERNACAO` | varchar(2) | Caráter do atendimento (`ah_car_internacao`) — labels em `AihCaraterInternacao` |
 | `ESPECIALIDADE` | varchar(3) | Código de especialidade (`ah_especialidade`) |
 | `PROC_PRINCIPAL` | varchar(10) | Procedimento principal 10 dígitos → `procedimento.codigo` |
 | `DIAG_PRINCIPAL` | varchar(4) | CID-10 principal (`ah_diag_pri`) |
+| `DIAG_SECUNDARIO` | varchar(4) | CID-10 secundário (`ah_diag_sec`) |
 | `COMPLEXIDADE` | varchar(2) | Complexidade da internação |
 | `FINANCIAMENTO` | varchar(2) | Código de financiamento → `s_rub.RUB_ID` |
 | `ENFERMARIA` | varchar(4) | Código de enfermaria/leito |
 | `MOTIVO_SAIDA` | varchar(2) | Motivo de saída (`ah_mot_saida`) |
+| `CID_OBITO` | varchar(4) | CID do óbito (`ah_diag_obito`) |
 | `DIARIAS` | int | Total de diárias da internação |
 | `DIARIAS_UTI` | int | Diárias em UTI |
 | `VALOR_TOTAL_AIH` | decimal(12,2) | Valor total da AIH (pré-calculado: `SUM(TB_HPA.pa_valor)` no SIHD) |
 
+**Ordem das 23 colunas no arquivo de importação:**
+```
+AIH; IDENT_AIH; CNES; COMPETENCIA; MUN_RESIDENCIA; DT_NASC; IDADE; SEXO_PACIENTE;
+DT_INT; DT_SAIDA; CARATER_INTERNACAO; ESPECIALIDADE; PROC_PRINCIPAL; DIAG_PRINCIPAL;
+DIAG_SECUNDARIO; COMPLEXIDADE; FINANCIAMENTO; ENFERMARIA; MOTIVO_SAIDA; CID_OBITO;
+DIARIAS; DIARIAS_UTI; VALOR_TOTAL_AIH
+```
+
 **Índices:**
 ```sql
 PRIMARY KEY (id)
-UNIQUE KEY uk_aih (AIH, CNES, COMPETENCIA)   -- mesma AIH pode aparecer em competências diferentes
+UNIQUE KEY uk_aih (AIH, CNES, COMPETENCIA, DT_SAIDA)  -- reabertura UTI na mesma competência
 KEY idx_aih_cnes     (CNES)
 KEY idx_aih_cmp      (COMPETENCIA)
 KEY idx_aih_cnes_cmp (CNES, COMPETENCIA)
 ```
 
-> A chave única é `(AIH, CNES, COMPETENCIA)` — o mesmo número de AIH pode existir em competências diferentes (internações longas que transitam entre meses).
+> A chave única é `(AIH, CNES, COMPETENCIA, DT_SAIDA)` — a mesma AIH pode existir em competências diferentes **e** mais de uma vez na mesma competência quando há fechamento/reabertura (ex.: UTI), diferenciadas por `DT_SAIDA`.
 
 ---
 
@@ -155,14 +170,17 @@ LEFT JOIN forma fg
 
 ### 3.3 JOIN entre s_aih e s_aih_pa
 
-Use as três colunas para evitar ambiguidade (mesma AIH pode existir em competências diferentes):
+Base: `AIH + CNES + COMPETENCIA`. Quando a mesma AIH aparece mais de uma vez na competência (reabertura), o app usa `AihEpisodeJoin`: amarra o item ao episódio com `s_aih_pa.QUANTIDADE = s_aih.DIARIAS`; itens sem par caem no cabeçalho com `DT_SAIDA` mais recente.
 
 ```sql
+-- JOIN simples (1 cabeçalho por AIH+CNES+COMPETENCIA)
 s_aih sa
 LEFT JOIN s_aih_pa sp
     ON sp.AIH         COLLATE utf8mb4_unicode_ci = sa.AIH         COLLATE utf8mb4_unicode_ci
     AND sp.CNES        COLLATE utf8mb4_unicode_ci = sa.CNES        COLLATE utf8mb4_unicode_ci
     AND sp.COMPETENCIA COLLATE utf8mb4_unicode_ci = sa.COMPETENCIA COLLATE utf8mb4_unicode_ci
+
+-- JOIN com episódio (produção / RelatorioAihPaController) — ver App\Support\AihEpisodeJoin
 ```
 
 ### 3.4 Hierarquia de procedimentos (forma)
@@ -611,13 +629,15 @@ ORDER BY total_periodo DESC;
 | **Filtrar por COMPETENCIA SEMPRE** | Sem filtro varre toda a tabela |
 | **Sem CAST** | `DIARIAS`, `DIARIAS_UTI`, `QUANTIDADE`, `VALOR_ITEM`, `VALOR_TOTAL_AIH` são `int`/`decimal` — soma direta |
 | **FINANCIAMENTO = RUB_ID direto** | 2 chars apenas (diferente do SIA que usa 4 chars de PRD_RUB) |
-| **JOIN s_aih ↔ s_aih_pa** | Usar as 3 colunas: AIH + CNES + COMPETENCIA |
+| **JOIN s_aih ↔ s_aih_pa** | Base: AIH + CNES + COMPETENCIA; com reabertura usar `AihEpisodeJoin` (QUANTIDADE≈DIARIAS) |
 | **Forma: COLLATE utf8mb4_general_ci** | s_aih/s_aih_pa = unicode_ci, forma = general_ci — obrigatório no JOIN |
 | **VALOR_TOTAL_AIH é pré-calculado** | Soma de TB_HPA.pa_valor feita no SIHD. Pode divergir de SUM(s_aih_pa.VALOR_ITEM) por filtragem na origem |
 | **DT_NASC / DT_INT / DT_SAIDA são varchar** | Formato AAAAMMDD. Para calcular dias: `DATEDIFF(STR_TO_DATE(DT_SAIDA,'%Y%m%d'), STR_TO_DATE(DT_INT,'%Y%m%d'))` |
 | **IDADE > 150 = inválido** | Filtrar com `WHERE sa.IDADE <= 150` ou `AND sa.IDADE IS NOT NULL` |
 | **Sem FK físicas** | LEFT JOIN por padrão; pode haver AIH em s_aih_pa sem registro em s_aih |
-| **Chave única (AIH, CNES, COMPETENCIA)** | Mesmo número de AIH em competências diferentes = registros distintos válidos |
+| **Chave única (AIH, CNES, COMPETENCIA, DT_SAIDA)** | Mesma AIH em competências diferentes ou com DT_SAIDA distinta (reabertura) = registros válidos |
+| **CARATER_INTERNACAO** | Códigos `01`–`06`; labels via `App\Support\AihCaraterInternacao` |
+| **Importação** | `AihTextImportService` — 23 cols (ou 22 sem DIAG_SECUNDARIO); upsert pela uk_aih |
 
 ---
 
@@ -654,7 +674,7 @@ COUNT(sp.id) / NULLIF(COUNT(DISTINCT sp.AIH), 0) AS media_procedimentos_por_aih
 ## 7. Checklist para Novos Relatórios/KPIs
 
 - [ ] Tem filtro de `COMPETENCIA` (ou intervalo `BETWEEN`)?
-- [ ] JOIN s_aih ↔ s_aih_pa usa AIH + CNES + COMPETENCIA?
+- [ ] JOIN s_aih ↔ s_aih_pa usa AIH + CNES + COMPETENCIA (e episódio se houver reabertura)?
 - [ ] JOINs com `forma` usam `COLLATE utf8mb4_general_ci`?
 - [ ] `FINANCIAMENTO` comparado direto com `RUB_ID` (sem LEFT)?
 - [ ] `NULLIF` nos denominadores de divisão?

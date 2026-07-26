@@ -59,9 +59,15 @@ prestador    procedimento cbo          forma        cismetro
 
 **Tabelas auxiliares (podem ser modificadas via migration):**
 ```
+s_aih        s_aih_pa      sus_paulista
 report_job   report_result_header   report_result_rows
 users        cache / sessions       jobs / failed_jobs
 ```
+
+Atualização SQL (phpMyAdmin / mysql CLI, sem recriar core):
+- `database/sql/atualizar_producao_2026_06.sql` — cria AIH + SUS Paulista + VL_SP/VL_SH
+- `database/sql/atualizar_producao_2026_07.sql` — campos SIHD estendidos + uk_aih com DT_SAIDA
+- Schema completo AIH: `docs/sih-aih-schema-for-llm.md` / `database/sql/create_sih_tables.sql`
 
 ### 4.2 Queries — Obrigações
 
@@ -106,13 +112,16 @@ Ver detalhes completos em [`.context/docs/routes-map.md`](.context/docs/routes-m
 | Relatório SIA dinâmico | `/relatorios` | `RelatorioController` |
 | Relatório APAC | `/relatorios/apac` | `RelatorioApacController` |
 | Relatório BPI | `/relatorios/bpi` | `RelatorioBpiController` |
+| Relatório AIH (internações) | `/relatorios/aih` | `RelatorioAihController` |
+| Relatório AIH-PA (itens) | `/relatorios/aih-pa` | `RelatorioAihPaController` |
+| Importação AIH | `/aih-import` | `AihImportController` |
 | Faturamento por Prestador | `/relatorios/faturamento-prestador` | `FaturamentoPrestadorController` |
 | SAPA (s_apa CRUD) | `/sapa` | `SApaController` |
 | SPAP (s_pap CRUD) | `/spap` | `SPapController` |
 | SRUB (s_rub CRUD) | `/srub` | `SRubController` |
 | Auth (Breeze) | `/login`, `/logout`, etc. | `Auth\*` |
 
-**Total: 123 rotas** — lista completa em `routes-map.md`
+Lista completa em `routes-map.md` (`php artisan route:list`).
 
 ---
 
@@ -123,6 +132,9 @@ app/Http/Controllers/
   RelatorioController.php              ← relatório SIA dinâmico (s_prd)
   RelatorioApacController.php          ← relatório APAC (s_pap + s_apa)
   RelatorioBpiController.php           ← relatório BPI (s_bpi)
+  RelatorioAihController.php           ← relatório AIH internações (s_aih)
+  RelatorioAihPaController.php         ← relatório AIH procedimentos (s_aih_pa)
+  AihImportController.php              ← importação texto SIHD
   FaturamentoPrestadorController.php   ← faturamento hierárquico (s_prd)
   HomeController.php                   ← dashboard (competências SIA/SIH)
   AdminController.php
@@ -219,7 +231,8 @@ php artisan view:cache
 
 Ver [`.context/docs/current-work.md`](.context/docs/current-work.md) para status detalhado do sprint atual.
 
-**Resumo (2026-07-09):**
+**Resumo (2026-07-26):**
+- AIH estendido (campos SIHD + uk com DT_SAIDA); script `atualizar_producao_2026_07.sql`
 - Dashboard consolidado em `HomeController` + `home.blade.php` (`/dashboard`; `/painel` redireciona)
 - Exports usam `BrazilianNumberFormatter` diretamente (sem trait intermediária)
 
@@ -234,13 +247,15 @@ Ver [`.context/docs/current-work.md`](.context/docs/current-work.md) para status
 | `routes-map.md` | 123 rotas organizadas por módulo (método + URI + nome + controller) |
 | `exports-pattern.md` | Classes Export, Concerns, Support — padrão e como adicionar novo |
 | `current-work.md` | Sprint atual: arquivos modificados, objetivo, próximos passos |
-| `glossary.md` | Vocabulário SIA/APAC/BPI/SUS/DATASUS |
+| `glossary.md` | Vocabulário SIA/APAC/BPI/AIH/SUS/DATASUS |
 | `performance-playbook.md` | Índices, queries pesadas, estratégias de performance |
 | `security.md` | Práticas de segurança do projeto |
 | `data-flow.md` | Fluxo de dados entre módulos |
 | `sia-field-catalog.md` | Catálogo completo de campos SIA |
 | `ops-runbook.md` | Operação em produção |
 | `testing-strategy.md` | PHPUnit e validação SQL |
+
+Schema SIH/AIH (fora de `.context`): [`docs/sih-aih-schema-for-llm.md`](docs/sih-aih-schema-for-llm.md)
 
 ===
 

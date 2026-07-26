@@ -1,43 +1,42 @@
 # Trabalho Atual — Sprint Ativa
 
 > Atualizar esta seção ao iniciar/completar trabalho significativo.
-> Última atualização: 2026-07-09
+> Última atualização: 2026-07-26
 
 ---
 
-## Concluído recentemente
+## Em andamento / concluído recentemente
 
-### Refactor de exportações
-- Formatação numérica centralizada em `app/Support/BrazilianNumberFormatter.php`
-- Classes Export (`RelatorioExport`, `RelatorioApacExport`, `MatrixReportExport`, `MatrixReportByPrestadorExport`) usam `parseForExcel()` e `columnFormatsForHeaders()`
-- Trait `FormatsBrazilianExcelColumns` removida (lógica absorvida pelo helper)
+### AIH — campos SIHD estendidos + docs/DB
+- Campos novos em `s_aih`: `IDENT_AIH`, `MUN_RESIDENCIA`, `CARATER_INTERNACAO`, `DIAG_SECUNDARIO`, `CID_OBITO`
+- UK `uk_aih` = `(AIH, CNES, COMPETENCIA, DT_SAIDA)` (reabertura UTI)
+- Importação: `AihTextImportService` (23/22 colunas)
+- Script SQL: `database/sql/atualizar_producao_2026_07.sql`
+- Docs alinhados: `docs/sih-aih-schema-for-llm.md`, data-contract, routes-map, glossary
 
-### Consolidação de dashboard e dependências
-- `HomeController` + `home.blade.php` substituem `DashboardController`
-- `/painel` → redirect 301 para `/dashboard`
-- Removidos: Livewire, Sanctum (dependência direta), Larapex Charts
-- Registro público e verificação de e-mail removidos do auth
+### Matriz / SUS Paulista (diff local)
+- `HasMatrixReport`: meta de eixos/métricas na resposta JSON da matriz
+- `HasSusPaulistaReport`: vigência via subquery `MAX(competencia_inicial)` cobrindo a competência do registro
 
-### Field configs unificados
-- Padrão `getAllFieldConfigs()` nos controllers de relatório
-- `getFields()` e `getFieldConfig()` delegam para `getAllFieldConfigs()`
+### Refactor de exportações (anterior)
+- Formatação numérica em `BrazilianNumberFormatter`
+- Dashboard consolidado em `HomeController` + `home.blade.php`
 
 ---
 
 ## Próximos Passos
 
-- [ ] Atualizar documentação restante (glossary, exporta.md) se necessário
+- [ ] Aplicar `atualizar_producao_2026_07.sql` (ou migrations 2026_07_10_*) nos ambientes que ainda não têm os campos estendidos
 - [ ] Limpar `welcome.blade.php` (bloco register morto)
-- [ ] Regenerar ou remover `_ide_helper.php` obsoleto (refs Livewire)
+- [ ] Regenerar ou remover `_ide_helper.php` obsoleto
 
 ---
 
-## Histórico Recente (commits anteriores)
+## Histórico Recente (commits)
 
 | Hash | Mensagem |
 |---|---|
-| `6a73f73c` | upload de prestador e procedimento |
-| `75a18e0b` | data movimento |
-| `84b90a5b` | relatorio producao individualizado |
-| `f18a6ad4` | feat: enhance reports and SIA services with new functionalities |
-| `24b226ca` | feat: fullstack monorepo setup with concurrently |
+| `d52c0170` | feat(aih): estender importação SIHD e relatórios com novos campos |
+| `410773bc` | feat(sus-paulista): adicionar seeders Tabela SUS Paulista SIA e SIH |
+| `3d8f67a8` | feat(prestador): substituir coluna CNPJ por relatório na listagem |
+| `a3f0…` | (ver `git log`) |

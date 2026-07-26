@@ -34,6 +34,12 @@ scaffoldVersion: "2.0.0"
 | **Lacuna** | Diferença entre apresentado e aprovado (`VL_P - VL_A`); principal métrica de auditoria |
 | **Faturamento** | Relatório de valores aprovados agrupado por hierarquia: prestador → tipo → grupo → subgrupo → forma → procedimento |
 | **Rubrica** | Classificação contábil de despesa; tabela `s_rub`, campo `prd_rub` |
+| **AIH** | Autorização de Internação Hospitalar — cabeçalho em `s_aih`, itens em `s_aih_pa` |
+| **SIH** | Sistema de Informações Hospitalares (módulo hospitalar; importação via SIHD) |
+| **HPA** | Procedimentos da AIH no SIHD (`TB_HPA` → `s_aih_pa`) |
+| **HAIH** | Cabeçalho da AIH no SIHD (`TB_HAIH` → `s_aih`) |
+| **Caráter de internação** | Código `CARATER_INTERNACAO` (`01`–`06`); labels em `AihCaraterInternacao` |
+| **SUS Paulista** | Tabela `sus_paulista` — valores/complementação TSP por competência e modalidade (`sia`/`sih`) |
 
 ## Tabelas Core (Imutáveis)
 
@@ -48,10 +54,13 @@ scaffoldVersion: "2.0.0"
 | `cismetro` | Equipes de saúde | pequeno | InnoDB |
 | `s_rub` | Rubricas contábeis | pequeno | MyISAM |
 
-## Tabelas Auxiliares (Gerenciadas pelo v3)
+## Tabelas Auxiliares
 
 | Tabela | Conteúdo |
 |--------|----------|
+| `s_aih` | Cabeçalho AIH (SIH) — UK `(AIH, CNES, COMPETENCIA, DT_SAIDA)` |
+| `s_aih_pa` | Itens/procedimentos por AIH |
+| `sus_paulista` | Tabela SUS Paulista (SIA/SIH) |
 | `report_job` | Fila de jobs assíncronos |
 | `report_result_header` | Metadados de cada resultado (colunas, TTL, caminho de export) |
 | `report_result_rows` | Linhas do resultado armazenadas em JSON |

@@ -1,6 +1,6 @@
 # Routes Map — ConsultaProd
 
-> 123 rotas totais. Verificar via `php artisan route:list`.
+> Verificar via `php artisan route:list`. Inclui módulos SIA, APAC, BPI, AIH e CRUDs.
 > Todos os módulos (exceto Auth e sistema) exigem autenticação: `web → Authenticate → CheckActive → EnsurePasswordChanged`.
 
 ---
@@ -172,6 +172,39 @@ Controller: `FaturamentoPrestadorController`
 | GET | /relatorios/faturamento-prestador | faturamento-prestador.index | index |
 | POST | /relatorios/faturamento-prestador/gerar | faturamento-prestador.gerar | gerar |
 | POST | /relatorios/faturamento-prestador/pdf | faturamento-prestador.pdf | exportPdf |
+
+### AIH Internações — tabela `s_aih`
+Controller: `RelatorioAihController`
+> Schema: `docs/sih-aih-schema-for-llm.md`
+
+| Method | URI | Name | Action |
+|---|---|---|---|
+| GET | /relatorios/aih | relatorios.aih.index | index |
+| GET | /relatorios/aih/fields | relatorios.aih.fields | getFields |
+| GET | /relatorios/aih/lookup | relatorios.aih.lookup | getLookupData |
+| POST | /relatorios/aih/generate | relatorios.aih.generate | generate |
+| POST | /relatorios/aih/generate-matrix | relatorios.aih.generate-matrix | generateMatrix |
+
+### AIH Procedimentos — tabela `s_aih_pa`
+Controller: `RelatorioAihPaController`
+
+| Method | URI | Name | Action |
+|---|---|---|---|
+| GET | /relatorios/aih-pa | relatorios.aih-pa.index | index |
+| GET | /relatorios/aih-pa/fields | relatorios.aih-pa.fields | getFields |
+| GET | /relatorios/aih-pa/lookup | relatorios.aih-pa.lookup | getLookupData |
+| POST | /relatorios/aih-pa/generate | relatorios.aih-pa.generate | generate |
+| POST | /relatorios/aih-pa/generate-matrix | relatorios.aih-pa.generate-matrix | generateMatrix |
+
+### Importação AIH (SIHD)
+Controller: `AihImportController`
+
+| Method | URI | Name | Action |
+|---|---|---|---|
+| GET | /aih-import | aih.import | create |
+| POST | /aih-import | aih.import.store | store |
+| GET | /aih-import/preview | aih.import.preview | preview |
+| POST | /aih-import/apply | aih.import.apply | apply |
 
 ---
 
