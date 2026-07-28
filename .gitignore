@@ -25,3 +25,8 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 .worktrees/
+
+# Data dumps / planilhas / relatórios exportados (não versionar)
+*.xlsx
+*.pdf
+*.csv
