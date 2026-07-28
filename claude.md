@@ -17,6 +17,7 @@
 | Vocabulário do domínio (SIA, APAC, BPI, SUS) | [`.context/docs/glossary.md`](.context/docs/glossary.md) |
 | Performance + índices | [`.context/docs/performance-playbook.md`](.context/docs/performance-playbook.md) |
 | Segurança | [`.context/docs/security.md`](.context/docs/security.md) |
+| **Qualquer coisa de e-SUS (import API SIGTAP, s_esus, de-para CNES)** | [`.context/docs/esus-module.md`](.context/docs/esus-module.md) **← ler primeiro** |
 
 ---
 
@@ -42,6 +43,10 @@
 | Auth | Username/password + roles (admin, operator) |
 | **Sem** | Redis / Node.js / SSR / Docker (em produção atual) |
 
+> Serviço com construtor de args escalares (ex: `EsusApiService(string $baseUrl)`)
+> precisa de bind no `AppServiceProvider::register` — senão `BindingResolutionException`
+> na injeção de método do controller.
+
 ---
 
 ## 4. Regras Invioláveis
@@ -56,6 +61,7 @@ prestador    procedimento cbo          forma        cismetro
 - **PROIBIDO**: `ALTER TABLE`, `DROP`, qualquer DDL nessas tabelas
 - **PROIBIDO**: Migrations automáticas que toquem tabelas core
 - Em produção: migrations automáticas desabilitadas
+- **Nuance `prestador`**: "imutável" vale para as colunas DATASUS. Colunas de app (`ativo`, `relatorio`, `esus_ativo`) SÃO adicionadas via migration — padrão aceito.
 
 **Tabelas auxiliares (podem ser modificadas via migration):**
 ```
@@ -160,6 +166,11 @@ app/Support/
 public/js/
   relatorios-base.js                   ← JS frontend do sistema de relatórios
 
+app/View/Components/Sidebar.php         ← MENU LATERAL (menuSections). NÃO é
+                                          navigation.blade.php (esse = top-nav
+                                          Breeze, usado só por <x-app-layout>).
+                                          layouts.modern usa <x-sidebar/>.
+
 resources/views/
   relatorios/                          ← todas as views de relatório
   home.blade.php                       ← dashboard principal
@@ -202,6 +213,11 @@ php artisan about                    # info do sistema
 
 # Cache (sempre limpar antes de testar mudanças de config/rota)
 php artisan optimize:clear           # limpa tudo
+
+# ⚠️ Migrations NÃO são rastreadas (banco montado por SQL). `php artisan migrate`
+# puro falha ("users already exists"). Rodar 1 por vez:
+#   php artisan migrate --path=database/migrations/<arquivo>.php
+# Testes usam producao_test + RefreshDatabase (roda tudo do zero, OK).
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear
@@ -254,6 +270,7 @@ Ver [`.context/docs/current-work.md`](.context/docs/current-work.md) para status
 | `sia-field-catalog.md` | Catálogo completo de campos SIA |
 | `ops-runbook.md` | Operação em produção |
 | `testing-strategy.md` | PHPUnit e validação SQL |
+| `esus-module.md` | **Módulo e-SUS completo**: API JWT, tabelas `s_esus`/`esus_unidade`, resumo de cada arquivo/função, regras de import (dedupe, uk, confirm reimport, de-para/CNES) |
 
 Schema SIH/AIH (fora de `.context`): [`docs/sih-aih-schema-for-llm.md`](docs/sih-aih-schema-for-llm.md)
 

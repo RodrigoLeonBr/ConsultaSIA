@@ -27,6 +27,9 @@
                     <x-nav-link :href="route('srub.index')" :active="request()->routeIs('srub.*')">
                         {{ __('Financiamentos') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('esus.index')" :active="request()->routeIs('esus.*')">
+                        {{ __('e-SUS') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('relatorios.index')" :active="request()->routeIs('relatorios.index')">
                         {{ __('Relatórios Produção') }}
                     </x-nav-link>
@@ -99,6 +102,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('srub.index')" :active="request()->routeIs('srub.*')">
                 {{ __('Financiamentos') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('esus.index')" :active="request()->routeIs('esus.*')">
+                {{ __('e-SUS') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('relatorios.index')" :active="request()->routeIs('relatorios.index')">
                 {{ __('Relatórios Produção') }}

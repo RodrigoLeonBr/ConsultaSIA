@@ -39,6 +39,11 @@ class PrestadorController extends Controller
             $query->where('tipouni', $request->tipouni);
         }
 
+        // Filter by e-SUS consideration
+        if ($request->filled('esus_ativo')) {
+            $query->where('esus_ativo', $request->esus_ativo === '1');
+        }
+
         $prestadores = $query->orderBy('re_cnome')->paginate(20)->withQueryString();
 
         return view('prestador.index', compact('prestadores'));

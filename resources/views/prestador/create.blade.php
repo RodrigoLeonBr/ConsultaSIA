@@ -159,6 +159,22 @@
                                     <p class="text-gray-500">Marque se o prestador deve estar ativo no sistema.</p>
                                 </div>
                             </div>
+
+                            <!-- Considerar no e-SUS -->
+                            <div class="flex items-center">
+                                <div class="flex items-center h-5">
+                                    <input type="checkbox"
+                                           id="esus_ativo"
+                                           name="esus_ativo"
+                                           value="1"
+                                           {{ old('esus_ativo', true) ? 'checked' : '' }}
+                                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="esus_ativo" class="font-medium text-gray-700">Considerar no e-SUS</label>
+                                    <p class="text-gray-500">Marque para usar a produção e-SUS desta unidade nas consultas. Desmarque quando a produção vier de outra fonte (ex.: SIA).</p>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Buttons -->

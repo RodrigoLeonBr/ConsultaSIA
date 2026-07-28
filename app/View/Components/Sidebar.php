@@ -66,6 +66,18 @@ class Sidebar extends Component
             return 'aih-import';
         }
 
+        if (request()->routeIs('relatorios.esus.*')) {
+            return 'esus-relatorio';
+        }
+
+        if (request()->routeIs('esus.import*')) {
+            return 'esus-import';
+        }
+
+        if (request()->routeIs('esus.*')) {
+            return 'esus';
+        }
+
         if (request()->routeIs('relatorios.aih-pa.*')) {
             return 'aih-pa';
         }
@@ -123,6 +135,15 @@ class Sidebar extends Component
                     ['id' => 'aih-import', 'label' => 'Importar AIH',         'route' => 'aih.import',              'icon' => 'aih-import'],
                     ['id' => 'aih',        'label' => 'Internações AIH',       'route' => 'relatorios.aih.index',    'icon' => 'aih'],
                     ['id' => 'aih-pa',     'label' => 'Procedimentos AIH',     'route' => 'relatorios.aih-pa.index', 'icon' => 'aih-pa'],
+                ],
+            ],
+            [
+                'id' => 'esus',
+                'label' => 'e-SUS',
+                'items' => [
+                    ['id' => 'esus-import',    'label' => 'Importar e-SUS',  'route' => 'esus.import',           'icon' => 'aih-import'],
+                    ['id' => 'esus',           'label' => 'Produção e-SUS',  'route' => 'esus.index',            'icon' => 'procedimento'],
+                    ['id' => 'esus-relatorio', 'label' => 'Relatório e-SUS', 'route' => 'relatorios.esus.index', 'icon' => 'relatorios'],
                 ],
             ],
             [
