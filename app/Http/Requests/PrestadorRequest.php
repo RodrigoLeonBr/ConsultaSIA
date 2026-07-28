@@ -67,6 +67,9 @@ class PrestadorRequest extends FormRequest
             'ativo' => [
                 'boolean',
             ],
+            'esus_ativo' => [
+                'boolean',
+            ],
         ];
     }
 
@@ -84,6 +87,7 @@ class PrestadorRequest extends FormRequest
             'tipouni' => 'natureza da unidade',
             'relatorio' => 'relatório',
             'ativo' => 'status ativo',
+            'esus_ativo' => 'considerar no e-SUS',
         ];
     }
 
@@ -119,6 +123,7 @@ class PrestadorRequest extends FormRequest
         // Convert checkbox value to boolean
         $this->merge([
             'ativo' => $this->boolean('ativo'),
+            'esus_ativo' => $this->boolean('esus_ativo'),
         ]);
 
         // Remove non-numeric characters from CNPJ

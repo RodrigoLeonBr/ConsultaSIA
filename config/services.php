@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'esus' => [
+        'base_url' => env('ESUS_API_URL', 'http://localhost:8080'),
+        'username' => env('ESUS_API_USER'),
+        'password' => env('ESUS_API_PASSWORD'),
+    ],
+
 ];

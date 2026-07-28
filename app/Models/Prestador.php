@@ -54,6 +54,7 @@ class Prestador extends Model
         'tipouni',
         'relatorio',
         'ativo',
+        'esus_ativo',
     ];
 
     /**
@@ -63,6 +64,7 @@ class Prestador extends Model
     {
         return [
             'ativo' => 'boolean',
+            'esus_ativo' => 'boolean',
             'area' => 'integer',
         ];
     }

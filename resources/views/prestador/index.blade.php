@@ -45,7 +45,7 @@
             <!-- Filters -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
-                    <form method="GET" action="{{ route('prestador.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <form method="GET" action="{{ route('prestador.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <div>
                             <input type="text" 
                                    name="search" 
@@ -70,11 +70,18 @@
                                 <option value="E" {{ request('tipouni') == 'E' ? 'selected' : '' }}>Estadual</option>
                             </select>
                         </div>
+                        <div>
+                            <select name="esus_ativo" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">e-SUS (todos)</option>
+                                <option value="1" {{ request('esus_ativo') === '1' ? 'selected' : '' }}>Considera e-SUS</option>
+                                <option value="0" {{ request('esus_ativo') === '0' ? 'selected' : '' }}>Não considera</option>
+                            </select>
+                        </div>
                         <div class="flex space-x-2">
                             <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 flex-1">
                                 Buscar
                             </button>
-                            @if(request()->hasAny(['search', 'tipo', 'tipouni', 'ativo']))
+                            @if(request()->hasAny(['search', 'tipo', 'tipouni', 'ativo', 'esus_ativo']))
                                 <a href="{{ route('prestador.index') }}" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">
                                     Limpar
                                 </a>
@@ -108,6 +115,9 @@
                                     </th>
                                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Status
+                                    </th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        e-SUS
                                     </th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Ações
@@ -153,6 +163,12 @@
                                                 {{ $prestador->ativo ? 'Ativo' : 'Inativo' }}
                                             </span>
                                         </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                {{ $prestador->esus_ativo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' }}">
+                                                {{ $prestador->esus_ativo ? 'Sim' : 'Não' }}
+                                            </span>
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div class="flex justify-end space-x-2">
                                                 <a href="{{ route('prestador.show', $prestador) }}" 
@@ -174,7 +190,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                        <td colspan="8" class="px-6 py-4 text-center text-gray-500">
                                             Nenhum prestador encontrado.
                                         </td>
                                     </tr>

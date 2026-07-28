@@ -18,11 +18,12 @@ const RelatoriosBase = (function () {
 
     const CURRENCY_FIELDS = new Set([
         'PRD_VL_P', 'PAP_VALOR', 'BPI_VL_P', 'cismetro_total', 'cismetro_valor',
-        'sus_paulista_tab', 'sus_paulista_tab_total', 'sus_paulista_tsp', 'sus_paulista_tsp_total'
+        'sus_paulista_tab', 'sus_paulista_tab_total', 'sus_paulista_tsp', 'sus_paulista_tsp_total',
+        'VALOR_TOTAL_AIH', 'VALOR_TOTAL', 'VALOR',
     ]);
 
     const INTEGER_FIELDS = new Set([
-        'PRD_QT_P', 'PAP_QT_P', 'BPI_QT_P'
+        'PRD_QT_P', 'PAP_QT_P', 'BPI_QT_P', 'qtd_aih', 'DIARIAS', 'DIARIAS_UTI',
     ]);
 
     function isAlreadyBrFormatted(value) {
@@ -53,12 +54,12 @@ const RelatoriosBase = (function () {
         });
     }
 
-    function formatMatrixFieldValue(field, value) {
-        if (CURRENCY_FIELDS.has(field)) {
+    function formatMatrixFieldValue(field, value, fieldMeta = null) {
+        if (fieldMeta?.type === 'currency' || CURRENCY_FIELDS.has(field)) {
             return formatBrCurrency(value);
         }
 
-        if (INTEGER_FIELDS.has(field)) {
+        if (fieldMeta?.type === 'number' || INTEGER_FIELDS.has(field)) {
             return formatBrInteger(value);
         }
 
@@ -68,6 +69,184 @@ const RelatoriosBase = (function () {
         }
 
         return value ?? '';
+    }
+
+    function escapeHtml(text) {
+        return String(text ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function formatMatrixAxisList(items, separator = ' — ') {
+        if (!items || items.length === 0) {
+            return '—';
+        }
+
+        return items.map((item, index) => {
+            const prefix = items.length > 1 ? `${index + 1}) ` : '';
+            return `${prefix}${item.label}`;
+        }).join(separator);
+    }
+
+    function renderMatrixMetaBanner(matrixMeta) {
+        if (!matrixMeta) {
+            return '';
+        }
+
+        const columns = formatMatrixAxisList(matrixMeta.columns);
+        const rows = formatMatrixAxisList(matrixMeta.rows);
+        const values = formatMatrixAxisList(matrixMeta.values);
+        const split = matrixMeta.split
+            ? `<div><span class="font-medium text-gray-800">Quebra:</span> ${escapeHtml(matrixMeta.split.label)}</div>`
+            : '';
+
+        return `
+            <div class="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-gray-700">
+                <p class="mb-2 font-medium text-gray-900">Estrutura da matriz</p>
+                <div class="grid gap-1 sm:grid-cols-1">
+                    <div><span class="font-medium text-gray-800">Colunas:</span> ${escapeHtml(columns)}</div>
+                    <div><span class="font-medium text-gray-800">Linhas:</span> ${escapeHtml(rows)}</div>
+                    <div><span class="font-medium text-gray-800">Valores:</span> ${escapeHtml(values)}</div>
+                    ${split}
+                </div>
+            </div>
+        `;
+    }
+
+    function getMatrixRowHeaderLabel(matrixMeta) {
+        if (!matrixMeta?.rows?.length) {
+            return 'Categoria';
+        }
+
+        if (matrixMeta.rows.length === 1) {
+            return matrixMeta.rows[0].label;
+        }
+
+        return formatMatrixAxisList(matrixMeta.rows, ' + ');
+    }
+
+    function formatMatrixCellValue(valuesMap, fieldMeta) {
+        if (!fieldMeta) {
+            return '-';
+        }
+
+        const value = valuesMap?.[fieldMeta.field] ?? 0;
+
+        return formatMatrixFieldValue(fieldMeta.field, value, fieldMeta);
+    }
+
+    function normalizeMatrixValueFields(valueFields) {
+        if (valueFields?.length) {
+            return valueFields;
+        }
+
+        return [{ field: '_value', label: 'Valor', type: 'number' }];
+    }
+
+    function buildMatrixColumnGroups(competencias, valueFields) {
+        const fields = normalizeMatrixValueFields(valueFields);
+        const groups = competencias.map((comp) => ({
+            type: 'period',
+            comp,
+            columns: fields.map((fieldMeta, index) => ({
+                fieldMeta,
+                order: index + 1,
+            })),
+        }));
+
+        groups.push({
+            type: 'total',
+            label: 'Total',
+            columns: fields.map((fieldMeta, index) => ({
+                fieldMeta,
+                order: index + 1,
+            })),
+        });
+
+        return { fields, groups };
+    }
+
+    function renderMatrixTableHeaders(rowHeaderLabel, groups, multiValue, isMobile) {
+        const cellClass = isMobile ? 'px-1 py-1 text-xs' : 'px-2 py-2 text-xs';
+        let html = '<thead class="bg-gray-50 sticky top-0 z-20">';
+
+        if (multiValue) {
+            html += '<tr>';
+            html += `<th rowspan="2" class="px-3 py-2 border text-left text-sm font-medium sticky-left bg-gray-50 z-30 min-w-[200px]">${rowHeaderLabel}</th>`;
+
+            groups.forEach((group) => {
+                const topLabel = group.type === 'period' ? group.comp.label : group.label;
+                const topClass = group.type === 'total' ? ' bg-blue-50' : '';
+                html += `<th colspan="${group.columns.length}" class="${cellClass} border text-center font-medium${topClass}">${escapeHtml(topLabel)}</th>`;
+            });
+
+            html += '</tr><tr>';
+
+            groups.forEach((group) => {
+                const isTotalGroup = group.type === 'total';
+                group.columns.forEach((col, index) => {
+                    const isLastTotal = isTotalGroup && index === group.columns.length - 1;
+                    const extraClass = isTotalGroup ? ' bg-blue-50' : ' bg-gray-100/80';
+                    const stickyClass = isLastTotal ? ' sticky-right' : '';
+                    html += `<th class="${cellClass} border text-center font-medium${extraClass}${stickyClass}">${escapeHtml(`${col.order}) ${col.fieldMeta.label}`)}</th>`;
+                });
+            });
+
+            html += '</tr>';
+        } else {
+            html += '<tr>';
+            html += `<th class="px-3 py-2 border text-left text-sm font-medium sticky-left bg-gray-50 z-30 min-w-[200px]">${rowHeaderLabel}</th>`;
+
+            groups.forEach((group) => {
+                if (group.type === 'period') {
+                    html += `<th class="${cellClass} border text-center font-medium min-w-[80px]">${escapeHtml(group.comp.label)}</th>`;
+                } else {
+                    html += `<th class="${cellClass} border text-center font-medium bg-blue-50 min-w-[100px] sticky-right">${escapeHtml(group.label)}</th>`;
+                }
+            });
+
+            html += '</tr>';
+        }
+
+        html += '</thead>';
+
+        return html;
+    }
+
+    function renderMatrixDataCells(valuesByPeriod, rowTotals, groups, options = {}) {
+        const { variant = 'body' } = options;
+        let html = '';
+
+        groups.forEach((group) => {
+            const isTotalGroup = group.type === 'total';
+
+            group.columns.forEach((col, index) => {
+                const source = isTotalGroup
+                    ? rowTotals
+                    : (valuesByPeriod?.[group.comp.code] || {});
+                const formatted = formatMatrixCellValue(source, col.fieldMeta);
+                const isLastTotal = isTotalGroup && index === group.columns.length - 1;
+
+                let extraClass = '';
+                if (isTotalGroup) {
+                    const bgClass = variant === 'footer'
+                        ? (isLastTotal ? 'bg-blue-200' : 'bg-blue-100')
+                        : 'bg-blue-50';
+                    const weightClass = variant === 'footer' ? 'font-bold' : 'font-semibold';
+                    extraClass = ` ${weightClass} ${bgClass}${isLastTotal ? ' sticky-right' : ''}`;
+                }
+
+                html += `<td class="px-2 py-2 border text-xs text-center${extraClass}">${formatted}</td>`;
+            });
+        });
+
+        return html;
+    }
+
+    function countMatrixDataColumns(groups) {
+        return groups.reduce((total, group) => total + group.columns.length, 0);
     }
 
     function formatDisplayValue(value) {
@@ -85,13 +264,9 @@ const RelatoriosBase = (function () {
                 : formatBrCurrency(value);
         }
 
-        if (typeof value === 'string' && /^-?\d+(\.\d+)?$/.test(value.trim())) {
-            const num = Number(value);
-            return Number.isInteger(num)
-                ? formatBrInteger(num)
-                : formatBrCurrency(num);
-        }
-
+        // Strings de dígitos puros são CÓDIGOS (CNES, SIGTAP, CID) — preservar como
+        // texto (zeros à esquerda, sem separador de milhar). Números reais já chegam
+        // pré-formatados do servidor (capturados por isAlreadyBrFormatted acima).
         return value;
     }
 
@@ -110,6 +285,8 @@ const RelatoriosBase = (function () {
         if (resultsContainer) {
             resultsContainer.innerHTML = '';
         }
+
+        hideSqlPanel(cfg);
 
         const cancelSearch = document.getElementById(cfg.cancelSearchId);
         if (cancelSearch) {
@@ -181,6 +358,8 @@ const RelatoriosBase = (function () {
             resultsContainer.innerHTML = loadingHtml;
         }
 
+        hideSqlPanel(cfg);
+
         const cancelSearch = document.getElementById(cfg.cancelSearchId);
         if (cancelSearch) {
             cancelSearch.classList.remove('hidden');
@@ -197,7 +376,72 @@ const RelatoriosBase = (function () {
     }
 
     /**
-     * Show SQL
+     * Hide SQL panel until a report returns SQL
+     */
+    function hideSqlPanel(config = {}) {
+        const cfg = { ...defaultConfig, ...config };
+        const sqlPanel = document.getElementById(cfg.sqlPanelId);
+
+        if (sqlPanel) {
+            sqlPanel.style.display = 'none';
+        }
+    }
+
+    /**
+     * Prepare collapsible SQL panel (runs once per page)
+     */
+    function initSqlPanel(panel) {
+        if (!panel || panel.dataset.sqlCollapsible === 'true') {
+            return;
+        }
+
+        const header = panel.querySelector('h3');
+        const content = panel.querySelector('#sql-panel-content')
+            || panel.querySelector('.bg-gray-100');
+
+        if (!header || !content) {
+            return;
+        }
+
+        content.id = 'sql-panel-content';
+        content.style.display = 'none';
+        content.classList.add('mt-4');
+
+        const title = header.textContent.trim() || 'SQL Gerado';
+        header.className = 'text-lg font-medium text-gray-900 mb-0 cursor-pointer select-none flex items-center justify-between gap-3';
+        header.innerHTML = `
+            <span>${escapeHtml(title)}</span>
+            <span id="sql-panel-toggle" class="text-sm font-normal text-blue-600 whitespace-nowrap">clique para exibir</span>
+        `;
+
+        header.addEventListener('click', () => toggleSqlPanel());
+        panel.dataset.sqlCollapsible = 'true';
+    }
+
+    function toggleSqlPanel(config = {}) {
+        const cfg = { ...defaultConfig, ...config };
+        const panel = document.getElementById(cfg.sqlPanelId);
+        const content = document.getElementById('sql-panel-content');
+        const toggle = document.getElementById('sql-panel-toggle');
+
+        if (!content) {
+            return;
+        }
+
+        const isOpen = content.style.display !== 'none';
+        content.style.display = isOpen ? 'none' : 'block';
+
+        if (toggle) {
+            toggle.textContent = isOpen ? 'clique para exibir' : 'clique para ocultar';
+        }
+
+        if (panel) {
+            panel.dataset.sqlOpen = isOpen ? 'false' : 'true';
+        }
+    }
+
+    /**
+     * Show SQL (collapsed by default; click header to expand)
      */
     function showSQL(sql, bindings, config = {}) {
         const cfg = { ...defaultConfig, ...config };
@@ -209,6 +453,8 @@ const RelatoriosBase = (function () {
             return;
         }
 
+        initSqlPanel(sqlPanel);
+
         let formattedSQL = sql;
         if (bindings && bindings.length > 0) {
             formattedSQL += '\n\nBindings: ' + JSON.stringify(bindings, null, 2);
@@ -216,6 +462,19 @@ const RelatoriosBase = (function () {
 
         sqlDisplay.textContent = formattedSQL;
         sqlPanel.style.display = 'block';
+
+        const content = document.getElementById('sql-panel-content');
+        const toggle = document.getElementById('sql-panel-toggle');
+
+        if (content) {
+            content.style.display = 'none';
+        }
+
+        if (toggle) {
+            toggle.textContent = 'clique para exibir';
+        }
+
+        sqlPanel.dataset.sqlOpen = 'false';
     }
 
     /**
@@ -244,15 +503,19 @@ const RelatoriosBase = (function () {
             return;
         }
 
-        // Get headers from first row
+        // Get headers from first row. Alinha à direita apenas colunas numéricas
+        // (valores já BR-formatados pelo servidor: "1.234", "R$ ...").
         const firstRow = data.data[0];
-        const headers = Object.keys(firstRow).map(header =>
-            `<th class="px-2 py-1 border text-left text-xs font-medium">${header}</th>`
+        const keys = Object.keys(firstRow);
+        const alignRight = keys.map(k => isAlreadyBrFormatted(firstRow[k]));
+
+        const headers = keys.map((header, i) =>
+            `<th class="px-2 py-1 border ${alignRight[i] ? 'text-right' : 'text-left'} text-xs font-medium">${header}</th>`
         ).join('');
 
         const rows = data.data.map(row => {
-            const cells = Object.values(row).map(value =>
-                `<td class="px-2 py-1 border text-xs">${formatDisplayValue(value)}</td>`
+            const cells = Object.values(row).map((value, i) =>
+                `<td class="px-2 py-1 border text-xs ${alignRight[i] ? 'text-right' : 'text-left'}">${formatDisplayValue(value)}</td>`
             ).join('');
             return `<tr>${cells}</tr>`;
         }).join('');
@@ -299,139 +562,114 @@ const RelatoriosBase = (function () {
     /**
      * Render matrix results (pivot table format)
      */
-    function renderMatrixResults(matrixData, container) {
+    function resolveMatrixValueFields(matrixMeta, matrixData) {
+        if (matrixMeta?.values?.length) {
+            return matrixMeta.values;
+        }
+
+        const sampleValues = matrixData.rows?.[0]?.values
+            ? Object.values(matrixData.rows[0].values)[0]
+            : matrixData.grand_totals;
+
+        if (!sampleValues) {
+            return [];
+        }
+
+        return Object.keys(sampleValues).map((field) => ({
+            field,
+            label: field,
+            type: 'number',
+        }));
+    }
+
+    function renderMatrixResults(matrixData, container, matrixMeta = null) {
         if (!matrixData.competencias || matrixData.competencias.length === 0) {
             container.innerHTML = '<p class="text-gray-500 text-center py-8">Nenhuma competência encontrada para matriz.</p>';
             return;
         }
 
+        const metaBanner = renderMatrixMetaBanner(matrixMeta);
+        const valueFields = resolveMatrixValueFields(matrixMeta, matrixData);
+
         // Múltiplas tabelas: quebra por prestador, tipo de relatório, etc.
         if (matrixData.prestadores && Object.keys(matrixData.prestadores).length > 0) {
-            let html = '';
+            let html = metaBanner;
             const splitLabels = {
                 prd_uid: 'Prestador',
-                tipo_relatorio: 'Tipo de Relatório'
+                tipo_relatorio: 'Tipo de Relatório',
+                CNES: 'Prestador (CNES)',
             };
-            const splitLabel = splitLabels[matrixData.split_field] || 'Grupo';
+            const splitLabel = splitLabels[matrixData.split_field]
+                || matrixMeta?.split?.label
+                || 'Grupo';
 
             Object.values(matrixData.prestadores).forEach(sectionData => {
+                const sectionTitle = sectionData.nome
+                    ? `${splitLabel}: ${sectionData.nome}`
+                    : splitLabel;
+
                 html += `
                     <div class="mb-8 border-b-4 border-blue-200 pb-8 last:border-0 last:pb-0">
                         <h3 class="text-lg font-bold text-gray-800 mb-3 px-1 border-l-4 border-blue-500 pl-2">
-                            ${splitLabel}: ${sectionData.nome || 'Sem nome'}
+                            ${escapeHtml(sectionTitle)}
                         </h3>
-                        ${renderMatrixTable(sectionData)}
+                        ${renderMatrixTable(sectionData, matrixMeta, valueFields, sectionTitle)}
                     </div>
                 `;
             });
 
             container.innerHTML = html;
         } else {
-            // Standard single matrix render
-            container.innerHTML = renderMatrixTable(matrixData);
+            container.innerHTML = metaBanner + renderMatrixTable(matrixData, matrixMeta, valueFields);
         }
     }
 
     /**
      * Helper to build HTML for a single matrix table 
      */
-    function renderMatrixTable(matrixData) {
-        // Check if it's a large matrix for responsive handling
+    function renderMatrixTable(matrixData, matrixMeta = null, valueFields = [], sectionTitle = null) {
         const isLargeMatrix = matrixData.competencias.length > 12 || (matrixData.rows && matrixData.rows.length > 50);
         const isMobile = window.innerWidth < 768;
+        const rowHeaderLabel = escapeHtml(getMatrixRowHeaderLabel(matrixMeta));
+        const columnLabel = matrixMeta?.columns?.[0]?.label || 'Competência';
+        const { fields, groups } = buildMatrixColumnGroups(matrixData.competencias, valueFields);
+        const multiValue = fields.length > 1;
+        const dataColumnCount = countMatrixDataColumns(groups);
+        const sectionHint = sectionTitle
+            ? `<p class="text-xs text-gray-500 mt-1">${escapeHtml(sectionTitle)}</p>`
+            : '';
 
-        // Build matrix info and controls
         let matrixHtml = `
             <div class="mb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <p class="text-sm text-gray-600">
-                        <strong>Visualização:</strong> ${matrixData.rows ? matrixData.rows.length : 0} categorias × ${matrixData.competencias.length} competências
+                        <strong>Visualização:</strong> ${matrixData.rows ? matrixData.rows.length : 0} categorias × ${matrixData.competencias.length} ${escapeHtml(columnLabel.toLowerCase())}
                     </p>
+                    ${sectionHint}
                     ${isLargeMatrix ? '<p class="text-xs text-amber-600 mt-1">⚠️ Matriz grande - use scroll horizontal para navegar</p>' : ''}
                 </div>
             </div>
             <div class="matrix-container ${isMobile ? 'mobile-matrix' : ''}" style="max-height: 70vh; overflow: auto;">
                 <table class="min-w-full border-collapse border border-gray-300 matrix-table">
-                    <thead class="bg-gray-50 sticky top-0 z-20">
-                        <tr>
-                            <th class="px-3 py-2 border text-left text-sm font-medium sticky-left bg-gray-50 z-30 min-w-[200px]">Categoria</th>
+                    ${renderMatrixTableHeaders(rowHeaderLabel, groups, multiValue, isMobile)}
+                    <tbody>
         `;
 
-        // Add competencia headers with responsive sizing
-        matrixData.competencias.forEach(comp => {
-            const headerClass = isMobile ? 'px-1 py-2' : 'px-2 py-2';
-            const textClass = isMobile ? 'text-xs' : 'text-xs';
-            matrixHtml += `<th class="${headerClass} border text-center ${textClass} font-medium min-w-[80px]">${comp.label}</th>`;
-        });
-        matrixHtml += `<th class="px-2 py-2 border text-center text-xs font-medium bg-blue-50 min-w-[100px] sticky-right">Total</th></tr></thead><tbody>`;
-
-        // Add data rows
         if (matrixData.rows && matrixData.rows.length > 0) {
-            matrixData.rows.forEach(row => {
-                matrixHtml += `<tr class="hover:bg-gray-50">`;
+            matrixData.rows.forEach((row) => {
+                matrixHtml += '<tr class="hover:bg-gray-50">';
                 matrixHtml += `<td class="px-3 py-2 border text-sm font-medium sticky-left bg-white text-left">${row.category}</td>`;
-
-                // Add values for each competencia
-                matrixData.competencias.forEach(comp => {
-                    const values = row.values[comp.code] || {};
-                    let cellContent = '';
-
-                    // Format numeric values
-                    Object.keys(values).forEach(field => {
-                        const value = values[field] || 0;
-                        cellContent += formatMatrixFieldValue(field, value);
-                        cellContent += '<br>';
-                    });
-
-                    if (!cellContent) cellContent = '-';
-                    matrixHtml += `<td class="px-2 py-2 border text-xs text-center">${cellContent}</td>`;
-                });
-
-                // Add row total
-                let totalContent = '';
-                if (row.totals) {
-                    Object.keys(row.totals).forEach(field => {
-                        const value = row.totals[field] || 0;
-                        totalContent += formatMatrixFieldValue(field, value);
-                        totalContent += '<br>';
-                    });
-                }
-                matrixHtml += `<td class="px-2 py-2 border text-xs text-center font-semibold bg-blue-50">${totalContent || '-'}</td>`;
-                matrixHtml += `</tr>`;
+                matrixHtml += renderMatrixDataCells(row.values, row.totals, groups);
+                matrixHtml += '</tr>';
             });
         } else {
-            const colspan = matrixData.competencias.length + 2;
-            matrixHtml += `<tr><td colspan="${colspan}" class="px-3 py-4 text-center text-gray-500">Nenhum dado para este grupo</td></tr>`;
+            matrixHtml += `<tr><td colspan="${dataColumnCount + 1}" class="px-3 py-4 text-center text-gray-500">Nenhum dado para este grupo</td></tr>`;
         }
 
-        // Add totals row
-        matrixHtml += `<tr class="bg-blue-100 font-semibold">`;
-        matrixHtml += `<td class="px-3 py-2 border text-sm sticky-left bg-blue-100 text-left">Total</td>`;
-
-        matrixData.competencias.forEach(comp => {
-            const totals = matrixData.totals[comp.code] || {};
-            let totalContent = '';
-
-            Object.keys(totals).forEach(field => {
-                const value = totals[field] || 0;
-                totalContent += formatMatrixFieldValue(field, value);
-                totalContent += '<br>';
-            });
-
-            matrixHtml += `<td class="px-2 py-2 border text-xs text-center">${totalContent || '-'}</td>`;
-        });
-
-        // Grand total
-        let grandTotalContent = '';
-        if (matrixData.grand_totals) {
-            Object.keys(matrixData.grand_totals).forEach(field => {
-                const value = matrixData.grand_totals[field] || 0;
-                grandTotalContent += formatMatrixFieldValue(field, value);
-                grandTotalContent += '<br>';
-            });
-        }
-        matrixHtml += `<td class="px-2 py-2 border text-xs text-center font-bold bg-blue-200">${grandTotalContent || '-'}</td>`;
-        matrixHtml += `</tr></tbody></table></div>`;
+        matrixHtml += '<tr class="bg-blue-100 font-semibold">';
+        matrixHtml += '<td class="px-3 py-2 border text-sm sticky-left bg-blue-100 text-left">Total</td>';
+        matrixHtml += renderMatrixDataCells(matrixData.totals, matrixData.grand_totals, groups, { variant: 'footer' });
+        matrixHtml += '</tr></tbody></table></div>';
 
         // Add CSS for responsive matrix
         matrixHtml += `
@@ -497,7 +735,7 @@ const RelatoriosBase = (function () {
 
         // Check if it's matrix data
         if (data.type === 'matrix') {
-            renderMatrixResults(data.data, container);
+            renderMatrixResults(data.data, container, data.meta ?? null);
         } else {
             renderListResults(data, container);
         }

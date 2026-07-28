@@ -4,6 +4,9 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AihImportController;
 use App\Http\Controllers\CboController;
 use App\Http\Controllers\CismetroController;
+use App\Http\Controllers\EsusController;
+use App\Http\Controllers\EsusImportController;
+use App\Http\Controllers\EsusRelatorioController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PrestadorController;
 use App\Http\Controllers\PrestadorImportController;
@@ -109,6 +112,25 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
         Route::get('/relatorios/faturamento-prestador', [App\Http\Controllers\FaturamentoPrestadorController::class, 'index'])->name('faturamento-prestador.index');
         Route::post('/relatorios/faturamento-prestador/gerar', [App\Http\Controllers\FaturamentoPrestadorController::class, 'gerar'])->name('faturamento-prestador.gerar');
         Route::post('/relatorios/faturamento-prestador/pdf', [App\Http\Controllers\FaturamentoPrestadorController::class, 'exportarPdf'])->name('faturamento-prestador.pdf');
+
+        // Importação e-SUS (produção SIGTAP via API)
+        Route::get('/esus-import', [EsusImportController::class, 'create'])->name('esus.import');
+        Route::post('/esus-import', [EsusImportController::class, 'store'])->name('esus.import.store');
+        Route::get('/esus-import/preview', [EsusImportController::class, 'preview'])->name('esus.import.preview');
+        Route::post('/esus-import/apply', [EsusImportController::class, 'apply'])->name('esus.import.apply');
+
+        // Relatório e-SUS (produção SIGTAP dinâmico, sem valores)
+        Route::get('/relatorios/esus', [EsusRelatorioController::class, 'index'])->name('relatorios.esus.index');
+        Route::get('/relatorios/esus/fields', [EsusRelatorioController::class, 'getFields'])->name('relatorios.esus.fields');
+        Route::get('/relatorios/esus/lookup', [EsusRelatorioController::class, 'getLookupData'])->name('relatorios.esus.lookup');
+        Route::post('/relatorios/esus/generate', [EsusRelatorioController::class, 'generate'])->name('relatorios.esus.generate');
+        Route::post('/relatorios/esus/generate-matrix', [EsusRelatorioController::class, 'generateMatrix'])->name('relatorios.esus.generate-matrix');
+
+        // Produção e-SUS (consultar/alterar)
+        Route::get('/esus', [EsusController::class, 'index'])->name('esus.index');
+        Route::get('/esus/{esu}/edit', [EsusController::class, 'edit'])->name('esus.edit');
+        Route::match(['put', 'patch'], '/esus/{esu}', [EsusController::class, 'update'])->name('esus.update');
+        Route::delete('/esus/{esu}', [EsusController::class, 'destroy'])->name('esus.destroy');
 
         // Importação AIH (SIHD)
         Route::get('/aih-import', [AihImportController::class, 'create'])->name('aih.import');
