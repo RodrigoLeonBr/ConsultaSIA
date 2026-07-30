@@ -68,12 +68,10 @@ class EsusApiService
             throw new RuntimeException('Credenciais da API e-SUS não configuradas (ESUS_API_USER/ESUS_API_PASSWORD).');
         }
 
-        $response = Http::baseUrl($this->baseUrl)
-            ->acceptJson()
-            ->post('/auth/login', [
-                'username' => $this->username,
-                'senha' => $this->password,
-            ]);
+        $response = $this->client()->post('/auth/login', [
+            'username' => $this->username,
+            'senha' => $this->password,
+        ]);
 
         if ($response->failed()) {
             throw new RuntimeException("Login na API e-SUS falhou (HTTP {$response->status()}).");
@@ -90,8 +88,17 @@ class EsusApiService
 
     private function authorized(): PendingRequest
     {
+        return $this->client()->withToken($this->token ?? $this->login());
+    }
+
+    /**
+     * API e-SUS é intranet/local: HTTP_PROXY corporativo (Squid) quebra
+     * 127.0.0.1/localhost com 503 ERR_CONNECT_FAIL.
+     */
+    private function client(): PendingRequest
+    {
         return Http::baseUrl($this->baseUrl)
             ->acceptJson()
-            ->withToken($this->token ?? $this->login());
+            ->withOptions(['proxy' => false]);
     }
 }

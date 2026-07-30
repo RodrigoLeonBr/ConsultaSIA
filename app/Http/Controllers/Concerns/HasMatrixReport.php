@@ -102,6 +102,7 @@ trait HasMatrixReport
 
             // Transformar em estrutura pivot
             $pivotData = $this->pivotData($matrixData, $selectedFields);
+            $matrixMeta = $this->buildMatrixDisplayMeta($selectedFields);
 
             switch ($format) {
                 case 'excel':
@@ -115,6 +116,7 @@ trait HasMatrixReport
                         'success' => true,
                         'data' => $pivotData,
                         'type' => 'matrix',
+                        'meta' => $matrixMeta,
                         'sql' => $sql,
                         'bindings' => $bindings,
                     ]);
@@ -141,6 +143,49 @@ trait HasMatrixReport
     }
 
     /**
+     * Metadados de exibição da matriz (eixos e métricas na ordem selecionada)
+     *
+     * @return array{columns: array<int, array{field: string, label: string}>, rows: array<int, array{field: string, label: string}>, values: array<int, array{field: string, label: string, type: string}>, split?: array{field: string, label: string}}
+     */
+    protected function buildMatrixDisplayMeta(array $selectedFields): array
+    {
+        $pivotField = $this->getSelectedMatrixPivotFields($selectedFields)[0];
+        $splitField = $this->getMatrixSplitField($selectedFields);
+        $rowFields = $this->getMatrixRowDimensionFields($selectedFields, $pivotField, $splitField);
+
+        $mapAxisField = function (string $field): array {
+            $config = $this->getFieldConfig($field);
+
+            return [
+                'field' => $field,
+                'label' => $config['label'] ?? $field,
+            ];
+        };
+
+        $mapValueField = function (string $field): array {
+            $config = $this->getFieldConfig($field);
+
+            return [
+                'field' => $field,
+                'label' => $config['label'] ?? $field,
+                'type' => $config['type'] ?? 'number',
+            ];
+        };
+
+        $meta = [
+            'columns' => [$mapAxisField($pivotField)],
+            'rows' => array_map($mapAxisField, $rowFields),
+            'values' => array_map($mapValueField, $this->getNumericFields($selectedFields)),
+        ];
+
+        if ($splitField) {
+            $meta['split'] = $mapAxisField($splitField);
+        }
+
+        return $meta;
+    }
+
+    /**
      * Build optimized query for matrix data
      */
     protected function buildMatrixData($selectedFields, $filters)
@@ -164,7 +209,7 @@ trait HasMatrixReport
 
         foreach ($selectedFields as $field) {
             $fieldConfig = $this->getFieldConfig($field);
-            if ($fieldConfig && $fieldConfig['type'] === 'lookup') {
+            if ($fieldConfig && $fieldConfig['type'] === 'lookup' && ! isset($fieldConfig['lookup_static'])) {
                 $joinKey = $fieldConfig['lookup_table'];
                 if (! in_array($joinKey, $joins)) {
                     $this->addMatrixJoin($query, $field, $fieldConfig, $tableAlias, $joins);

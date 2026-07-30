@@ -882,7 +882,7 @@ class RelatorioAihController extends BaseRelatorioController
             'PROC_PRINCIPAL' => ($item->PROC_PRINCIPAL ?? '').'|'.($item->PROC_PRINCIPAL_display ?? ''),
             'FINANCIAMENTO' => ($item->FINANCIAMENTO ?? '').'|'.($item->FINANCIAMENTO_display ?? ''),
             'CARATER_INTERNACAO' => ($item->CARATER_INTERNACAO ?? '').'|'.($item->CARATER_INTERNACAO_display ?? ''),
-            default => parent::getGroupKeyPart($item, $field),
+            default => $item->{$field} ?? '',
         };
     }
 

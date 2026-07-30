@@ -87,8 +87,22 @@ trait HasSusPaulistaReport
                 DB::raw('spaul.codigo COLLATE utf8mb4_unicode_ci')
             )
                 ->where('spaul.modalidade', '=', $modalidade)
-                ->whereRaw("spaul.competencia_inicial COLLATE utf8mb4_unicode_ci <= {$tableAlias}.{$competenciaField} COLLATE utf8mb4_unicode_ci")
-                ->whereRaw("spaul.competencia_final COLLATE utf8mb4_unicode_ci >= {$tableAlias}.{$competenciaField} COLLATE utf8mb4_unicode_ci");
+                ->whereRaw(
+                    "spaul.competencia_inicial = (
+                        SELECT COALESCE(
+                            MAX(CASE
+                                WHEN s2.competencia_inicial COLLATE utf8mb4_unicode_ci <= {$tableAlias}.{$competenciaField} COLLATE utf8mb4_unicode_ci
+                                 AND s2.competencia_final   COLLATE utf8mb4_unicode_ci >= {$tableAlias}.{$competenciaField} COLLATE utf8mb4_unicode_ci
+                                THEN s2.competencia_inicial
+                            END),
+                            MIN(s2.competencia_inicial)
+                        )
+                        FROM sus_paulista s2
+                        WHERE s2.codigo COLLATE utf8mb4_unicode_ci = {$tableAlias}.{$procedimentoField} COLLATE utf8mb4_unicode_ci
+                          AND s2.modalidade = ?
+                    )",
+                    [$modalidade]
+                );
         };
 
         if ($this->hasSusPaulistaOnlyFilter($filters)) {
@@ -165,22 +179,22 @@ trait HasSusPaulistaReport
         return match ($field) {
             'sus_paulista_tab' => [
                 'Tab Paulista - Valor Unitário' => $row->sus_paulista_tab
-                    ? 'R$ ' . number_format((float) $row->sus_paulista_tab, 2, ',', '.')
+                    ? 'R$ '.number_format((float) $row->sus_paulista_tab, 2, ',', '.')
                     : 'R$ 0,00',
             ],
             'sus_paulista_tab_total' => [
                 'Tab Paulista - Valor Total' => $row->sus_paulista_tab_total
-                    ? 'R$ ' . number_format((float) $row->sus_paulista_tab_total, 2, ',', '.')
+                    ? 'R$ '.number_format((float) $row->sus_paulista_tab_total, 2, ',', '.')
                     : 'R$ 0,00',
             ],
             'sus_paulista_tsp' => [
                 'Compl. TSP - Valor Unitário' => $row->sus_paulista_tsp
-                    ? 'R$ ' . number_format((float) $row->sus_paulista_tsp, 2, ',', '.')
+                    ? 'R$ '.number_format((float) $row->sus_paulista_tsp, 2, ',', '.')
                     : 'R$ 0,00',
             ],
             'sus_paulista_tsp_total' => [
                 'Compl. TSP - Valor Total' => $row->sus_paulista_tsp_total
-                    ? 'R$ ' . number_format((float) $row->sus_paulista_tsp_total, 2, ',', '.')
+                    ? 'R$ '.number_format((float) $row->sus_paulista_tsp_total, 2, ',', '.')
                     : 'R$ 0,00',
             ],
             default => null,
@@ -191,12 +205,12 @@ trait HasSusPaulistaReport
     {
         if (in_array('sus_paulista_tab_total', $selectedFields, true)) {
             $total = $data->sum(fn ($item) => $item->sus_paulista_tab_total ?? 0);
-            $totals['Tab Paulista - Valor Total'] = 'R$ ' . number_format((float) $total, 2, ',', '.');
+            $totals['Tab Paulista - Valor Total'] = 'R$ '.number_format((float) $total, 2, ',', '.');
         }
 
         if (in_array('sus_paulista_tsp_total', $selectedFields, true)) {
             $total = $data->sum(fn ($item) => $item->sus_paulista_tsp_total ?? 0);
-            $totals['Compl. TSP - Valor Total'] = 'R$ ' . number_format((float) $total, 2, ',', '.');
+            $totals['Compl. TSP - Valor Total'] = 'R$ '.number_format((float) $total, 2, ',', '.');
         }
     }
 

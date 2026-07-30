@@ -801,7 +801,7 @@ class RelatorioAihPaController extends BaseRelatorioController
             'CBO_PROFISSIONAL' => ($item->CBO_PROFISSIONAL ?? '').'|'.($item->CBO_PROFISSIONAL_display ?? ''),
             'FINANCIAMENTO_DETALHE' => ($item->FINANCIAMENTO_DETALHE ?? '').'|'.($item->FINANCIAMENTO_DETALHE_display ?? ''),
             'DIAG_PRINCIPAL' => $item->DIAG_PRINCIPAL ?? '',
-            default => parent::getGroupKeyPart($item, $field),
+            default => $item->{$field} ?? '',
         };
     }
 

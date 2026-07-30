@@ -129,4 +129,81 @@ class RelatorioAihFieldsTest extends TestCase
         $response->assertOk();
         $response->assertJsonFragment(['value' => '02', 'label' => '02 — Urgência']);
     }
+
+    public function test_matrix_report_with_static_lookup_field_does_not_error(): void
+    {
+        DB::table('s_aih')->insert([
+            ['AIH' => '1', 'CNES' => '2082179', 'COMPETENCIA' => '202601', 'CARATER_INTERNACAO' => '01', 'VALOR_TOTAL_AIH' => 10],
+            ['AIH' => '2', 'CNES' => '2082179', 'COMPETENCIA' => '202602', 'CARATER_INTERNACAO' => '02', 'VALOR_TOTAL_AIH' => 20],
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson(route('relatorios.aih.generate-matrix'), [
+            'fields' => ['COMPETENCIA', 'CARATER_INTERNACAO', 'qtd_aih'],
+            'filters' => [],
+            'format' => 'html',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('type', 'matrix');
+    }
+
+    public function test_sus_paulista_fallback_to_earliest_period_when_no_exact_match(): void
+    {
+        // Procedure only available from 202602 in sus_paulista
+        DB::table('sus_paulista')->insert([
+            'codigo' => '0999999999',
+            'modalidade' => 'sih',
+            'competencia_inicial' => '202602',
+            'competencia_final' => '999999',
+            'tab_paulista' => '100.00',
+            'complementacao_tsp' => '10.00',
+        ]);
+
+        DB::table('s_aih')->insert([
+            'AIH' => '9999000001',
+            'IDENT_AIH' => '01',
+            'CNES' => '2082179',
+            'COMPETENCIA' => '202501', // before 202602 — no exact match in sus_paulista
+            'PROC_PRINCIPAL' => '0999999999',
+            'VALOR_TOTAL_AIH' => 500,
+        ]);
+
+        $controller = new RelatorioAihController;
+        $method = new \ReflectionMethod($controller, 'buildQuery');
+        $method->setAccessible(true);
+
+        $query = $method->invoke(
+            $controller,
+            ['sus_paulista_tab_total'],
+            [['field' => 'COMPETENCIA', 'operator' => '=', 'value' => '202501'],
+                ['field' => 'CNES', 'operator' => '=', 'value' => '2082179']]
+        );
+
+        $rows = $query->get();
+
+        $this->assertCount(1, $rows);
+        $this->assertSame(100.0, (float) $rows[0]->sus_paulista_tab_total);
+    }
+
+    public function test_matrix_report_with_carater_resumo_field_does_not_error(): void
+    {
+        DB::table('s_aih')->insert([
+            ['AIH' => '1', 'CNES' => '2082179', 'COMPETENCIA' => '202601', 'CARATER_INTERNACAO' => '03', 'VALOR_TOTAL_AIH' => 10],
+            ['AIH' => '2', 'CNES' => '2082179', 'COMPETENCIA' => '202602', 'CARATER_INTERNACAO' => '01', 'VALOR_TOTAL_AIH' => 20],
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson(route('relatorios.aih.generate-matrix'), [
+            'fields' => ['COMPETENCIA', 'carater_internacao_resumo', 'qtd_aih'],
+            'filters' => [['field' => 'COMPETENCIA', 'operator' => '>=', 'value' => '202601']],
+            'format' => 'html',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('type', 'matrix')
+            ->assertJsonStructure(['data' => ['rows', 'competencias', 'totals']])
+            ->assertJsonPath('meta.columns.0.field', 'COMPETENCIA')
+            ->assertJsonPath('meta.rows.0.field', 'carater_internacao_resumo')
+            ->assertJsonPath('meta.values.0.field', 'qtd_aih');
+    }
 }
