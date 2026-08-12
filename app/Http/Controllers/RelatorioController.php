@@ -47,6 +47,12 @@ class RelatorioController extends BaseRelatorioController
                 'table' => 's_prd',
                 'operators' => ['=', '>=', '<=', 'between'],
             ],
+            'ano_competencia' => [
+                'label' => 'Ano Competência',
+                'type' => 'text',
+                'table' => 's_prd',
+                'operators' => ['=', '>=', '<=', 'between', 'in'],
+            ],
             'prd_mvm' => [
                 'label' => 'Data Movimento',
                 'type' => 'date',
@@ -114,6 +120,12 @@ class RelatorioController extends BaseRelatorioController
                 'lookup_key' => 'RUB_ID',
                 'lookup_display' => 'RUB_DC',
                 'operators' => ['=', 'in'],
+            ],
+            'PRD_ORG' => [
+                'label' => 'Origem',
+                'type' => 'text',
+                'table' => 's_prd',
+                'operators' => ['=', 'like', 'starts_with', 'in'],
             ],
             'PRD_CIDPRI' => [
                 'label' => 'CID Principal',
@@ -487,6 +499,11 @@ class RelatorioController extends BaseRelatorioController
                     // Format competencia as YYYY-MM
                     $selectFields[] = DB::raw("CONCAT(SUBSTRING(sp.prd_cmp, 1, 4), '-', SUBSTRING(sp.prd_cmp, 5, 2)) as competencia");
                     $groupByFields[] = 'sp.prd_cmp';
+                } elseif ($field === 'ano_competencia') {
+                    $selectFields[] = DB::raw('SUBSTRING(sp.prd_cmp, 1, 4) as ano_competencia');
+                    if (! in_array('prd_cmp', $selectedFields, true)) {
+                        $groupByFields[] = DB::raw('SUBSTRING(sp.prd_cmp, 1, 4)');
+                    }
                 } elseif ($field === 'prd_mvm') {
                     $selectFields[] = DB::raw("CONCAT(SUBSTRING(sp.prd_mvm, 1, 4), '-', SUBSTRING(sp.prd_mvm, 5, 2)) as movimento");
                     $groupByFields[] = 'sp.prd_mvm';
@@ -661,6 +678,33 @@ class RelatorioController extends BaseRelatorioController
             return;
         }
 
+        if ($field === 'ano_competencia') {
+            $expr = DB::raw('SUBSTRING(sp.prd_cmp, 1, 4)');
+            switch ($operator) {
+                case '=':
+                    $query->where($expr, '=', $value);
+                    break;
+                case '>=':
+                    $query->where($expr, '>=', $value);
+                    break;
+                case '<=':
+                    $query->where($expr, '<=', $value);
+                    break;
+                case 'between':
+                    if (is_array($value) && count($value) === 2) {
+                        $query->whereBetween($expr, $value);
+                    }
+                    break;
+                case 'in':
+                    if (is_array($value)) {
+                        $query->whereIn($expr, $value);
+                    }
+                    break;
+            }
+
+            return;
+        }
+
         if ($field === 'filter_sus_paulista') {
             return;
         }
@@ -801,6 +845,8 @@ class RelatorioController extends BaseRelatorioController
                     $formatted['Valor Total'] = 'R$ '.number_format((float) ($row->total_valor ?? 0), 2, ',', '.');
                 } elseif ($field === 'prd_cmp') {
                     $formatted['Data Competência'] = $row->competencia ?? '';
+                } elseif ($field === 'ano_competencia') {
+                    $formatted['Ano Competência'] = $row->ano_competencia ?? '';
                 } elseif ($field === 'prd_mvm') {
                     $formatted['Data Movimento'] = $row->movimento ?? '';
                 } elseif (in_array($field, $this->getFaixaEtariaFieldIds(), true)) {
@@ -932,6 +978,9 @@ class RelatorioController extends BaseRelatorioController
             $selectFields[] = 'sr.RUB_DC as rubrica_nome';
             $groupByFields[] = "{$tableAlias}.PRD_RUB";
             $groupByFields[] = 'sr.RUB_DC';
+        } elseif ($field === 'ano_competencia') {
+            $selectFields[] = DB::raw("SUBSTRING({$tableAlias}.prd_cmp, 1, 4) as ano_competencia");
+            $groupByFields[] = DB::raw("SUBSTRING({$tableAlias}.prd_cmp, 1, 4)");
         } elseif ($field === 'cismetro_descricao') {
             $selectFields[] = "{$tableAlias}.prd_pa as cismetro_codigo";
             $selectFields[] = 'cs.descricao as cismetro_descricao';
@@ -1004,6 +1053,8 @@ class RelatorioController extends BaseRelatorioController
             return ($item->cbo_codigo ?? '').'|'.($item->cbo_nome ?? '');
         } elseif ($field === 'PRD_RUB') {
             return ($item->rubrica_codigo ?? '').'|'.($item->rubrica_nome ?? '');
+        } elseif ($field === 'ano_competencia') {
+            return $item->ano_competencia ?? '';
         } elseif ($field === 'cismetro_descricao') {
             return ($item->cismetro_codigo ?? '').'|'.($item->cismetro_descricao ?? '');
         } elseif (in_array($field, $this->getFormaFieldIds(), true)) {
