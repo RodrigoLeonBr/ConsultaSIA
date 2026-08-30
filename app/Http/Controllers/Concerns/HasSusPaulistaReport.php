@@ -81,24 +81,28 @@ trait HasSusPaulistaReport
         $modalidade = $this->getSusPaulistaModalidade();
 
         $callback = function ($join) use ($tableAlias, $procedimentoField, $competenciaField, $modalidade) {
+            // COLLATE apenas no lado da tabela base (utf8mb4_general_ci). As colunas
+            // de sus_paulista (utf8mb4_unicode_ci) ficam nativas para que o índice
+            // unique (codigo, modalidade, competencia_inicial) seja usado — senão o
+            // COLLATE nos dois lados força full scan da sus_paulista por linha.
             $join->on(
                 DB::raw("{$tableAlias}.{$procedimentoField} COLLATE utf8mb4_unicode_ci"),
                 '=',
-                DB::raw('spaul.codigo COLLATE utf8mb4_unicode_ci')
+                DB::raw('spaul.codigo')
             )
                 ->where('spaul.modalidade', '=', $modalidade)
                 ->whereRaw(
                     "spaul.competencia_inicial = (
                         SELECT COALESCE(
                             MAX(CASE
-                                WHEN s2.competencia_inicial COLLATE utf8mb4_unicode_ci <= {$tableAlias}.{$competenciaField} COLLATE utf8mb4_unicode_ci
-                                 AND s2.competencia_final   COLLATE utf8mb4_unicode_ci >= {$tableAlias}.{$competenciaField} COLLATE utf8mb4_unicode_ci
+                                WHEN s2.competencia_inicial <= {$tableAlias}.{$competenciaField} COLLATE utf8mb4_unicode_ci
+                                 AND s2.competencia_final   >= {$tableAlias}.{$competenciaField} COLLATE utf8mb4_unicode_ci
                                 THEN s2.competencia_inicial
                             END),
                             MIN(s2.competencia_inicial)
                         )
                         FROM sus_paulista s2
-                        WHERE s2.codigo COLLATE utf8mb4_unicode_ci = {$tableAlias}.{$procedimentoField} COLLATE utf8mb4_unicode_ci
+                        WHERE s2.codigo = {$tableAlias}.{$procedimentoField} COLLATE utf8mb4_unicode_ci
                           AND s2.modalidade = ?
                     )",
                     [$modalidade]

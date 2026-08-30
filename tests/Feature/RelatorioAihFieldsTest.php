@@ -204,6 +204,39 @@ class RelatorioAihFieldsTest extends TestCase
         $this->assertSame(100.0, (float) $rows[0]->sus_paulista_tab_total);
     }
 
+    public function test_sus_paulista_matches_period_window_containing_competencia(): void
+    {
+        DB::table('sus_paulista')->insert([
+            ['codigo' => '0888888888', 'modalidade' => 'sih', 'competencia_inicial' => '202401', 'competencia_final' => '202512', 'tab_paulista' => '100.00', 'complementacao_tsp' => '10.00'],
+            ['codigo' => '0888888888', 'modalidade' => 'sih', 'competencia_inicial' => '202601', 'competencia_final' => '999999', 'tab_paulista' => '200.00', 'complementacao_tsp' => '20.00'],
+        ]);
+
+        DB::table('s_aih')->insert([
+            'AIH' => '9999000002',
+            'IDENT_AIH' => '01',
+            'CNES' => '2082179',
+            'COMPETENCIA' => '202603', // inside second window
+            'PROC_PRINCIPAL' => '0888888888',
+            'VALOR_TOTAL_AIH' => 500,
+        ]);
+
+        $controller = new RelatorioAihController;
+        $method = new \ReflectionMethod($controller, 'buildQuery');
+        $method->setAccessible(true);
+
+        $query = $method->invoke(
+            $controller,
+            ['sus_paulista_tab_total'],
+            [['field' => 'COMPETENCIA', 'operator' => '=', 'value' => '202603'],
+                ['field' => 'CNES', 'operator' => '=', 'value' => '2082179']]
+        );
+
+        $rows = $query->get();
+
+        $this->assertCount(1, $rows);
+        $this->assertSame(200.0, (float) $rows[0]->sus_paulista_tab_total);
+    }
+
     public function test_matrix_report_with_carater_resumo_field_does_not_error(): void
     {
         DB::table('s_aih')->insert([
