@@ -798,10 +798,22 @@ const RelatoriosBase = (function () {
             if (errorData.error) {
                 message = errorData.error;
             }
+            if (/max_statement_time exceeded/i.test(message)) {
+                message = 'Tempo de execução excedido (timeout). A consulta é muito '
+                    + 'pesada. Veja o SQL gerado abaixo.';
+            }
             sql = errorData.sql ?? null;
             bindings = errorData.bindings ?? null;
         } catch (e) {
-            // resposta não-JSON
+            // Resposta não-JSON = erro fatal (ex.: timeout de execução). O SQL não
+            // volta nesse caso; fica registrado no log do servidor (laravel.log).
+            if (/Maximum execution time/i.test(errorText)) {
+                message = 'Tempo de execução excedido (timeout). A consulta é muito '
+                    + 'pesada. O SQL gerado foi registrado no log do servidor.';
+            } else {
+                message = `Erro do servidor: ${response.status}. `
+                    + 'O SQL gerado foi registrado no log do servidor.';
+            }
         }
 
         return { message, sql, bindings };

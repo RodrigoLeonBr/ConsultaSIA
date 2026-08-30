@@ -148,6 +148,24 @@ class RelatorioAihFieldsTest extends TestCase
             ->assertJsonPath('type', 'matrix');
     }
 
+    public function test_matrix_report_with_procedimento_lookup_field_does_not_error(): void
+    {
+        DB::table('s_aih')->insert([
+            ['AIH' => '1', 'CNES' => '2082179', 'COMPETENCIA' => '202601', 'PROC_PRINCIPAL' => '0303010010', 'VALOR_TOTAL_AIH' => 10],
+            ['AIH' => '2', 'CNES' => '2082179', 'COMPETENCIA' => '202602', 'PROC_PRINCIPAL' => '0303010010', 'VALOR_TOTAL_AIH' => 20],
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson(route('relatorios.aih.generate-matrix'), [
+            'fields' => ['COMPETENCIA', 'PROC_PRINCIPAL', 'qtd_aih'],
+            'filters' => [],
+            'format' => 'html',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('type', 'matrix');
+    }
+
     public function test_sus_paulista_fallback_to_earliest_period_when_no_exact_match(): void
     {
         // Procedure only available from 202602 in sus_paulista

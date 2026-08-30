@@ -87,8 +87,17 @@ abstract class BaseRelatorioController extends Controller
             $sql = $query->toSql();
             $bindings = $query->getBindings();
 
+            // Log antes de executar: um timeout (fatal error) não é capturado pelo
+            // catch abaixo e mata a request com página HTML, sem retornar o SQL.
+            // Logar aqui garante que o SQL gerado fique registrado mesmo nesse caso.
+            \Log::info('SQL do relatório gerado', [
+                'sql' => $sql,
+                'bindings' => $bindings,
+            ]);
+
             // Execute query
             try {
+                $this->applyReportStatementTimeout();
                 $data = $query->get();
             } catch (\Exception $queryException) {
                 \Log::error('Erro ao executar SQL do relatório: '.$queryException->getMessage(), [
@@ -122,6 +131,8 @@ abstract class BaseRelatorioController extends Controller
                         'fields' => $selectedFields,
                         'total' => $data->count(),
                         'totals' => $totals,
+                        'sql' => $sql,
+                        'bindings' => $bindings,
                     ]);
             }
         } catch (\Exception $e) {
@@ -134,6 +145,24 @@ abstract class BaseRelatorioController extends Controller
                 'error' => 'Erro ao gerar relatório: '.$e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Segundos até o MariaDB abortar a query do relatório.
+     * Mantido abaixo do max_execution_time do PHP para que o abort venha
+     * do banco (exceção capturável) e não como fatal error do PHP.
+     */
+    protected int $reportStatementTimeout = 45;
+
+    /**
+     * Faz o MariaDB abortar a query pesada antes do fatal do PHP.
+     * Assim o timeout vira exceção capturável e o SQL volta pro frontend
+     * em vez de morrer numa página HTML sem o SQL gerado.
+     */
+    protected function applyReportStatementTimeout(): void
+    {
+        set_time_limit($this->reportStatementTimeout + 15);
+        DB::statement('SET SESSION max_statement_time = '.$this->reportStatementTimeout);
     }
 
     /**

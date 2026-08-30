@@ -309,6 +309,7 @@ trait HasMatrixReport
         $sql = $query->toSql();
         $bindings = $query->getBindings();
 
+        $this->applyReportStatementTimeout();
         $data = $query->get();
 
         // Retornar dados, SQL e bindings

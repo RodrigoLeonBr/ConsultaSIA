@@ -803,8 +803,8 @@ class RelatorioAihController extends BaseRelatorioController
                 'groupBy' => [DB::raw('('.AihCaraterInternacao::sqlResumoExpression().')')],
             ],
             $field === 'PROC_PRINCIPAL' => [
-                'select' => ['sa.PROC_PRINCIPAL', 'proc.procedimento as PROC_PRINCIPAL_display'],
-                'groupBy' => ['sa.PROC_PRINCIPAL', 'proc.procedimento'],
+                'select' => ['sa.PROC_PRINCIPAL', 'pc.procedimento as PROC_PRINCIPAL_display'],
+                'groupBy' => ['sa.PROC_PRINCIPAL', 'pc.procedimento'],
             ],
             $field === 'FINANCIAMENTO' => [
                 'select' => ['sa.FINANCIAMENTO', 'sr.RUB_DC as FINANCIAMENTO_display'],
