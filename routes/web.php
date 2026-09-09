@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AihImportController;
 use App\Http\Controllers\CboController;
 use App\Http\Controllers\CismetroController;
+use App\Http\Controllers\CismetroImportController;
 use App\Http\Controllers\EsusController;
 use App\Http\Controllers\EsusImportController;
 use App\Http\Controllers\EsusRelatorioController;
@@ -73,6 +74,10 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
         Route::post('/procedimento-import/tu/apply', [ProcedimentoImportController::class, 'applyTu'])->name('procedimento.import.tu.apply');
         Route::resource('srub', SRubController::class);
         Route::resource('cismetro', CismetroController::class);
+        Route::get('/cismetro-import', [CismetroImportController::class, 'create'])->name('cismetro.import');
+        Route::post('/cismetro-import', [CismetroImportController::class, 'store'])->name('cismetro.import.store');
+        Route::get('/cismetro-import/preview', [CismetroImportController::class, 'preview'])->name('cismetro.import.preview');
+        Route::post('/cismetro-import/apply', [CismetroImportController::class, 'apply'])->name('cismetro.import.apply');
         Route::get('/sus-paulista', [SusPaulistaController::class, 'index'])->name('sus-paulista.index');
         Route::get('/sus-paulista-import', [SusPaulistaImportController::class, 'create'])->name('sus-paulista.import');
         Route::post('/sus-paulista-import', [SusPaulistaImportController::class, 'store'])->name('sus-paulista.import.store');

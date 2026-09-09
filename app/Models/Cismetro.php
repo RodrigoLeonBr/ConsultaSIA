@@ -4,11 +4,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cismetro extends Model
 {
+    use HasFactory;
+
     public const TIPO_INDEFINIDO = 0;
 
     public const TIPO_MUNICIPIO = 1;
@@ -50,6 +53,8 @@ class Cismetro extends Model
         'descricao',
         'valor',
         'tipo_valor',
+        'competencia_inicial',
+        'competencia_final',
     ];
 
     /**
@@ -61,6 +66,15 @@ class Cismetro extends Model
             'valor' => 'decimal:2',
             'tipo_valor' => 'integer',
         ];
+    }
+
+    /**
+     * Scope: procedimentos vigentes numa competência (AAAAMM).
+     */
+    public function scopeVigente(\Illuminate\Database\Eloquent\Builder $query, string $competencia): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('competencia_inicial', '<=', $competencia)
+            ->where('competencia_final', '>=', $competencia);
     }
 
     /**
