@@ -133,4 +133,27 @@ class RelatorioQuadrimestralTest extends TestCase
         // total da seção = 33 (CDS de 7 descartado)
         $this->assertSame(33, $secao['total']);
     }
+
+    public function test_rota_index_exige_auth(): void
+    {
+        $this->get(route('relatorios.quadrimestral.index'))->assertRedirect(route('login'));
+    }
+
+    public function test_gerar_renderiza_secoes(): void
+    {
+        $this->seedTresFontes();
+
+        $this->actingAs($this->createReportTestUser())
+            ->post(route('relatorios.quadrimestral.gerar'), ['ano' => 2026, 'quadrimestre' => 1])
+            ->assertOk()
+            ->assertSee('ATENCAO BASICA')
+            ->assertSee('data-node-id="pe:0301100209:2048205"', false);
+    }
+
+    public function test_gerar_valida_quadrimestre(): void
+    {
+        $this->actingAs($this->createReportTestUser())
+            ->post(route('relatorios.quadrimestral.gerar'), ['ano' => 2026, 'quadrimestre' => 9])
+            ->assertSessionHasErrors('quadrimestre');
+    }
 }

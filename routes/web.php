@@ -16,6 +16,7 @@ use App\Http\Controllers\ProcedimentoImportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RelatorioAihController;
 use App\Http\Controllers\RelatorioAihPaController;
+use App\Http\Controllers\RelatorioQuadrimestralController;
 use App\Http\Controllers\SApaController;
 use App\Http\Controllers\SPapController;
 use App\Http\Controllers\SRubController;
@@ -156,6 +157,10 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
         Route::get('/relatorios/aih-pa/lookup', [RelatorioAihPaController::class, 'getLookupData'])->name('relatorios.aih-pa.lookup');
         Route::post('/relatorios/aih-pa/generate', [RelatorioAihPaController::class, 'generate'])->name('relatorios.aih-pa.generate');
         Route::post('/relatorios/aih-pa/generate-matrix', [RelatorioAihPaController::class, 'generateMatrix'])->name('relatorios.aih-pa.generate-matrix');
+
+        // Relatório Produção Quadrimestral
+        Route::get('/relatorios/quadrimestral', [RelatorioQuadrimestralController::class, 'index'])->name('relatorios.quadrimestral.index');
+        Route::post('/relatorios/quadrimestral/gerar', [RelatorioQuadrimestralController::class, 'gerar'])->name('relatorios.quadrimestral.gerar');
 
         // Additional custom routes if needed
         Route::patch('/prestador/{prestador}/toggle-status', [PrestadorController::class, 'toggleStatus'])->name('prestador.toggle-status');
