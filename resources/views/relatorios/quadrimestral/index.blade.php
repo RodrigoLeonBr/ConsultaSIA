@@ -32,6 +32,14 @@
             @endforeach
         </select>
     </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Visão</label>
+        <select name="modo" class="border border-gray-300 rounded-lg px-3 py-2">
+            @foreach($visoes as $v => $l)
+                <option value="{{ $v }}" @selected(($resultado['modo'] ?? 'meses') === $v)>{{ $l }}</option>
+            @endforeach
+        </select>
+    </div>
     <button type="submit" class="bg-blue-600 text-white rounded-lg px-4 py-2 font-medium hover:bg-blue-700">Aplicar</button>
 </form>
 
@@ -44,10 +52,12 @@
                     <thead>
                         <tr>
                             <th data-col-key="dim">Subgrupo / Forma / Procedimento / Prestador</th>
-                            @foreach($resultado['meses'] as $m)
-                                <th class="numeric" data-col-key="m{{ $loop->index }}" data-tipo="numero">{{ $m }}</th>
+                            @foreach($resultado['colunas'] as $m)
+                                <th class="numeric" data-col-key="c{{ $loop->index }}" data-tipo="numero">{{ $m }}</th>
                             @endforeach
-                            <th class="numeric" data-col-key="total" data-tipo="numero">Total</th>
+                            @if($resultado['mostra_total'])
+                                <th class="numeric" data-col-key="total" data-tipo="numero">Total</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -67,20 +77,24 @@
                                         <span>{{ $no['cod'] }} · {{ $no['desc'] }}</span>
                                     </div>
                                 </td>
-                                @foreach($no['meses'] as $q)
+                                @foreach($no['valores'] as $q)
                                     <td class="numeric">{{ number_format($q, 0, ',', '.') }}</td>
                                 @endforeach
-                                <td class="numeric">{{ number_format($no['total'], 0, ',', '.') }}</td>
+                                @if($resultado['mostra_total'])
+                                    <td class="numeric">{{ number_format($no['total'], 0, ',', '.') }}</td>
+                                @endif
                             </tr>
                         @endforeach
                     </tbody>
                     <tfoot>
                         <tr class="row-subtotal">
                             <td>Total do tipo</td>
-                            @foreach($secao['total_meses'] as $q)
+                            @foreach($secao['total_valores'] as $q)
                                 <td class="numeric">{{ number_format($q, 0, ',', '.') }}</td>
                             @endforeach
-                            <td class="numeric">{{ number_format($secao['total'], 0, ',', '.') }}</td>
+                            @if($resultado['mostra_total'])
+                                <td class="numeric">{{ number_format($secao['total'], 0, ',', '.') }}</td>
+                            @endif
                         </tr>
                     </tfoot>
                 </table>

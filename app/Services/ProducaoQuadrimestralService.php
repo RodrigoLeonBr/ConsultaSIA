@@ -39,22 +39,22 @@ class ProducaoQuadrimestralService
 
     /**
      * @param  iterable<int,object>  $linhas  linhas cruas (ver convenção do plano)
-     * @param  array<int,string>  $competencias  YYYYMM na ordem das colunas
-     * @return array<int,array{tipo:string,linhas:array<int,array<string,mixed>>,total_meses:array<int,int>,total:int}>
+     * @param  array<string,int>  $colMap  competência YYYYMM => índice da coluna (0..N-1)
+     * @return array<int,array{tipo:string,linhas:array<int,array<string,mixed>>,total_valores:array<int,int>,total:int}>
      */
-    public function montarSecoes(iterable $linhas, array $competencias): array
+    public function montarSecoes(iterable $linhas, array $colMap): array
     {
-        $col = array_flip(array_values($competencias));
+        $numCols = $colMap ? max($colMap) + 1 : 0;
         $tipos = [];
 
         foreach ($linhas as $l) {
-            if (! isset($col[$l->competencia])) {
+            if (! isset($colMap[$l->competencia])) {
                 continue;
             }
-            $i = $col[$l->competencia];
+            $i = $colMap[$l->competencia];
             $q = (int) $l->qtd;
             $tipo = $l->tipo_relatorio;
-            $tipos[$tipo] ??= ['tipo' => $tipo, 'nodes' => [], 'total_meses' => [0, 0, 0, 0], 'total' => 0];
+            $tipos[$tipo] ??= ['tipo' => $tipo, 'nodes' => [], 'total_valores' => array_fill(0, $numCols, 0), 'total' => 0];
 
             $niveis = [
                 [0, 'sg:'.$l->subgrupo_cod, '', $l->subgrupo_cod, $l->subgrupo_desc],
@@ -68,14 +68,14 @@ class ProducaoQuadrimestralService
                     $tipos[$tipo]['nodes'][$id] = [
                         'node_id' => $id, 'parent_id' => $parent, 'level' => $level,
                         'cod' => (string) $cod, 'desc' => (string) $desc, 'has_children' => $level < 3,
-                        'meses' => [0, 0, 0, 0], 'total' => 0,
+                        'valores' => array_fill(0, $numCols, 0), 'total' => 0,
                     ];
                 }
-                $tipos[$tipo]['nodes'][$id]['meses'][$i] += $q;
+                $tipos[$tipo]['nodes'][$id]['valores'][$i] += $q;
                 $tipos[$tipo]['nodes'][$id]['total'] += $q;
             }
 
-            $tipos[$tipo]['total_meses'][$i] += $q;
+            $tipos[$tipo]['total_valores'][$i] += $q;
             $tipos[$tipo]['total'] += $q;
         }
 
@@ -86,7 +86,7 @@ class ProducaoQuadrimestralService
             $secoes[] = [
                 'tipo' => $t['tipo'],
                 'linhas' => $this->linearizar($t['nodes']),
-                'total_meses' => $t['total_meses'],
+                'total_valores' => $t['total_valores'],
                 'total' => $t['total'],
             ];
         }
@@ -124,11 +124,29 @@ class ProducaoQuadrimestralService
     }
 
     /**
-     * @return array{secoes:array<int,mixed>,meses:array<int,string>,competencias:array<int,string>,ano:int,quadrimestre:int}
+     * @param  string  $modo  'meses' (4 meses do quadrimestre + total) ou 'anos' (mesmo quadrimestre em 4 anos, ano-3..ano)
+     * @return array{secoes:array<int,mixed>,colunas:array<int,string>,mostra_total:bool,modo:string,competencias:array<int,string>,ano:int,quadrimestre:int}
      */
-    public function gerar(int $ano, int $quadrimestre): array
+    public function gerar(int $ano, int $quadrimestre, string $modo = 'meses'): array
     {
-        $comps = $this->competencias($ano, $quadrimestre);
+        if ($modo === 'anos') {
+            $comps = [];
+            $colMap = [];
+            foreach (range($ano - 3, $ano) as $idx => $a) { // antigo → recente
+                foreach ($this->competencias($a, $quadrimestre) as $c) {
+                    $comps[] = $c;
+                    $colMap[$c] = $idx;
+                }
+            }
+            $colunas = array_map('strval', range($ano - 3, $ano));
+            $mostraTotal = false;
+        } else {
+            $comps = $this->competencias($ano, $quadrimestre);
+            $colMap = array_flip($comps);
+            $colunas = $this->rotulosMeses($comps);
+            $mostraTotal = true;
+        }
+
         $linhas = array_merge(
             $this->querySia($comps)->all(),
             $this->querySih($comps)->all(),
@@ -136,8 +154,10 @@ class ProducaoQuadrimestralService
         );
 
         return [
-            'secoes' => $this->montarSecoes($linhas, $comps),
-            'meses' => $this->rotulosMeses($comps),
+            'secoes' => $this->montarSecoes($linhas, $colMap),
+            'colunas' => $colunas,
+            'mostra_total' => $mostraTotal,
+            'modo' => $modo,
             'competencias' => $comps,
             'ano' => $ano,
             'quadrimestre' => $quadrimestre,
