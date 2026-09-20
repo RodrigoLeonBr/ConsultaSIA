@@ -24,11 +24,19 @@
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
-        <!-- Remember Me -->
+        <!-- Remember Me (mantém a sessão logada) -->
         <div class="block mt-4">
             <label for="remember_me" class="inline-flex items-center">
                 <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
+                <span class="ms-2 text-sm text-gray-600">{{ __('Manter conectado') }}</span>
+            </label>
+        </div>
+
+        <!-- Lembrar meu usuário (pré-preenche o usuário; senha nunca é gravada) -->
+        <div class="block mt-2">
+            <label for="remember_username" class="inline-flex items-center">
+                <input id="remember_username" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                <span class="ms-2 text-sm text-gray-600">Lembrar meu usuário</span>
             </label>
         </div>
 
@@ -44,4 +52,30 @@
             </x-primary-button>
         </div>
     </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var username = document.getElementById('username');
+            var lembrar = document.getElementById('remember_username');
+            var form = username.closest('form');
+            if (!username || !lembrar || !form) {
+                return;
+            }
+
+            var salvo = localStorage.getItem('login_username');
+            if (salvo) {
+                username.value = salvo;
+                lembrar.checked = true;
+                document.getElementById('password')?.focus();
+            }
+
+            form.addEventListener('submit', function () {
+                if (lembrar.checked) {
+                    localStorage.setItem('login_username', username.value);
+                } else {
+                    localStorage.removeItem('login_username');
+                }
+            });
+        });
+    </script>
 </x-guest-layout>
