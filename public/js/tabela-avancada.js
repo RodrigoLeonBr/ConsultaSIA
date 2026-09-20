@@ -253,7 +253,33 @@
         const linhas=exportRows.filter(row=>row.dataset.exportSkip!=='true').map(row=>targets.map(({c,field})=>field?norm(row.cells[c.index]?.querySelector('[data-export-field="'+field+'"]')?.innerText):read(row,c)));
         return {colunas,linhas,nome:key+'_'+dateStamp()};
       }
-      const colunas=shown.map(label),linhas=exportRows.filter(row=>row.dataset.exportSkip!=='true').map(row=>shown.map(c=>read(row,c)));
+      const rows=exportRows.filter(row=>row.dataset.exportSkip!=='true');
+      // Árvore: quebra a coluna de dimensão em uma coluna por nível aberto (com ancestrais),
+      // para não misturar níveis/valores na exportação. data-tree-levels="Nível1,Nível2,...".
+      const treeLevels=table.dataset.treeLevels?table.dataset.treeLevels.split(','):null;
+      const dimCol=shown.find(c=>c.key==='dim');
+      if(treeLevels&&dimCol) {
+        const valueCols=shown.filter(c=>c.key!=='dim');
+        const niveis=rows.map(row=>Number(row.dataset.level)).filter(n=>Number.isInteger(n));
+        const depth=Math.min(treeLevels.length,niveis.length?Math.max(...niveis)+1:1);
+        const dimPath=row=>{
+          const cells=Array(depth).fill(''),seen=new Set();
+          let r=row;
+          while(r) {
+            const lvl=Number(r.dataset.level);
+            if(Number.isInteger(lvl)&&lvl<depth&&cells[lvl]==='')cells[lvl]=read(r,dimCol);
+            const pid=r.dataset.parentId;
+            if(pid===undefined||seen.has(pid))break;
+            seen.add(pid);r=nodeMap.get(pid);
+          }
+          if(depth&&cells.every(v=>v===''))cells[0]=read(row,dimCol); // linha de total (tfoot, sem nível)
+          return cells;
+        };
+        const colunas=[...treeLevels.slice(0,depth),...valueCols.map(label)];
+        const linhas=rows.map(row=>[...dimPath(row),...valueCols.map(c=>read(row,c))]);
+        return {colunas,linhas,nome:key+'_'+dateStamp()};
+      }
+      const colunas=shown.map(label),linhas=rows.map(row=>shown.map(c=>read(row,c)));
       if(account!==undefined){colunas.unshift('Código da conta');linhas.forEach(row=>row.unshift(account));}
       return {colunas,linhas,nome:key+'_'+dateStamp()};
     }

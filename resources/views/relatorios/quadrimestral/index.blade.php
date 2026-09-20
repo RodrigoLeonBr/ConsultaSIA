@@ -48,7 +48,7 @@
         <section class="table-card statement" data-quad-secao>
             <header class="section-head"><h2 class="font-semibold text-gray-900">{{ $secao['tipo'] }}</h2></header>
             <div class="table-scroll">
-                <table data-tree="true" data-tree-depth="2">
+                <table data-tree="true" data-tree-depth="2" data-tree-levels="Subgrupo,Forma,Procedimento,Prestador">
                     <thead>
                         <tr>
                             <th data-col-key="dim">Subgrupo / Forma / Procedimento / Prestador</th>
