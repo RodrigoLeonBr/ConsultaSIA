@@ -75,4 +75,62 @@ class RelatorioQuadrimestralTest extends TestCase
 
         $this->assertSame(['AB', 'MAC'], array_column($secoes, 'tipo')); // ordem alfabética
     }
+
+    private function seedTresFontes(): void
+    {
+        \DB::table('procedimento')->insert([
+            'codigo' => '0301100209', 'procedimento' => 'ADM MEDICAMENTO IM', 'pa_id' => '0',
+        ]);
+        \DB::table('forma')->insert([
+            ['id_registro' => 1, 'grupo' => '03', 'subgrupo' => '0301', 'forma' => '030100', 'descricao' => 'SUBGRUPO 0301'],
+            ['id_registro' => 2, 'grupo' => '03', 'subgrupo' => '0301', 'forma' => '030110', 'descricao' => 'FORMA 030110'],
+        ]);
+        \DB::table('prestador')->insert([
+            ['re_cunid' => '2048205', 're_cnome' => 'UNIDADE A', 're_tipo' => 'U', 'area' => 1, 'tipouni' => 'M', 'ativo' => 1, 'esus_ativo' => 1, 'relatorio' => 'ATENCAO BASICA'],
+            ['re_cunid' => '9999999', 're_cnome' => 'UNIDADE B', 're_tipo' => 'U', 'area' => 1, 'tipouni' => 'M', 'ativo' => 1, 'esus_ativo' => 0, 'relatorio' => 'ATENCAO BASICA'],
+        ]);
+        // SIA: unidade A, jan, aprovada 20 (PRD_QT_A); apresentada diferente pra garantir que usamos A
+        \DB::table('s_prd')->insert([
+            'prd_cmp' => '202601', 'prd_uid' => '2048205', 'prd_pa' => '0301100209',
+            'prd_flh' => '001', 'prd_seq' => '01', 'prd_cbo' => '000000',
+            'PRD_QT_P' => '999', 'PRD_QT_A' => '20', 'PRD_VL_P' => '0', 'PRD_VL_A' => '0', 'prd_rub' => '01',
+        ]);
+        // SIH: unidade A, fev, 3
+        \DB::table('s_aih_pa')->insert([
+            'AIH' => '0000000000001', 'CNES' => '2048205', 'COMPETENCIA' => '202602',
+            'PROC_DETALHADO' => '0301100209', 'QUANTIDADE' => 3, 'VALOR_ITEM' => 0,
+            'FINANCIAMENTO_DETALHE' => '01', 'CBO_PROFISSIONAL' => '000000',
+        ]);
+        // e-SUS: unidade A (esus_ativo=1) jan 10 → soma com SIA no mesmo leaf; unidade B (esus_ativo=0) jan 99 → excluída
+        \DB::table('s_esus')->insert([
+            ['competencia' => '2026-01', 'cnes' => '2048205', 'unidade' => 'A', 'tipo_relatorio' => 'x', 'bloco' => 'b', 'descricao_esus' => 'd', 'codigo_sigtap' => '0301100209', 'descricao_sigtap' => 's', 'quantidade' => 10],
+            ['competencia' => '2026-01', 'cnes' => '9999999', 'unidade' => 'B', 'tipo_relatorio' => 'x', 'bloco' => 'b', 'descricao_esus' => 'd', 'codigo_sigtap' => '0301100209', 'descricao_sigtap' => 's', 'quantidade' => 99],
+            // e-SUS bloco CDS sem SIGTAP → descartado
+            ['competencia' => '2026-01', 'cnes' => '2048205', 'unidade' => 'A', 'tipo_relatorio' => 'cds', 'bloco' => 'b', 'descricao_esus' => 'd', 'codigo_sigtap' => '', 'descricao_sigtap' => '', 'quantidade' => 7],
+        ]);
+    }
+
+    public function test_gerar_soma_tres_fontes_e_exclui_esus_inativo(): void
+    {
+        $this->seedTresFontes();
+
+        $r = $this->service()->gerar(2026, 1); // Q1 = jan..abr
+
+        $this->assertSame(['Jan/2026', 'Fev/2026', 'Mar/2026', 'Abr/2026'], $r['meses']);
+        $this->assertCount(1, $r['secoes']);
+        $secao = $r['secoes'][0];
+        $this->assertSame('ATENCAO BASICA', $secao['tipo']);
+
+        // leaf do prestador A: jan = SIA 20 + eSUS 10 = 30 ; fev = SIH 3
+        $leaf = collect($secao['linhas'])->firstWhere('node_id', 'pe:0301100209:2048205');
+        $this->assertNotNull($leaf);
+        $this->assertSame([30, 3, 0, 0], $leaf['meses']);
+        $this->assertSame(33, $leaf['total']);
+
+        // unidade B (esus_ativo=0, 99) NÃO entra
+        $this->assertNull(collect($secao['linhas'])->firstWhere('node_id', 'pe:0301100209:9999999'));
+
+        // total da seção = 33 (CDS de 7 descartado)
+        $this->assertSame(33, $secao['total']);
+    }
 }

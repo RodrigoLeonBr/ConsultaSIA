@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\DB;
+
 class ProducaoQuadrimestralService
 {
     private const MESES = [
@@ -118,5 +120,131 @@ class ProducaoQuadrimestralService
         $visit('');
 
         return $out;
+    }
+
+    /**
+     * @return array{secoes:array<int,mixed>,meses:array<int,string>,competencias:array<int,string>,ano:int,quadrimestre:int}
+     */
+    public function gerar(int $ano, int $quadrimestre): array
+    {
+        $comps = $this->competencias($ano, $quadrimestre);
+        $linhas = array_merge(
+            $this->querySia($comps)->all(),
+            $this->querySih($comps)->all(),
+            $this->queryEsus($comps)->all(),
+        );
+
+        return [
+            'secoes' => $this->montarSecoes($linhas, $comps),
+            'meses' => $this->rotulosMeses($comps),
+            'competencias' => $comps,
+            'ano' => $ano,
+            'quadrimestre' => $quadrimestre,
+        ];
+    }
+
+    /** @return array<int,int> anos com produção (para o filtro) */
+    public function anosDisponiveis(): array
+    {
+        // ponytail: distinct por LEFT(cmp,4); mesmo custo aceito no FaturamentoPrestadorController.
+        $sia = DB::table('s_prd')->selectRaw('DISTINCT LEFT(prd_cmp,4) as ano')
+            ->whereRaw('prd_cmp REGEXP "^[0-9]{6}$"')->pluck('ano');
+        $sih = DB::table('s_aih_pa')->selectRaw('DISTINCT LEFT(COMPETENCIA,4) as ano')->pluck('ano');
+        $esus = DB::table('s_esus')->selectRaw('DISTINCT LEFT(competencia,4) as ano')->pluck('ano');
+
+        return collect([$sia, $sih, $esus])->flatten()
+            ->filter()->map(fn ($a) => (int) $a)->unique()->sortDesc()->values()->all();
+    }
+
+    /** @param array<int,string> $comps */
+    private function querySia(array $comps): \Illuminate\Support\Collection
+    {
+        return DB::table('s_prd as sp')
+            ->leftJoin('prestador as pr', 'sp.prd_uid', '=', 'pr.re_cunid')
+            ->leftJoin('forma as fs', function ($j) {
+                $j->on(DB::raw('SUBSTRING(sp.prd_pa,1,4)'), '=', 'fs.subgrupo')
+                    ->where('fs.forma', '=', DB::raw("CONCAT(SUBSTRING(sp.prd_pa,1,4),'00')"));
+            })
+            ->leftJoin('forma as ff', DB::raw('SUBSTRING(sp.prd_pa,1,6)'), '=', 'ff.forma')
+            ->leftJoin('procedimento as pc', 'sp.prd_pa', '=', 'pc.codigo')
+            ->whereIn('sp.prd_cmp', $comps)
+            ->whereRaw('LENGTH(sp.prd_pa) >= 6')
+            ->groupBy('pr.relatorio', 'sp.prd_pa', 'fs.descricao', 'ff.descricao', 'pc.procedimento', 'sp.prd_uid', 'pr.re_cnome', 'sp.prd_cmp')
+            ->select($this->colunasComuns(
+                proc: 'sp.prd_pa', cnes: 'sp.prd_uid', cmp: 'sp.prd_cmp',
+                qtd: 'SUM(CAST(sp.PRD_QT_A AS UNSIGNED))',
+            ))
+            ->get();
+    }
+
+    /** @param array<int,string> $comps */
+    private function querySih(array $comps): \Illuminate\Support\Collection
+    {
+        $c = 'COLLATE utf8mb4_general_ci';
+
+        return DB::table('s_aih_pa as ap')
+            ->leftJoin('prestador as pr', DB::raw("ap.CNES $c"), '=', 'pr.re_cunid')
+            ->leftJoin('forma as fs', function ($j) use ($c) {
+                $j->on(DB::raw("SUBSTRING(ap.PROC_DETALHADO,1,4) $c"), '=', 'fs.subgrupo')
+                    ->where('fs.forma', '=', DB::raw("CONCAT(SUBSTRING(ap.PROC_DETALHADO,1,4),'00')"));
+            })
+            ->leftJoin('forma as ff', DB::raw("SUBSTRING(ap.PROC_DETALHADO,1,6) $c"), '=', 'ff.forma')
+            ->leftJoin('procedimento as pc', DB::raw("ap.PROC_DETALHADO $c"), '=', 'pc.codigo')
+            ->whereIn('ap.COMPETENCIA', $comps)
+            ->whereRaw('LENGTH(ap.PROC_DETALHADO) >= 6')
+            ->groupBy('pr.relatorio', 'ap.PROC_DETALHADO', 'fs.descricao', 'ff.descricao', 'pc.procedimento', 'ap.CNES', 'pr.re_cnome', 'ap.COMPETENCIA')
+            ->select($this->colunasComuns(
+                proc: 'ap.PROC_DETALHADO', cnes: 'ap.CNES', cmp: 'ap.COMPETENCIA',
+                qtd: 'SUM(ap.QUANTIDADE)',
+            ))
+            ->get();
+    }
+
+    /** @param array<int,string> $comps */
+    private function queryEsus(array $comps): \Illuminate\Support\Collection
+    {
+        $c = 'COLLATE utf8mb4_general_ci';
+        $compsEsus = array_map(fn (string $x) => substr($x, 0, 4).'-'.substr($x, 4, 2), $comps);
+
+        return DB::table('s_esus as es')
+            ->join('prestador as pr', function ($j) use ($c) {
+                $j->on(DB::raw("es.cnes $c"), '=', 'pr.re_cunid')->where('pr.esus_ativo', '=', 1);
+            })
+            ->leftJoin('forma as fs', function ($j) use ($c) {
+                $j->on(DB::raw("SUBSTRING(es.codigo_sigtap,1,4) $c"), '=', 'fs.subgrupo')
+                    ->where('fs.forma', '=', DB::raw("CONCAT(SUBSTRING(es.codigo_sigtap,1,4),'00')"));
+            })
+            ->leftJoin('forma as ff', DB::raw("SUBSTRING(es.codigo_sigtap,1,6) $c"), '=', 'ff.forma')
+            ->leftJoin('procedimento as pc', DB::raw("es.codigo_sigtap $c"), '=', 'pc.codigo')
+            ->whereIn('es.competencia', $compsEsus)
+            ->whereRaw('LENGTH(es.codigo_sigtap) >= 6')
+            ->groupBy('pr.relatorio', 'es.codigo_sigtap', 'fs.descricao', 'ff.descricao', 'pc.procedimento', 'es.cnes', 'pr.re_cnome', 'es.competencia')
+            ->select($this->colunasComuns(
+                proc: 'es.codigo_sigtap', cnes: 'es.cnes',
+                cmp: "REPLACE(es.competencia,'-','')", qtd: 'SUM(es.quantidade)',
+            ))
+            ->get();
+    }
+
+    /**
+     * Colunas do grão comum às 3 fontes.
+     *
+     * @return array<int,\Illuminate\Database\Query\Expression>
+     */
+    private function colunasComuns(string $proc, string $cnes, string $cmp, string $qtd): array
+    {
+        return [
+            DB::raw("COALESCE(NULLIF(pr.relatorio,''),'Sem tipo') as tipo_relatorio"),
+            DB::raw("SUBSTRING($proc,1,4) as subgrupo_cod"),
+            DB::raw("COALESCE(fs.descricao,'') as subgrupo_desc"),
+            DB::raw("SUBSTRING($proc,1,6) as forma_cod"),
+            DB::raw("COALESCE(ff.descricao,'') as forma_desc"),
+            DB::raw("$proc as proc_cod"),
+            DB::raw("COALESCE(pc.procedimento,'') as proc_desc"),
+            DB::raw("$cnes as cnes"),
+            DB::raw("COALESCE(pr.re_cnome,'') as prestador_nome"),
+            DB::raw("$cmp as competencia"),
+            DB::raw("$qtd as qtd"),
+        ];
     }
 }
