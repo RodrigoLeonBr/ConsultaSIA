@@ -8,17 +8,19 @@ use Illuminate\Http\Request;
 
 class RelatorioQuadrimestralController extends Controller
 {
+    private const QUADRIMESTRES = [
+        1 => '1º Quadrimestre (Jan–Abr)',
+        2 => '2º Quadrimestre (Mai–Ago)',
+        3 => '3º Quadrimestre (Set–Dez)',
+    ];
+
     public function __construct(private ProducaoQuadrimestralService $service) {}
 
     public function index(): View
     {
         return view('relatorios.quadrimestral.index', [
             'anos' => $this->service->anosDisponiveis(),
-            'quadrimestres' => [
-                1 => '1º Quadrimestre (Jan–Abr)',
-                2 => '2º Quadrimestre (Mai–Ago)',
-                3 => '3º Quadrimestre (Set–Dez)',
-            ],
+            'quadrimestres' => self::QUADRIMESTRES,
             'resultado' => null,
         ]);
     }
@@ -32,11 +34,7 @@ class RelatorioQuadrimestralController extends Controller
 
         return view('relatorios.quadrimestral.index', [
             'anos' => $this->service->anosDisponiveis(),
-            'quadrimestres' => [
-                1 => '1º Quadrimestre (Jan–Abr)',
-                2 => '2º Quadrimestre (Mai–Ago)',
-                3 => '3º Quadrimestre (Set–Dez)',
-            ],
+            'quadrimestres' => self::QUADRIMESTRES,
             'resultado' => $this->service->gerar((int) $dados['ano'], (int) $dados['quadrimestre']),
         ]);
     }

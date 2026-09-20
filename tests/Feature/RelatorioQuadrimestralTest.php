@@ -156,4 +156,41 @@ class RelatorioQuadrimestralTest extends TestCase
             ->post(route('relatorios.quadrimestral.gerar'), ['ano' => 2026, 'quadrimestre' => 9])
             ->assertSessionHasErrors('quadrimestre');
     }
+
+    public function test_descarta_procedimento_curto_do_sia(): void
+    {
+        \DB::table('prestador')->insert([
+            're_cunid' => '2048205', 're_cnome' => 'UNIDADE A', 're_tipo' => 'U',
+            'area' => 1, 'tipouni' => 'M', 'ativo' => 1, 'esus_ativo' => 1, 'relatorio' => 'ATENCAO BASICA',
+        ]);
+        // proc com LENGTH < 6 → descartado; proc válido → mantido
+        \DB::table('s_prd')->insert([
+            ['prd_cmp' => '202601', 'prd_uid' => '2048205', 'prd_pa' => '0301', 'prd_flh' => '000', 'prd_seq' => '00', 'prd_cbo' => '000000', 'PRD_QT_P' => '0', 'PRD_QT_A' => '50', 'PRD_VL_P' => '0', 'PRD_VL_A' => '0', 'prd_rub' => '01'],
+            ['prd_cmp' => '202601', 'prd_uid' => '2048205', 'prd_pa' => '0301100209', 'prd_flh' => '000', 'prd_seq' => '00', 'prd_cbo' => '000000', 'PRD_QT_P' => '0', 'PRD_QT_A' => '4', 'PRD_VL_P' => '0', 'PRD_VL_A' => '0', 'prd_rub' => '01'],
+        ]);
+
+        $r = $this->service()->gerar(2026, 1);
+
+        $this->assertCount(1, $r['secoes']);
+        // só o proc válido (4), o curto (50) foi descartado
+        $this->assertSame(4, $r['secoes'][0]['total']);
+    }
+
+    public function test_prestador_sem_relatorio_vira_secao_sem_tipo(): void
+    {
+        \DB::table('prestador')->insert([
+            're_cunid' => '2048205', 're_cnome' => 'UNIDADE A', 're_tipo' => 'U',
+            'area' => 1, 'tipouni' => 'M', 'ativo' => 1, 'esus_ativo' => 1, 'relatorio' => null,
+        ]);
+        \DB::table('s_prd')->insert([
+            'prd_cmp' => '202601', 'prd_uid' => '2048205', 'prd_pa' => '0301100209',
+            'prd_flh' => '000', 'prd_seq' => '00', 'prd_cbo' => '000000',
+            'PRD_QT_P' => '0', 'PRD_QT_A' => '8', 'PRD_VL_P' => '0', 'PRD_VL_A' => '0', 'prd_rub' => '01',
+        ]);
+
+        $r = $this->service()->gerar(2026, 1);
+
+        $this->assertSame('Sem tipo', $r['secoes'][0]['tipo']);
+        $this->assertSame(8, $r['secoes'][0]['total']);
+    }
 }
