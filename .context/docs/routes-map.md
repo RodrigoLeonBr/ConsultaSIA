@@ -173,6 +173,15 @@ Controller: `FaturamentoPrestadorController`
 | POST | /relatorios/faturamento-prestador/gerar | faturamento-prestador.gerar | gerar |
 | POST | /relatorios/faturamento-prestador/pdf | faturamento-prestador.pdf | exportPdf |
 
+### Produção Quadrimestral — SIA + SIH + e-SUS
+Controller: `RelatorioQuadrimestralController` · Service: `ProducaoQuadrimestralService`
+Consolida `s_prd` + `s_aih_pa` + `s_esus` (3 queries + merge PHP); drill subgrupo→forma→procedimento→prestador; seção por tipo de relatório; 4 meses + total. e-SUS só `esus_ativo=1`; SIA usa `PRD_QT_A`.
+
+| Method | URI | Name | Action |
+|---|---|---|---|
+| GET | /relatorios/quadrimestral | relatorios.quadrimestral.index | index |
+| POST | /relatorios/quadrimestral/gerar | relatorios.quadrimestral.gerar | gerar |
+
 ### AIH Internações — tabela `s_aih`
 Controller: `RelatorioAihController`
 > Schema: `docs/sih-aih-schema-for-llm.md`

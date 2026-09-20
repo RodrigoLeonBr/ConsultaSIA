@@ -7,6 +7,15 @@
 
 ## Em andamento / concluído recentemente
 
+### Relatório Produção Quadrimestral (SIA + SIH + e-SUS)
+- `RelatorioQuadrimestralController` + `ProducaoQuadrimestralService` + view `relatorios/quadrimestral/index.blade.php`
+- 3 queries (s_prd/s_aih_pa/s_esus) + merge/linearização em PHP (evita timeout de UNION no s_prd)
+- Drill subgrupo→forma→procedimento→prestador; seção por tipo (`prestador.relatorio`); 4 meses + total
+- e-SUS só `esus_ativo=1` (evita dupla contagem c/ SIA); SIA usa `PRD_QT_A`
+- Componente `public/js/tabela-avancada.js` (porte do `cria-app`) + `public/css/tabela-avancada.css`
+- Testes: `tests/Feature/RelatorioQuadrimestralTest.php`. Spec/plano em `docs/superpowers/`
+- Pendente: validação manual no browser; export XLSX/PDF (fase 2); confirmar índice `s_prd.prd_cmp` em prod
+
 ### AIH — campos SIHD estendidos + docs/DB
 - Campos novos em `s_aih`: `IDENT_AIH`, `MUN_RESIDENCIA`, `CARATER_INTERNACAO`, `DIAG_SECUNDARIO`, `CID_OBITO`
 - UK `uk_aih` = `(AIH, CNES, COMPETENCIA, DT_SAIDA)` (reabertura UTI)
