@@ -30,3 +30,6 @@ Thumbs.db
 *.xlsx
 *.pdf
 *.csv
+
+# Material de referência da skill cria-app (não versionar)
+/cria-app
