@@ -86,6 +86,10 @@ class Sidebar extends Component
             return 'aih';
         }
 
+        if (request()->routeIs('relatorios.quadrimestral.*')) {
+            return 'quadrimestral';
+        }
+
         if (request()->routeIs('relatorios.*')) {
             return 'relatorios';
         }
@@ -126,6 +130,7 @@ class Sidebar extends Component
                     ['id' => 'bpi', 'label' => 'Produção Individualizada', 'route' => 'relatorios.bpi.index', 'icon' => 'bpi'],
                     ['id' => 'apac', 'label' => 'Relatório de APAC', 'route' => 'relatorios.apac.index', 'icon' => 'apac'],
                     ['id' => 'faturamento', 'label' => 'Faturamento por Prestador', 'route' => 'faturamento-prestador.index', 'icon' => 'faturamento'],
+                    ['id' => 'quadrimestral', 'label' => 'Produção Quadrimestral', 'route' => 'relatorios.quadrimestral.index', 'icon' => 'relatorios'],
                 ],
             ],
             [
