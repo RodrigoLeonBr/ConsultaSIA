@@ -197,6 +197,7 @@ class ProducaoQuadrimestralService
                 DB::raw('prd_uid as cnes'),
                 DB::raw('prd_pa as proc'),
                 DB::raw('SUM(CAST(PRD_QT_A AS UNSIGNED)) as qtd'),
+                DB::raw("'sia' as fonte"),
             ])->all();
     }
 
@@ -217,6 +218,7 @@ class ProducaoQuadrimestralService
                 DB::raw('CNES as cnes'),
                 DB::raw('PROC_DETALHADO as proc'),
                 DB::raw('SUM(QUANTIDADE) as qtd'),
+                DB::raw("'sih' as fonte"),
             ])->all();
     }
 
@@ -244,6 +246,7 @@ class ProducaoQuadrimestralService
                 DB::raw('cnes'),
                 DB::raw('codigo_sigtap as proc'),
                 DB::raw('SUM(quantidade) as qtd'),
+                DB::raw("'esus' as fonte"),
             ])->all();
 
         return array_values(array_filter($rows, fn ($r) => isset($ativos[(string) $r->cnes])));
@@ -254,7 +257,7 @@ class ProducaoQuadrimestralService
      * pequenos — mais barato que joins na agregação e imune a mix de collations.
      *
      * @param  array<int,object>  $raw  linhas cruas {competencia,cnes,proc,qtd}
-     * @return array<int,object>  linhas no grão consumido por montarSecoes
+     * @return array<int,object> linhas no grão consumido por montarSecoes
      */
     private function enriquecer(array $raw): array
     {
@@ -276,8 +279,12 @@ class ProducaoQuadrimestralService
             $sub = substr($proc, 0, 4);
             $forma6 = substr($proc, 0, 6);
             $p = $prest[(string) $r->cnes] ?? null;
+            $tipo = ($p && $p->relatorio !== null && $p->relatorio !== '') ? $p->relatorio : 'Sem tipo';
+            if ($tipo === 'Hospitalar') {
+                $tipo = $r->fonte === 'sih' ? 'Hospitalar - Internação' : 'Hospitalar - Ambulatorial';
+            }
             $out[] = (object) [
-                'tipo_relatorio' => ($p && $p->relatorio !== null && $p->relatorio !== '') ? $p->relatorio : 'Sem tipo',
+                'tipo_relatorio' => $tipo,
                 'subgrupo_cod' => $sub,
                 'subgrupo_desc' => $formaMap[$sub.'00'] ?? '',
                 'forma_cod' => $forma6,

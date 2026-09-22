@@ -195,6 +195,37 @@ class RelatorioQuadrimestralTest extends TestCase
         $this->assertSame(8, $r['secoes'][0]['total']);
     }
 
+    public function test_hospitalar_separa_ambulatorial_e_internacao(): void
+    {
+        \DB::table('procedimento')->insert([
+            'codigo' => '0301100209', 'procedimento' => 'PROC', 'pa_id' => '0',
+        ]);
+        \DB::table('prestador')->insert([
+            're_cunid' => '2048205', 're_cnome' => 'HOSP A', 're_tipo' => 'U',
+            'area' => 1, 'tipouni' => 'M', 'ativo' => 1, 'esus_ativo' => 0, 'relatorio' => 'Hospitalar',
+        ]);
+        // SIA jan 20 → Ambulatorial ; SIH fev 3 → Internação
+        \DB::table('s_prd')->insert([
+            'prd_cmp' => '202601', 'prd_uid' => '2048205', 'prd_pa' => '0301100209',
+            'prd_flh' => '000', 'prd_seq' => '00', 'prd_cbo' => '000000',
+            'PRD_QT_P' => '0', 'PRD_QT_A' => '20', 'PRD_VL_P' => '0', 'PRD_VL_A' => '0', 'prd_rub' => '01',
+        ]);
+        \DB::table('s_aih_pa')->insert([
+            'AIH' => '0000000000001', 'CNES' => '2048205', 'COMPETENCIA' => '202602',
+            'PROC_DETALHADO' => '0301100209', 'QUANTIDADE' => 3, 'VALOR_ITEM' => 0,
+            'FINANCIAMENTO_DETALHE' => '01', 'CBO_PROFISSIONAL' => '000000',
+        ]);
+
+        $r = $this->service()->gerar(2026, 1);
+
+        $this->assertSame(
+            ['Hospitalar - Ambulatorial', 'Hospitalar - Internação'],
+            array_column($r['secoes'], 'tipo')
+        );
+        $this->assertSame(20, collect($r['secoes'])->firstWhere('tipo', 'Hospitalar - Ambulatorial')['total']);
+        $this->assertSame(3, collect($r['secoes'])->firstWhere('tipo', 'Hospitalar - Internação')['total']);
+    }
+
     public function test_modo_anos_agrega_mesmo_quadrimestre_em_quatro_anos(): void
     {
         \DB::table('prestador')->insert([
