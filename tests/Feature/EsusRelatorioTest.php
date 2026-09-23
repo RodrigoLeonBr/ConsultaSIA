@@ -63,6 +63,8 @@ class EsusRelatorioTest extends TestCase
         $this->assertStringContainsString('INTRAMUSCULAR', $row['Procedimento']);
         $this->assertSame('114', $row['Quantidade']); // 10 + 5 + 99
         $this->assertSame('114', $data['totals']['Quantidade Total']);
+        $this->assertArrayHasKey('sql', $data);
+        $this->assertStringContainsStringIgnoringCase('select', $data['sql']);
     }
 
     public function test_filter_esus_ativo_excludes_units(): void
