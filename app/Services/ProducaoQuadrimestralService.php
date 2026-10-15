@@ -170,7 +170,7 @@ class ProducaoQuadrimestralService
         // evita o full-scan de DISTINCT no s_prd (5.9M) a cada request. Limpa com `php artisan cache:clear`.
         return Cache::remember('quad_anos_disponiveis', now()->addHours(6), function (): array {
             $sia = DB::table('s_prd')->selectRaw('DISTINCT LEFT(prd_cmp,4) as ano')->pluck('ano');
-            $sih = DB::table('s_aih_pa')->selectRaw('DISTINCT LEFT(COMPETENCIA,4) as ano')->pluck('ano');
+            $sih = DB::table('s_aih')->selectRaw('DISTINCT LEFT(COMPETENCIA,4) as ano')->pluck('ano');
             $esus = DB::table('s_esus')->selectRaw('DISTINCT LEFT(competencia,4) as ano')->pluck('ano');
 
             return collect([$sia, $sih, $esus])->flatten()
@@ -202,22 +202,24 @@ class ProducaoQuadrimestralService
     }
 
     /**
-     * SIH agregado sem joins.
+     * SIH agregado sem joins. Internação = cabeçalho AIH (s_aih), procedimento
+     * principal. Conta AIH distintas — NÃO soma itens de s_aih_pa (vários por
+     * internação, inflava os números).
      *
      * @param  array<int,string>  $comps
      * @return array<int,object>
      */
     private function querySih(array $comps): array
     {
-        return DB::table('s_aih_pa')
+        return DB::table('s_aih')
             ->whereIn('COMPETENCIA', $comps)
-            ->whereRaw('LENGTH(PROC_DETALHADO) >= 6')
-            ->groupBy('COMPETENCIA', 'CNES', 'PROC_DETALHADO')
+            ->whereRaw('LENGTH(PROC_PRINCIPAL) >= 6')
+            ->groupBy('COMPETENCIA', 'CNES', 'PROC_PRINCIPAL')
             ->get([
                 DB::raw('COMPETENCIA as competencia'),
                 DB::raw('CNES as cnes'),
-                DB::raw('PROC_DETALHADO as proc'),
-                DB::raw('SUM(QUANTIDADE) as qtd'),
+                DB::raw('PROC_PRINCIPAL as proc'),
+                DB::raw('COUNT(DISTINCT AIH) as qtd'),
                 DB::raw("'sih' as fonte"),
             ])->all();
     }

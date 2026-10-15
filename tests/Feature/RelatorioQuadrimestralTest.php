@@ -95,11 +95,11 @@ class RelatorioQuadrimestralTest extends TestCase
             'prd_flh' => '001', 'prd_seq' => '01', 'prd_cbo' => '000000',
             'PRD_QT_P' => '999', 'PRD_QT_A' => '20', 'PRD_VL_P' => '0', 'PRD_VL_A' => '0', 'prd_rub' => '01',
         ]);
-        // SIH: unidade A, fev, 3
-        \DB::table('s_aih_pa')->insert([
-            'AIH' => '0000000000001', 'CNES' => '2048205', 'COMPETENCIA' => '202602',
-            'PROC_DETALHADO' => '0301100209', 'QUANTIDADE' => 3, 'VALOR_ITEM' => 0,
-            'FINANCIAMENTO_DETALHE' => '01', 'CBO_PROFISSIONAL' => '000000',
+        // SIH: unidade A, fev, 3 internações (3 AIH distintas no cabeçalho s_aih)
+        \DB::table('s_aih')->insert([
+            ['AIH' => '0000000000001', 'CNES' => '2048205', 'COMPETENCIA' => '202602', 'PROC_PRINCIPAL' => '0301100209'],
+            ['AIH' => '0000000000002', 'CNES' => '2048205', 'COMPETENCIA' => '202602', 'PROC_PRINCIPAL' => '0301100209'],
+            ['AIH' => '0000000000003', 'CNES' => '2048205', 'COMPETENCIA' => '202602', 'PROC_PRINCIPAL' => '0301100209'],
         ]);
         // e-SUS: unidade A (esus_ativo=1) jan 10 → soma com SIA no mesmo leaf; unidade B (esus_ativo=0) jan 99 → excluída
         \DB::table('s_esus')->insert([
@@ -210,10 +210,10 @@ class RelatorioQuadrimestralTest extends TestCase
             'prd_flh' => '000', 'prd_seq' => '00', 'prd_cbo' => '000000',
             'PRD_QT_P' => '0', 'PRD_QT_A' => '20', 'PRD_VL_P' => '0', 'PRD_VL_A' => '0', 'prd_rub' => '01',
         ]);
-        \DB::table('s_aih_pa')->insert([
-            'AIH' => '0000000000001', 'CNES' => '2048205', 'COMPETENCIA' => '202602',
-            'PROC_DETALHADO' => '0301100209', 'QUANTIDADE' => 3, 'VALOR_ITEM' => 0,
-            'FINANCIAMENTO_DETALHE' => '01', 'CBO_PROFISSIONAL' => '000000',
+        \DB::table('s_aih')->insert([
+            ['AIH' => '0000000000001', 'CNES' => '2048205', 'COMPETENCIA' => '202602', 'PROC_PRINCIPAL' => '0301100209'],
+            ['AIH' => '0000000000002', 'CNES' => '2048205', 'COMPETENCIA' => '202602', 'PROC_PRINCIPAL' => '0301100209'],
+            ['AIH' => '0000000000003', 'CNES' => '2048205', 'COMPETENCIA' => '202602', 'PROC_PRINCIPAL' => '0301100209'],
         ]);
 
         $r = $this->service()->gerar(2026, 1);
