@@ -91,6 +91,11 @@ class RelatorioAihController extends BaseRelatorioController
                 'type' => 'date',
                 'operators' => ['=', '>=', '<=', 'between'],
             ],
+            'ano' => [
+                'label' => 'Ano',
+                'type' => 'text',
+                'operators' => ['=', '>=', '<=', 'between'],
+            ],
             'AIH' => [
                 'label' => 'Número AIH',
                 'type' => 'text',
@@ -491,6 +496,11 @@ class RelatorioAihController extends BaseRelatorioController
                     $groupByFields[] = 'sa.COMPETENCIA';
                     break;
 
+                case 'ano':
+                    $selectFields[] = DB::raw('SUBSTRING(sa.COMPETENCIA,1,4) as ano');
+                    $groupByFields[] = DB::raw('SUBSTRING(sa.COMPETENCIA,1,4)');
+                    break;
+
                 case 'CNES':
                     $selectFields[] = 'sa.CNES';
                     $selectFields[] = 'pr.re_cnome as CNES_display';
@@ -686,6 +696,19 @@ class RelatorioAihController extends BaseRelatorioController
             return;
         }
 
+        // ano → SUBSTRING(COMPETENCIA,1,4)
+        if ($field === 'ano') {
+            $expr = 'SUBSTRING(sa.COMPETENCIA, 1, 4)';
+            if ($operator === 'between' && is_array($value) && count($value) === 2) {
+                $query->whereRaw("{$expr} BETWEEN ? AND ?", [$value[0], $value[1]]);
+            } else {
+                $op = in_array($operator, ['=', '>=', '<='], true) ? $operator : '=';
+                $query->whereRaw("{$expr} {$op} ?", [$value]);
+            }
+
+            return;
+        }
+
         // grupo / subgrupo / forma → SUBSTRING filter
         if (in_array($field, ['grupo', 'subgrupo', 'forma'], true)) {
             $len = match ($field) {
@@ -817,6 +840,10 @@ class RelatorioAihController extends BaseRelatorioController
             $field === 'faixa_etaria_2' => [
                 'select' => [DB::raw('('.$this->faixaEtaria2Expression().') as faixa_etaria_2')],
                 'groupBy' => [DB::raw('('.$this->faixaEtaria2Expression().')')],
+            ],
+            $field === 'ano' => [
+                'select' => [DB::raw('SUBSTRING(sa.COMPETENCIA, 1, 4) as ano')],
+                'groupBy' => [DB::raw('SUBSTRING(sa.COMPETENCIA, 1, 4)')],
             ],
             $field === 'grupo' => [
                 'select' => [DB::raw('SUBSTRING(sa.PROC_PRINCIPAL, 1, 2) as grupo')],

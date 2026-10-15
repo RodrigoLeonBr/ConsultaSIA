@@ -96,6 +96,43 @@ class RelatorioAihFieldsTest extends TestCase
         $this->assertSame(1, (int) $rows[0]->qtd_aih);
     }
 
+    public function test_ano_field_exposed_in_endpoint(): void
+    {
+        $response = $this->actingAs($this->user)->getJson(route('relatorios.aih.fields'));
+
+        $response->assertOk();
+        $fields = $response->json('fields');
+
+        $this->assertArrayHasKey('ano', $fields);
+        $this->assertSame('Ano', $fields['ano']['label']);
+        $this->assertSame(['=', '>=', '<=', 'between'], $fields['ano']['operators']);
+    }
+
+    public function test_build_query_selects_and_filters_ano(): void
+    {
+        DB::table('s_aih')->insert([
+            ['AIH' => '1', 'CNES' => '2082179', 'COMPETENCIA' => '202511', 'VALOR_TOTAL_AIH' => 10],
+            ['AIH' => '2', 'CNES' => '2082179', 'COMPETENCIA' => '202601', 'VALOR_TOTAL_AIH' => 20],
+            ['AIH' => '3', 'CNES' => '2082179', 'COMPETENCIA' => '202603', 'VALOR_TOTAL_AIH' => 30],
+        ]);
+
+        $controller = new RelatorioAihController;
+        $method = new \ReflectionMethod($controller, 'buildQuery');
+        $method->setAccessible(true);
+
+        $query = $method->invoke(
+            $controller,
+            ['ano', 'qtd_aih'],
+            [['field' => 'ano', 'operator' => '=', 'value' => '2026']],
+        );
+
+        $rows = $query->get();
+
+        $this->assertCount(1, $rows);
+        $this->assertSame('2026', $rows[0]->ano);
+        $this->assertSame(2, (int) $rows[0]->qtd_aih);
+    }
+
     public function test_build_query_groups_carater_by_dashboard_resumo(): void
     {
         DB::table('s_aih')->insert([
