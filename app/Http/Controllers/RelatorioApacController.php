@@ -342,6 +342,9 @@ class RelatorioApacController extends BaseRelatorioController
             } elseif ($field === 'PAP_CMP') {
                 $selectFields[] = DB::raw("CONCAT(SUBSTRING(pap.PAP_CMP, 1, 4), '-', SUBSTRING(pap.PAP_CMP, 5, 2)) as competencia");
                 $groupByFields[] = 'pap.PAP_CMP';
+            } elseif ($field === 'ano') {
+                $selectFields[] = DB::raw('SUBSTRING(pap.PAP_CMP, 1, 4) as ano');
+                $groupByFields[] = DB::raw('SUBSTRING(pap.PAP_CMP, 1, 4)');
             } elseif ($field === 'PAP_MVM') {
                 $selectFields[] = DB::raw("CONCAT(SUBSTRING(pap.PAP_MVM, 1, 4), '-', SUBSTRING(pap.PAP_MVM, 5, 2)) as movimento");
                 $groupByFields[] = 'pap.PAP_MVM';
@@ -488,6 +491,18 @@ class RelatorioApacController extends BaseRelatorioController
                 $query->whereIn('pap.PAP_PA', $procedimentoCodigos);
             } else {
                 $query->whereRaw('1 = 0');
+            }
+
+            return;
+        }
+
+        if ($field === 'ano') {
+            $expr = 'SUBSTRING(pap.PAP_CMP, 1, 4)';
+            if ($operator === 'between' && is_array($value) && count($value) === 2) {
+                $query->whereRaw("{$expr} BETWEEN ? AND ?", [$value[0], $value[1]]);
+            } else {
+                $op = in_array($operator, ['=', '>=', '<='], true) ? $operator : '=';
+                $query->whereRaw("{$expr} {$op} ?", [$value]);
             }
 
             return;
@@ -793,6 +808,12 @@ class RelatorioApacController extends BaseRelatorioController
                 'table' => 's_pap',
                 'operators' => ['=', '>=', '<=', 'between'],
             ],
+            'ano' => [
+                'label' => 'Ano',
+                'type' => 'text',
+                'table' => 's_pap',
+                'operators' => ['=', '>=', '<=', 'between'],
+            ],
             'PAP_MVM' => [
                 'label' => 'Data Movimento',
                 'type' => 'date',
@@ -1080,6 +1101,9 @@ class RelatorioApacController extends BaseRelatorioController
             $selectFields[] = 'cs.descricao as cismetro_descricao';
             $groupByFields[] = "{$tableAlias}.PAP_PA";
             $groupByFields[] = 'cs.descricao';
+        } elseif ($field === 'ano') {
+            $selectFields[] = DB::raw("SUBSTRING({$tableAlias}.PAP_CMP, 1, 4) as ano");
+            $groupByFields[] = DB::raw("SUBSTRING({$tableAlias}.PAP_CMP, 1, 4)");
         } elseif ($field === 'grupo') {
             $selectFields[] = DB::raw("SUBSTRING({$tableAlias}.PAP_PA, 1, 2) as grupo");
             $groupByFields[] = DB::raw("SUBSTRING({$tableAlias}.PAP_PA, 1, 2)");
